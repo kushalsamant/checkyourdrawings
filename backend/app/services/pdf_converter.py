@@ -4,6 +4,7 @@ import fitz
 from PIL import Image, UnidentifiedImageError
 
 from backend.app.config import ALLOWED_EXTENSIONS, PDF_DPI
+from backend.app.services.image_limits import validate_image_dimensions
 
 
 class FileConversionError(Exception):
@@ -69,11 +70,13 @@ def convert_pdf_page_to_image(
             page = document.load_page(page_number)
             pixmap = page.get_pixmap(dpi=dpi, alpha=False)
 
-            return Image.frombytes(
+            image = Image.frombytes(
                 mode="RGB",
                 size=(pixmap.width, pixmap.height),
                 data=pixmap.samples,
             )
+            validate_image_dimensions(image)
+            return image
     except FileConversionError:
         raise
     except fitz.FileDataError as exc:
@@ -89,7 +92,9 @@ def load_raster_image(file_path: Path) -> Image.Image:
     try:
         with Image.open(file_path) as image:
             image.load()
-            return image.convert("RGB")
+            rgb_image = image.convert("RGB")
+            validate_image_dimensions(rgb_image)
+            return rgb_image
     except FileNotFoundError as exc:
         raise FileConversionError(f"File does not exist: {file_path}") from exc
     except UnidentifiedImageError as exc:
