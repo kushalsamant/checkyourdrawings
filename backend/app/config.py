@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     max_image_dimension: int = 12_000
     output_max_age_hours: int = 24
     compare_timeout_seconds: int = 300
+    content_bbox_padding_ratio: float = 0.02
+    min_overlap_area_ratio: float = 0.05
+    alignment_marginal_inlier_ratio: float = 0.55
+    alignment_fail_inlier_ratio: float = 0.35
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3000",
@@ -48,6 +52,10 @@ MAX_IMAGE_PIXELS: int = _settings.max_image_pixels
 MAX_IMAGE_DIMENSION: int = _settings.max_image_dimension
 OUTPUT_MAX_AGE_HOURS: int = _settings.output_max_age_hours
 COMPARE_TIMEOUT_SECONDS: int = _settings.compare_timeout_seconds
+CONTENT_BBOX_PADDING_RATIO: float = _settings.content_bbox_padding_ratio
+MIN_OVERLAP_AREA_RATIO: float = _settings.min_overlap_area_ratio
+ALIGNMENT_MARGINAL_INLIER_RATIO: float = _settings.alignment_marginal_inlier_ratio
+ALIGNMENT_FAIL_INLIER_RATIO: float = _settings.alignment_fail_inlier_ratio
 CORS_ORIGINS: list[str] = _settings.cors_origins
 ALLOWED_EXTENSIONS: frozenset[str] = frozenset({".pdf", ".png", ".jpg", ".jpeg"})
 

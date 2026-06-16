@@ -19,7 +19,17 @@ from backend.app.config import (
     UPLOAD_DIR,
 )
 from backend.app.schemas.compare import CompareResponse
-from backend.app.services.alignment import AlignmentError, align_revision_to_reference
+from backend.app.services.alignment import (
+    AlignmentError,
+    align_revision_to_reference,
+    evaluate_alignment_confidence,
+)
+from backend.app.services.content_detection import (
+    compute_overlap_bbox,
+    crop_image,
+    detect_content_bbox,
+    translate_difference_result,
+)
 from backend.app.services.differencer import DifferenceError, detect_differences
 from backend.app.services.image_limits import ImageTooLargeError
 from backend.app.services.output_cleanup import prune_old_outputs
@@ -78,7 +88,25 @@ def _run_comparison_pipeline(revision_a_path: Path, revision_b_path: Path) -> Co
         reference_image,
         revision_image,
     )
-    difference_result = detect_differences(reference_image, aligned_image)
+    alignment_confidence = evaluate_alignment_confidence(alignment_metadata)
+
+    reference_bbox = detect_content_bbox(reference_image)
+    revision_bbox = detect_content_bbox(aligned_image)
+    if compute_overlap_bbox(reference_bbox, revision_bbox) is None:
+        raise AlignmentError(
+            "Could not find enough overlapping drawing content between the two files. "
+            "They may show different views or have incompatible framing."
+        )
+
+    comparison_bbox = reference_bbox
+    reference_crop = crop_image(reference_image, comparison_bbox)
+    aligned_crop = crop_image(aligned_image, comparison_bbox)
+    difference_result = detect_differences(reference_crop, aligned_crop)
+    difference_result = translate_difference_result(
+        difference_result,
+        comparison_bbox.x,
+        comparison_bbox.y,
+    )
     rendered_image = render_comparison_image(aligned_image, difference_result)
 
     output_filename: str = f"comparison-{uuid4().hex}.png"
@@ -90,6 +118,12 @@ def _run_comparison_pipeline(revision_a_path: Path, revision_b_path: Path) -> Co
         image_path=f"/outputs/{output_filename}",
         metadata={
             "alignment": asdict(alignment_metadata),
+            "alignment_confidence": asdict(alignment_confidence),
+            "content": {
+                "reference_bbox": asdict(reference_bbox),
+                "revision_bbox": asdict(revision_bbox),
+                "overlap_bbox": asdict(comparison_bbox),
+            },
             "differences": asdict(difference_result),
         },
     )

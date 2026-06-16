@@ -139,6 +139,14 @@ button:focus-visible,
   padding: 0.8rem 1rem;
 }
 
+.warning {
+  background: #fff8e8;
+  border-left: 4px solid #c58a12;
+  color: #6a4d08;
+  margin: 1rem 0;
+  padding: 0.8rem 1rem;
+}
+
 .result-section,
 .metadata-section {
   margin-top: 1.5rem;

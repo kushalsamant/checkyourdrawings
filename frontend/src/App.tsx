@@ -90,6 +90,13 @@ export default function App() {
         </p>
       )}
 
+      {metadata?.alignment_confidence.status === "marginal" && (
+        <p className="warning" role="status">
+          {metadata.alignment_confidence.message ??
+            "Alignment confidence is low. Review the comparison manually."}
+        </p>
+      )}
+
       <section className="result-section" aria-label="Result" aria-live="polite">
         <h2>Result</h2>
 
@@ -117,6 +124,23 @@ export default function App() {
             <div>
               <dt>Alignment inliers</dt>
               <dd>{metadata.alignment.inlier_matches}</dd>
+            </div>
+
+            <div>
+              <dt>Alignment confidence</dt>
+              <dd>{metadata.alignment_confidence.status}</dd>
+            </div>
+
+            <div>
+              <dt>Overlap area</dt>
+              <dd>
+                {metadata.content.overlap_bbox.width} x {metadata.content.overlap_bbox.height}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Inlier ratio</dt>
+              <dd>{metadata.alignment.inlier_ratio.toFixed(2)}</dd>
             </div>
           </dl>
         </section>

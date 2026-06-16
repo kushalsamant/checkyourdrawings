@@ -40,8 +40,21 @@ export interface DifferenceMetadata {
   changed_pixel_ratio: number;
 }
 
+export interface ContentMetadata {
+  reference_bbox: BoundingBox;
+  revision_bbox: BoundingBox;
+  overlap_bbox: BoundingBox;
+}
+
+export interface AlignmentConfidence {
+  status: "high" | "marginal" | "failed";
+  message: string | null;
+}
+
 export interface CompareMetadata {
   alignment: AlignmentMetadata;
+  alignment_confidence: AlignmentConfidence;
+  content: ContentMetadata;
   differences: DifferenceMetadata;
 }
 
@@ -111,10 +124,20 @@ export function parseCompareResponse(data: unknown): CompareResponse {
   }
 
   const alignment = data.metadata.alignment;
+  const alignmentConfidence = data.metadata.alignment_confidence;
+  const content = data.metadata.content;
   const differences = data.metadata.differences;
 
   if (!isRecord(alignment) || !isRecord(differences)) {
     throw new Error("Comparison metadata is incomplete.");
+  }
+
+  if (!isRecord(alignmentConfidence) || typeof alignmentConfidence.status !== "string") {
+    throw new Error("Comparison metadata is missing alignment confidence.");
+  }
+
+  if (!isRecord(content) || !isRecord(content.overlap_bbox)) {
+    throw new Error("Comparison metadata is missing content framing.");
   }
 
   if (!Array.isArray(differences.regions)) {

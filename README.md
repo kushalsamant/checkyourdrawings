@@ -36,6 +36,10 @@ All backend settings use the `CYD_` prefix:
 | `CYD_MAX_IMAGE_DIMENSION` | `12000` | Maximum image width or height |
 | `CYD_OUTPUT_MAX_AGE_HOURS` | `24` | Delete old comparison PNGs after this many hours |
 | `CYD_COMPARE_TIMEOUT_SECONDS` | `300` | Reserved for future server-side timeout enforcement |
+| `CYD_CONTENT_BBOX_PADDING_RATIO` | `0.02` | Padding added around detected ink bounding boxes |
+| `CYD_MIN_OVERLAP_AREA_RATIO` | `0.05` | Minimum shared ink overlap required before comparing |
+| `CYD_ALIGNMENT_MARGINAL_INLIER_RATIO` | `0.55` | Below this inlier ratio, the API warns but still returns a diff |
+| `CYD_ALIGNMENT_FAIL_INLIER_RATIO` | `0.35` | Below this inlier ratio, comparison fails with HTTP 400 |
 | `CYD_CORS_ORIGINS` | localhost dev origins | Comma-separated allowed frontend origins |
 
 ## Frontend

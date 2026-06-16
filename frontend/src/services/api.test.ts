@@ -28,7 +28,13 @@ describe("parseCompareResponse", () => {
     const payload = {
       image_path: "/outputs/comparison-abc.png",
       metadata: {
-        alignment: { inlier_matches: 10 },
+        alignment: { inlier_matches: 10, inlier_ratio: 0.9 },
+        alignment_confidence: { status: "high", message: null },
+        content: {
+          reference_bbox: { x: 0, y: 0, width: 100, height: 100 },
+          revision_bbox: { x: 0, y: 0, width: 100, height: 100 },
+          overlap_bbox: { x: 10, y: 10, width: 80, height: 80 },
+        },
         differences: { regions: [] },
       },
     };
@@ -42,6 +48,12 @@ describe("parseCompareResponse", () => {
         image_path: "/outputs/x.png",
         metadata: {
           alignment: {},
+          alignment_confidence: { status: "high", message: null },
+          content: {
+            reference_bbox: { x: 0, y: 0, width: 1, height: 1 },
+            revision_bbox: { x: 0, y: 0, width: 1, height: 1 },
+            overlap_bbox: { x: 0, y: 0, width: 1, height: 1 },
+          },
           differences: {},
         },
       }),

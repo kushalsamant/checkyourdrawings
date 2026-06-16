@@ -9,6 +9,7 @@ from backend.tests.fixtures.factory import (
     ContentScenario,
     FileExtension,
     image_to_bytes,
+    make_padded_identical_pair,
     make_reference_image,
     make_revision_image,
 )
@@ -99,3 +100,23 @@ def test_compare_same_file_both_slots(client: TestClient) -> None:
     )
     assert response.status_code == 200, response.text
     assert response.json()["metadata"]["differences"]["changed_pixel_count"] == 0
+
+
+@pytest.mark.integration
+def test_compare_unequal_margins_identical_ink(client: TestClient) -> None:
+    reference, revision = make_padded_identical_pair(
+        margin_a=(30, 20, 100, 80),
+        margin_b=(80, 60, 30, 20),
+    )
+    response = client.post(
+        "/compare",
+        files={
+            "revision_a": ("a.png", image_to_bytes(reference, ".png"), "image/png"),
+            "revision_b": ("b.png", image_to_bytes(revision, ".png"), "image/png"),
+        },
+    )
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["metadata"]["differences"]["changed_pixel_count"] <= 100
+    assert payload["metadata"]["alignment_confidence"]["status"] in {"high", "marginal"}
+    assert payload["metadata"]["content"]["overlap_bbox"]["width"] > 0

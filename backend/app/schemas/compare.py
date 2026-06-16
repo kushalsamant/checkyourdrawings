@@ -40,8 +40,21 @@ class DifferenceMetadataResponse(BaseModel):
     changed_pixel_ratio: float
 
 
+class ContentMetadataResponse(BaseModel):
+    reference_bbox: BoundingBoxResponse
+    revision_bbox: BoundingBoxResponse
+    overlap_bbox: BoundingBoxResponse
+
+
+class AlignmentConfidenceResponse(BaseModel):
+    status: str
+    message: str | None
+
+
 class CompareMetadataResponse(BaseModel):
     alignment: AlignmentMetadataResponse
+    alignment_confidence: AlignmentConfidenceResponse
+    content: ContentMetadataResponse
     differences: DifferenceMetadataResponse
 
 

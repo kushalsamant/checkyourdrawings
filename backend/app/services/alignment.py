@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import TypeAlias
+from typing import Literal, TypeAlias
 
 import cv2
 import numpy as np
 from numpy.typing import NDArray
 
+from backend.app.config import ALIGNMENT_FAIL_INLIER_RATIO, ALIGNMENT_MARGINAL_INLIER_RATIO
 from backend.app.services.image_utils import ImageArray, convert_to_grayscale
 
 
@@ -26,6 +27,39 @@ class AlignmentMetadata:
 
 class AlignmentError(Exception):
     """Raised when image alignment cannot be computed reliably."""
+
+
+@dataclass(frozen=True)
+class AlignmentConfidence:
+    status: Literal["high", "marginal", "failed"]
+    message: str | None
+
+
+def evaluate_alignment_confidence(
+    metadata: AlignmentMetadata,
+    *,
+    marginal_inlier_ratio: float = ALIGNMENT_MARGINAL_INLIER_RATIO,
+    fail_inlier_ratio: float = ALIGNMENT_FAIL_INLIER_RATIO,
+) -> AlignmentConfidence:
+    """Classify alignment quality and raise when the comparison should not proceed."""
+    if metadata.inlier_ratio < fail_inlier_ratio:
+        raise AlignmentError(
+            "Alignment confidence is too low to compare these drawings. "
+            f"Inlier ratio {metadata.inlier_ratio:.2f} is below the minimum "
+            f"{fail_inlier_ratio:.2f}. The files may show different views or lack "
+            "enough shared geometry."
+        )
+
+    if metadata.inlier_ratio < marginal_inlier_ratio:
+        return AlignmentConfidence(
+            status="marginal",
+            message=(
+                "Alignment confidence is low. Review the comparison manually before "
+                "relying on detected regions."
+            ),
+        )
+
+    return AlignmentConfidence(status="high", message=None)
 
 
 def align_revision_to_reference(

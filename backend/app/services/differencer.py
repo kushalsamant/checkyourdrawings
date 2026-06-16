@@ -5,7 +5,12 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
-from backend.app.services.image_utils import ImageArray, convert_to_grayscale
+from backend.app.services.image_utils import (
+    ImageArray,
+    build_foreground_mask,
+    clean_mask,
+    convert_to_grayscale,
+)
 
 
 DifferenceKind: TypeAlias = Literal["addition", "deletion", "modification"]
@@ -80,12 +85,12 @@ def detect_differences(
         morphology_kernel_size=morphology_kernel_size,
     )
 
-    reference_foreground: ImageArray = _build_foreground_mask(
+    reference_foreground: ImageArray = build_foreground_mask(
         reference_gray,
         threshold=foreground_threshold,
         morphology_kernel_size=morphology_kernel_size,
     )
-    revision_foreground: ImageArray = _build_foreground_mask(
+    revision_foreground: ImageArray = build_foreground_mask(
         revision_gray,
         threshold=foreground_threshold,
         morphology_kernel_size=morphology_kernel_size,
@@ -234,48 +239,10 @@ def _build_difference_mask(
         cv2.THRESH_BINARY,
     )
 
-    return _clean_mask(
+    return clean_mask(
         difference_mask,
         morphology_kernel_size=morphology_kernel_size,
     )
-
-
-def _build_foreground_mask(
-    grayscale_image: ImageArray,
-    *,
-    threshold: int | None,
-    morphology_kernel_size: int,
-) -> ImageArray:
-    if threshold is None:
-        _, mask = cv2.threshold(
-            grayscale_image,
-            0,
-            255,
-            cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU,
-        )
-    else:
-        if not 0 <= threshold <= 255:
-            raise ValueError("foreground_threshold must be between 0 and 255.")
-
-        _, mask = cv2.threshold(
-            grayscale_image,
-            threshold,
-            255,
-            cv2.THRESH_BINARY_INV,
-        )
-
-    return _clean_mask(mask, morphology_kernel_size=morphology_kernel_size)
-
-
-def _clean_mask(mask: ImageArray, *, morphology_kernel_size: int) -> ImageArray:
-    kernel: ImageArray = cv2.getStructuringElement(
-        cv2.MORPH_RECT,
-        (morphology_kernel_size, morphology_kernel_size),
-    )
-
-    opened: ImageArray = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
-    closed: ImageArray = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernel, iterations=2)
-    return closed
 
 
 def _classify_region(

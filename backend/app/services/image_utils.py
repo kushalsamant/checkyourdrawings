@@ -147,3 +147,57 @@ def threshold_image(
 
     _, binary = cv2.threshold(grayscale, threshold, max_value, threshold_type)
     return binary
+
+
+def clean_mask(mask: ImageArray, *, morphology_kernel_size: int) -> ImageArray:
+    """Apply opening and closing to reduce noise in a binary mask."""
+    if morphology_kernel_size < 1 or morphology_kernel_size % 2 == 0:
+        raise ValueError("morphology_kernel_size must be a positive odd integer.")
+
+    kernel: ImageArray = cv2.getStructuringElement(
+        cv2.MORPH_RECT,
+        (morphology_kernel_size, morphology_kernel_size),
+    )
+
+    opened: ImageArray = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
+    return cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernel, iterations=2)
+
+
+def build_framing_mask(grayscale_image: ImageArray) -> ImageArray:
+    """Build an ink mask for content framing without removing thin separated lines."""
+    _, mask = cv2.threshold(
+        grayscale_image,
+        0,
+        255,
+        cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU,
+    )
+    kernel: ImageArray = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    return cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+
+def build_foreground_mask(
+    grayscale_image: ImageArray,
+    *,
+    threshold: int | None = None,
+    morphology_kernel_size: int = 3,
+) -> ImageArray:
+    """Build a binary mask of ink-like foreground pixels."""
+    if threshold is None:
+        _, mask = cv2.threshold(
+            grayscale_image,
+            0,
+            255,
+            cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU,
+        )
+    else:
+        if not 0 <= threshold <= 255:
+            raise ValueError("threshold must be between 0 and 255.")
+
+        _, mask = cv2.threshold(
+            grayscale_image,
+            threshold,
+            255,
+            cv2.THRESH_BINARY_INV,
+        )
+
+    return clean_mask(mask, morphology_kernel_size=morphology_kernel_size)

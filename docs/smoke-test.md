@@ -47,6 +47,10 @@ Record pass/fail and notes for each row.
 | 8 | **Same file twice** | Upload the same file for A and B; expect near-zero changes. | | |
 | 9 | **Invalid file** | Try a `.gif` or `.txt`; expect a clear error, no crash. | | |
 | 10 | **Large file** | If you have a big sheet, confirm compare completes or returns a clear size/limit error. | | |
+| 11 | **Unequal margins** | Export the same plan twice with different white borders. Expect near-zero false edge changes. | | |
+| 12 | **Title block only changed** | Compare revisions where only the title block changed. Review whether plan regions look reasonable. | | |
+| 13 | **Different view** | Compare two files that are not the same view. Expect HTTP 400 or a marginal-confidence warning. | | |
+| 14 | **Metadata panel** | After a successful compare, confirm overlap area and alignment confidence appear in metadata. | | |
 
 ---
 
@@ -56,10 +60,13 @@ Record pass/fail and notes for each row.
 - Alignment completes without a homography error.
 - Changed regions match what you expect on the sheet.
 - Download works from the result viewer.
+- Unequal white margins do not create large false-positive bands at page edges.
+- Metadata shows overlap area and alignment confidence status.
 
 **Red flags** (tell the agent when you report back)
 - `Homography is unreliable` or alignment errors on normal drawings.
-- Many false regions on unchanged areas.
+- `Alignment confidence is too low` on revisions that should match.
+- Many false regions on unchanged areas, especially at page edges.
 - Missing obvious changes you can see by eye.
 - Download fails or image does not load.
 - App hangs on **Comparing...** for more than a few minutes.
