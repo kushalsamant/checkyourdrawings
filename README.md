@@ -66,7 +66,7 @@ Serve the contents of `frontend/dist/` from your static host and point `VITE_API
 
 ## Testing
 
-See [docs/testing.md](docs/testing.md).
+See [docs/testing.md](docs/testing.md) for automated tests and [docs/smoke-test.md](docs/smoke-test.md) for manual smoke testing with real drawings.
 
 Quick start:
 

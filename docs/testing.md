@@ -45,7 +45,9 @@ Frontend tests cover:
 
 ## Manual smoke checklist
 
-After changing alignment or differencing logic, verify with real drawings:
+See **[docs/smoke-test.md](smoke-test.md)** for a step-by-step checklist with a results table.
+
+Quick summary after changing alignment or differencing logic:
 
 1. Compare two revisions of a real PDF drawing.
 2. Compare a PNG against a PDF of the same drawing.

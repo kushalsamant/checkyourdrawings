@@ -1,1 +1,0 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/comparebutton.tsx","./src/components/resultviewer.tsx","./src/components/uploadpanel.tsx","./src/services/api.test.ts","./src/services/api.ts","./src/utils/filevalidation.test.ts","./src/utils/filevalidation.ts"],"version":"5.9.3"}
