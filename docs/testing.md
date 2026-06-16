@@ -55,10 +55,10 @@ Quick summary after changing alignment or differencing logic:
 4. Download the comparison PNG from the result viewer.
 5. Try a dark-background drawing and inspect false-positive regions.
 
-## CI
+## Local checks before pushing
 
-GitHub Actions runs on every push and pull request:
+Run these from the repository root (with the virtual environment activated for backend commands):
 
 - `ruff check backend`
 - `pytest backend/tests -v`
-- `npm test` and `npm run build` in `frontend/`
+- `cd frontend && npm test && npm run build`
