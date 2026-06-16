@@ -1,9 +1,9 @@
 import { useId, useState } from "react";
 import type { ChangeEvent, DragEvent } from "react";
 
-const ACCEPTED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg"] as const;
-const ACCEPTED_MIME_TYPES = ["application/pdf", "image/png", "image/jpeg"] as const;
-const ACCEPT_ATTRIBUTE = [...ACCEPTED_EXTENSIONS, ...ACCEPTED_MIME_TYPES].join(",");
+import { validateFile } from "../utils/fileValidation";
+
+const ACCEPT_ATTRIBUTE = ".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg";
 
 type RevisionKey = "revisionA" | "revisionB";
 
@@ -148,31 +148,4 @@ function UploadSlot({
       )}
     </div>
   );
-}
-
-function validateFile(file: File): string | null {
-  const extension = getFileExtension(file.name);
-
-  if (!isAcceptedExtension(extension)) {
-    return "Unsupported file type. Use PDF, PNG, JPG, or JPEG.";
-  }
-
-  if (file.type !== "" && !isAcceptedMimeType(file.type)) {
-    return "Unsupported file content type. Use PDF, PNG, JPG, or JPEG.";
-  }
-
-  return null;
-}
-
-function getFileExtension(filename: string): string {
-  const extension = filename.slice(filename.lastIndexOf(".")).toLowerCase();
-  return extension;
-}
-
-function isAcceptedExtension(extension: string): extension is (typeof ACCEPTED_EXTENSIONS)[number] {
-  return ACCEPTED_EXTENSIONS.includes(extension as (typeof ACCEPTED_EXTENSIONS)[number]);
-}
-
-function isAcceptedMimeType(mimeType: string): mimeType is (typeof ACCEPTED_MIME_TYPES)[number] {
-  return ACCEPTED_MIME_TYPES.includes(mimeType as (typeof ACCEPTED_MIME_TYPES)[number]);
 }
