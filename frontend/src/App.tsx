@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CompareButton } from "./components/CompareButton";
 import { ResultViewer } from "./components/ResultViewer";
@@ -14,6 +14,19 @@ export default function App() {
   const [metadata, setMetadata] = useState<CompareMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isComparing, setIsComparing] = useState<boolean>(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    setComparisonImageUrl(null);
+    setMetadata(null);
+    setError(null);
+  }, [revisionA, revisionB]);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   async function handleCompare(): Promise<void> {
     if (revisionA === null || revisionB === null) {
@@ -21,14 +34,22 @@ export default function App() {
       return;
     }
 
+    abortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     setIsComparing(true);
     setError(null);
 
     try {
-      const result = await uploadAndCompare(revisionA, revisionB);
+      const result = await uploadAndCompare(revisionA, revisionB, abortController.signal);
       setComparisonImageUrl(result.comparisonImageUrl);
       setMetadata(result.metadata);
     } catch (requestError) {
+      if (requestError instanceof DOMException && requestError.name === "AbortError") {
+        return;
+      }
+
       setComparisonImageUrl(null);
       setMetadata(null);
       setError(
@@ -69,7 +90,7 @@ export default function App() {
         </p>
       )}
 
-      <section className="result-section" aria-label="Result">
+      <section className="result-section" aria-label="Result" aria-live="polite">
         <h2>Result</h2>
 
         {comparisonImageUrl ? (
