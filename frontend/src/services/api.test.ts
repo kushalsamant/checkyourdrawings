@@ -42,6 +42,18 @@ describe("parseCompareResponse", () => {
     expect(parseCompareResponse(payload).image_path).toBe("/outputs/comparison-abc.png");
   });
 
+  it("rejects missing alignment confidence", () => {
+    expect(() =>
+      parseCompareResponse({
+        image_path: "/outputs/x.png",
+        metadata: {
+          alignment: { inlier_ratio: 0.9 },
+          differences: { regions: [] },
+        },
+      }),
+    ).toThrow("alignment confidence");
+  });
+
   it("rejects missing metadata regions", () => {
     expect(() =>
       parseCompareResponse({

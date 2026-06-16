@@ -133,7 +133,9 @@ export function parseCompareResponse(data: unknown): CompareResponse {
   }
 
   if (!isRecord(alignmentConfidence) || typeof alignmentConfidence.status !== "string") {
-    throw new Error("Comparison metadata is missing alignment confidence.");
+    throw new Error(
+      "Comparison metadata is missing alignment confidence. Restart the API server on port 8000 so it matches the current frontend.",
+    );
   }
 
   if (!isRecord(content) || !isRecord(content.overlap_bbox)) {

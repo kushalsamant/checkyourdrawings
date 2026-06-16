@@ -12,6 +12,8 @@ cd C:\Users\ADMIN\Documents\GitHub\checkyourdrawings
 uvicorn backend.app.main:app --reload
 ```
 
+If compare fails with `alignment confidence` missing from metadata, an old API process is probably still bound to port 8000. Stop it and start uvicorn again.
+
 ### 2. Start the frontend (second terminal)
 
 ```powershell
