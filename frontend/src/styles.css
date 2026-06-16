@@ -37,6 +37,13 @@ button:disabled {
   opacity: 0.55;
 }
 
+button:focus-visible,
+.download-link:focus-visible,
+.drop-zone:focus-within {
+  outline: 2px solid #2f8f5b;
+  outline-offset: 2px;
+}
+
 .app-shell {
   margin: 0 auto;
   max-width: 1180px;
@@ -67,6 +74,7 @@ button:disabled {
 .upload-slot {
   display: grid;
   gap: 0.6rem;
+  position: relative;
 }
 
 .drop-zone {
@@ -96,7 +104,15 @@ button:disabled {
 }
 
 .file-input {
-  max-width: 100%;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .secondary-button {
@@ -109,6 +125,10 @@ button:disabled {
   display: flex;
   gap: 1rem;
   margin: 1rem 0 1.5rem;
+}
+
+.compare-button {
+  min-width: 180px;
 }
 
 .alert {
