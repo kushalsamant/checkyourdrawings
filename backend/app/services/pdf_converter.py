@@ -40,6 +40,11 @@ def load_image(file_path: Path, *, page_number: int = 0, dpi: int = PDF_DPI) -> 
     if file_path.suffix.lower() == ".pdf":
         return convert_pdf_page_to_image(file_path, page_number=page_number, dpi=dpi)
 
+    if file_path.suffix.lower() == ".dwg":
+        from backend.app.services.dwg_converter import convert_dwg_to_image
+
+        return convert_dwg_to_image(file_path, dpi=dpi)
+
     return load_raster_image(file_path)
 
 

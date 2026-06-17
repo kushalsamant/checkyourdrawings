@@ -23,6 +23,7 @@ describe("validateFile", () => {
     [".png", "image/png"],
     [".jpg", "image/jpeg"],
     [".jpeg", "image/jpeg"],
+    [".dwg", "application/octet-stream"],
   ])("accepts %s with %s", (extension, mimeType) => {
     const file = new File(["content"], `drawing${extension}`, { type: mimeType });
     expect(validateFile(file)).toBeNull();

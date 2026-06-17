@@ -51,10 +51,19 @@ class AlignmentConfidenceResponse(BaseModel):
     message: str | None
 
 
+class OverlayMetadataResponse(BaseModel):
+    red_pixels: int
+    blue_pixels: int
+    green_pixels: int
+    magenta_pixels: int
+    background_mode: str
+
+
 class CompareMetadataResponse(BaseModel):
     alignment: AlignmentMetadataResponse
     alignment_confidence: AlignmentConfidenceResponse
     content: ContentMetadataResponse
+    overlay: OverlayMetadataResponse
     differences: DifferenceMetadataResponse
 
 

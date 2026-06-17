@@ -85,6 +85,7 @@ class TestCompareRouteErrors:
         assert "alignment" in payload["metadata"]
         assert "alignment_confidence" in payload["metadata"]
         assert "content" in payload["metadata"]
+        assert "overlay" in payload["metadata"]
         assert "differences" in payload["metadata"]
         assert payload["metadata"]["alignment_confidence"]["status"] in {
             "high",

@@ -3,15 +3,15 @@ import type { ChangeEvent, DragEvent } from "react";
 
 import { validateFile } from "../utils/fileValidation";
 
-const ACCEPT_ATTRIBUTE = ".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg";
+const ACCEPT_ATTRIBUTE = ".pdf,.png,.jpg,.jpeg,.dwg,application/pdf,image/png,image/jpeg,application/octet-stream";
 
-type RevisionKey = "revisionA" | "revisionB";
+type DrawingKey = "drawingA" | "drawingB";
 
 interface UploadPanelProps {
-  revisionA: File | null;
-  revisionB: File | null;
-  onRevisionAChange: (file: File | null) => void;
-  onRevisionBChange: (file: File | null) => void;
+  drawingA: File | null;
+  drawingB: File | null;
+  onDrawingAChange: (file: File | null) => void;
+  onDrawingBChange: (file: File | null) => void;
 }
 
 interface UploadSlotProps {
@@ -26,40 +26,40 @@ interface UploadSlotProps {
 }
 
 export function UploadPanel({
-  revisionA,
-  revisionB,
-  onRevisionAChange,
-  onRevisionBChange,
+  drawingA,
+  drawingB,
+  onDrawingAChange,
+  onDrawingBChange,
 }: UploadPanelProps) {
   const generatedId = useId();
-  const [draggingSlot, setDraggingSlot] = useState<RevisionKey | null>(null);
-  const [errors, setErrors] = useState<Record<RevisionKey, string | null>>({
-    revisionA: null,
-    revisionB: null,
+  const [draggingSlot, setDraggingSlot] = useState<DrawingKey | null>(null);
+  const [errors, setErrors] = useState<Record<DrawingKey, string | null>>({
+    drawingA: null,
+    drawingB: null,
   });
 
   return (
-    <section className="upload-panel" aria-label="Upload drawing revisions">
+    <section className="upload-panel" aria-label="Upload drawings">
       <UploadSlot
-        id={`${generatedId}-revision-a`}
-        label="Revision A"
-        file={revisionA}
-        isDragging={draggingSlot === "revisionA"}
-        error={errors.revisionA}
-        onDragStateChange={(isDragging) => setDraggingSlot(isDragging ? "revisionA" : null)}
-        onFileChange={onRevisionAChange}
-        onErrorChange={(error) => setErrors((current) => ({ ...current, revisionA: error }))}
+        id={`${generatedId}-drawing-a`}
+        label="Drawing A"
+        file={drawingA}
+        isDragging={draggingSlot === "drawingA"}
+        error={errors.drawingA}
+        onDragStateChange={(isDragging) => setDraggingSlot(isDragging ? "drawingA" : null)}
+        onFileChange={onDrawingAChange}
+        onErrorChange={(error) => setErrors((current) => ({ ...current, drawingA: error }))}
       />
 
       <UploadSlot
-        id={`${generatedId}-revision-b`}
-        label="Revision B"
-        file={revisionB}
-        isDragging={draggingSlot === "revisionB"}
-        error={errors.revisionB}
-        onDragStateChange={(isDragging) => setDraggingSlot(isDragging ? "revisionB" : null)}
-        onFileChange={onRevisionBChange}
-        onErrorChange={(error) => setErrors((current) => ({ ...current, revisionB: error }))}
+        id={`${generatedId}-drawing-b`}
+        label="Drawing B"
+        file={drawingB}
+        isDragging={draggingSlot === "drawingB"}
+        error={errors.drawingB}
+        onDragStateChange={(isDragging) => setDraggingSlot(isDragging ? "drawingB" : null)}
+        onFileChange={onDrawingBChange}
+        onErrorChange={(error) => setErrors((current) => ({ ...current, drawingB: error }))}
       />
     </section>
   );
@@ -124,7 +124,7 @@ function UploadSlot({
         data-dragging={isDragging}
       >
         <strong>{label}</strong>
-        <span>{file ? file.name : "Drop a PDF, PNG, JPG, or JPEG file here"}</span>
+        <span>{file ? file.name : "Drop a PDF, PNG, JPG, JPEG, or DWG file here"}</span>
       </label>
 
       <input

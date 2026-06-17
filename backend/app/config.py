@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     min_overlap_area_ratio: float = 0.05
     alignment_marginal_inlier_ratio: float = 0.55
     alignment_fail_inlier_ratio: float = 0.35
+    oda_converter_path: str | None = None
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3000",
@@ -56,8 +57,9 @@ CONTENT_BBOX_PADDING_RATIO: float = _settings.content_bbox_padding_ratio
 MIN_OVERLAP_AREA_RATIO: float = _settings.min_overlap_area_ratio
 ALIGNMENT_MARGINAL_INLIER_RATIO: float = _settings.alignment_marginal_inlier_ratio
 ALIGNMENT_FAIL_INLIER_RATIO: float = _settings.alignment_fail_inlier_ratio
+ODA_CONVERTER_PATH: str | None = _settings.oda_converter_path
 CORS_ORIGINS: list[str] = _settings.cors_origins
-ALLOWED_EXTENSIONS: frozenset[str] = frozenset({".pdf", ".png", ".jpg", ".jpeg"})
+ALLOWED_EXTENSIONS: frozenset[str] = frozenset({".pdf", ".png", ".jpg", ".jpeg", ".dwg"})
 
 
 def ensure_runtime_directories() -> None:

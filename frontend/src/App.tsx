@@ -3,13 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { CompareButton } from "./components/CompareButton";
 import { ResultViewer } from "./components/ResultViewer";
 import { UploadPanel } from "./components/UploadPanel";
-import type { CompareMetadata } from "./services/api";
+import type { BackgroundMode, CompareMetadata } from "./services/api";
 import { uploadAndCompare } from "./services/api";
 
 
 export default function App() {
-  const [revisionA, setRevisionA] = useState<File | null>(null);
-  const [revisionB, setRevisionB] = useState<File | null>(null);
+  const [drawingA, setDrawingA] = useState<File | null>(null);
+  const [drawingB, setDrawingB] = useState<File | null>(null);
+  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>("light");
   const [comparisonImageUrl, setComparisonImageUrl] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<CompareMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +21,7 @@ export default function App() {
     setComparisonImageUrl(null);
     setMetadata(null);
     setError(null);
-  }, [revisionA, revisionB]);
+  }, [drawingA, drawingB, backgroundMode]);
 
   useEffect(() => {
     return () => {
@@ -29,8 +30,8 @@ export default function App() {
   }, []);
 
   async function handleCompare(): Promise<void> {
-    if (revisionA === null || revisionB === null) {
-      setError("Upload Revision A and Revision B before comparing.");
+    if (drawingA === null || drawingB === null) {
+      setError("Upload Drawing A and Drawing B before comparing.");
       return;
     }
 
@@ -42,7 +43,12 @@ export default function App() {
     setError(null);
 
     try {
-      const result = await uploadAndCompare(revisionA, revisionB, abortController.signal);
+      const result = await uploadAndCompare(
+        drawingA,
+        drawingB,
+        backgroundMode,
+        abortController.signal,
+      );
       setComparisonImageUrl(result.comparisonImageUrl);
       setMetadata(result.metadata);
     } catch (requestError) {
@@ -66,20 +72,44 @@ export default function App() {
     <main className="app-shell">
       <header className="app-header">
         <h1>Check Your Drawings</h1>
-        <p>Upload two drawing revisions and generate a visual comparison.</p>
+        <p>Upload two drawings for an auto-aligned coordination overlay.</p>
       </header>
 
       <UploadPanel
-        revisionA={revisionA}
-        revisionB={revisionB}
-        onRevisionAChange={setRevisionA}
-        onRevisionBChange={setRevisionB}
+        drawingA={drawingA}
+        drawingB={drawingB}
+        onDrawingAChange={setDrawingA}
+        onDrawingBChange={setDrawingB}
       />
 
       <div className="compare-row">
+        <fieldset className="background-toggle">
+          <legend>Background</legend>
+          <label>
+            <input
+              type="radio"
+              name="background-mode"
+              value="light"
+              checked={backgroundMode === "light"}
+              onChange={() => setBackgroundMode("light")}
+            />
+            Light
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="background-mode"
+              value="dark"
+              checked={backgroundMode === "dark"}
+              onChange={() => setBackgroundMode("dark")}
+            />
+            Dark
+          </label>
+        </fieldset>
+
         <CompareButton
           isLoading={isComparing}
-          disabled={revisionA === null || revisionB === null}
+          disabled={drawingA === null || drawingB === null}
           onClick={handleCompare}
         />
       </div>
@@ -112,13 +142,23 @@ export default function App() {
           <h2>Metadata</h2>
           <dl className="metadata-grid">
             <div>
-              <dt>Detected regions</dt>
-              <dd>{metadata.differences.regions.length}</dd>
+              <dt>Red (only A)</dt>
+              <dd>{metadata.overlay.red_pixels}</dd>
             </div>
 
             <div>
-              <dt>Changed pixels</dt>
-              <dd>{metadata.differences.changed_pixel_count}</dd>
+              <dt>Blue (only B)</dt>
+              <dd>{metadata.overlay.blue_pixels}</dd>
+            </div>
+
+            <div>
+              <dt>Green (both)</dt>
+              <dd>{metadata.overlay.green_pixels}</dd>
+            </div>
+
+            <div>
+              <dt>Magenta (clash)</dt>
+              <dd>{metadata.overlay.magenta_pixels}</dd>
             </div>
 
             <div>

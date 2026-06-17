@@ -35,6 +35,13 @@ describe("parseCompareResponse", () => {
           revision_bbox: { x: 0, y: 0, width: 100, height: 100 },
           overlap_bbox: { x: 10, y: 10, width: 80, height: 80 },
         },
+        overlay: {
+          red_pixels: 1,
+          blue_pixels: 2,
+          green_pixels: 3,
+          magenta_pixels: 0,
+          background_mode: "light",
+        },
         differences: { regions: [] },
       },
     };
@@ -48,6 +55,18 @@ describe("parseCompareResponse", () => {
         image_path: "/outputs/x.png",
         metadata: {
           alignment: { inlier_ratio: 0.9 },
+          content: {
+            reference_bbox: { x: 0, y: 0, width: 1, height: 1 },
+            revision_bbox: { x: 0, y: 0, width: 1, height: 1 },
+            overlap_bbox: { x: 0, y: 0, width: 1, height: 1 },
+          },
+          overlay: {
+            red_pixels: 0,
+            blue_pixels: 0,
+            green_pixels: 0,
+            magenta_pixels: 0,
+            background_mode: "light",
+          },
           differences: { regions: [] },
         },
       }),
@@ -65,6 +84,13 @@ describe("parseCompareResponse", () => {
             reference_bbox: { x: 0, y: 0, width: 1, height: 1 },
             revision_bbox: { x: 0, y: 0, width: 1, height: 1 },
             overlap_bbox: { x: 0, y: 0, width: 1, height: 1 },
+          },
+          overlay: {
+            red_pixels: 0,
+            blue_pixels: 0,
+            green_pixels: 0,
+            magenta_pixels: 0,
+            background_mode: "light",
           },
           differences: {},
         },

@@ -123,8 +123,28 @@ button:focus-visible,
 .compare-row {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin: 1rem 0 1.5rem;
+}
+
+.background-toggle {
+  border: 1px solid #d9dee3;
+  border-radius: 8px;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+}
+
+.background-toggle legend {
+  padding: 0 0.3rem;
+}
+
+.background-toggle label {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
 }
 
 .compare-button {

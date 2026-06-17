@@ -77,12 +77,12 @@ def test_compare_content_scenarios_png(client: TestClient, scenario: ContentScen
         },
     )
     assert response.status_code == 200, response.text
-    regions = response.json()["metadata"]["differences"]["regions"]
-
+    payload = response.json()
+    overlay = payload["metadata"]["overlay"]
     if scenario == ContentScenario.IDENTICAL:
-        assert len(regions) == 0
+        assert overlay["green_pixels"] > 0
     else:
-        assert len(regions) >= 1
+        assert overlay["red_pixels"] + overlay["blue_pixels"] + overlay["magenta_pixels"] > 0
 
 
 @pytest.mark.integration
@@ -99,7 +99,10 @@ def test_compare_same_file_both_slots(client: TestClient) -> None:
         },
     )
     assert response.status_code == 200, response.text
-    assert response.json()["metadata"]["differences"]["changed_pixel_count"] == 0
+    overlay = response.json()["metadata"]["overlay"]
+    assert overlay["green_pixels"] > 0
+    assert overlay["red_pixels"] == 0
+    assert overlay["blue_pixels"] == 0
 
 
 @pytest.mark.integration

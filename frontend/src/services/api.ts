@@ -1,6 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 
+export type BackgroundMode = "light" | "dark";
 export type DifferenceKind = "addition" | "deletion" | "modification";
 
 export interface BoundingBox {
@@ -51,10 +52,19 @@ export interface AlignmentConfidence {
   message: string | null;
 }
 
+export interface OverlayMetadata {
+  red_pixels: number;
+  blue_pixels: number;
+  green_pixels: number;
+  magenta_pixels: number;
+  background_mode: BackgroundMode;
+}
+
 export interface CompareMetadata {
   alignment: AlignmentMetadata;
   alignment_confidence: AlignmentConfidence;
   content: ContentMetadata;
+  overlay: OverlayMetadata;
   differences: DifferenceMetadata;
 }
 
@@ -69,13 +79,15 @@ export interface UploadAndCompareResult {
 }
 
 export async function uploadAndCompare(
-  revisionA: File,
-  revisionB: File,
+  drawingA: File,
+  drawingB: File,
+  backgroundMode: BackgroundMode = "light",
   signal?: AbortSignal,
 ): Promise<UploadAndCompareResult> {
   const formData = new FormData();
-  formData.append("revision_a", revisionA);
-  formData.append("revision_b", revisionB);
+  formData.append("drawing_a", drawingA);
+  formData.append("drawing_b", drawingB);
+  formData.append("background_mode", backgroundMode);
 
   const timeoutController = new AbortController();
   const timeoutId = window.setTimeout(() => timeoutController.abort(), COMPARE_TIMEOUT_MS);
@@ -126,9 +138,10 @@ export function parseCompareResponse(data: unknown): CompareResponse {
   const alignment = data.metadata.alignment;
   const alignmentConfidence = data.metadata.alignment_confidence;
   const content = data.metadata.content;
+  const overlay = data.metadata.overlay;
   const differences = data.metadata.differences;
 
-  if (!isRecord(alignment) || !isRecord(differences)) {
+  if (!isRecord(alignment) || !isRecord(differences) || !isRecord(overlay)) {
     throw new Error("Comparison metadata is incomplete.");
   }
 

@@ -1,6 +1,17 @@
-export const ACCEPTED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg"] as const;
-export const ACCEPTED_MIME_TYPES = ["application/pdf", "image/png", "image/jpeg"] as const;
+export const ACCEPTED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".dwg"] as const;
+export const ACCEPTED_MIME_TYPES = [
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "application/acad",
+  "application/x-acad",
+  "application/dwg",
+  "image/vnd.dwg",
+  "application/octet-stream",
+] as const;
 export const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
+
+export type BackgroundMode = "light" | "dark";
 
 export function getFileExtension(filename: string): string {
   const dotIndex = filename.lastIndexOf(".");
@@ -18,7 +29,12 @@ export function isAcceptedExtension(
 
 export function isAcceptedMimeType(
   mimeType: string,
-): mimeType is (typeof ACCEPTED_MIME_TYPES)[number] {
+  extension: string,
+): boolean {
+  if (mimeType === "" || mimeType === "application/octet-stream") {
+    return isAcceptedExtension(extension);
+  }
+
   return ACCEPTED_MIME_TYPES.includes(mimeType as (typeof ACCEPTED_MIME_TYPES)[number]);
 }
 
@@ -26,11 +42,11 @@ export function validateFile(file: File): string | null {
   const extension = getFileExtension(file.name);
 
   if (!isAcceptedExtension(extension)) {
-    return "Unsupported file type. Use PDF, PNG, JPG, or JPEG.";
+    return "Unsupported file type. Use PDF, PNG, JPG, JPEG, or DWG.";
   }
 
-  if (file.type !== "" && !isAcceptedMimeType(file.type)) {
-    return "Unsupported file content type. Use PDF, PNG, JPG, or JPEG.";
+  if (!isAcceptedMimeType(file.type, extension)) {
+    return "Unsupported file content type. Use PDF, PNG, JPG, JPEG, or DWG.";
   }
 
   if (file.size > MAX_FILE_SIZE_BYTES) {

@@ -41,21 +41,15 @@ def evaluate_alignment_confidence(
     marginal_inlier_ratio: float = ALIGNMENT_MARGINAL_INLIER_RATIO,
     fail_inlier_ratio: float = ALIGNMENT_FAIL_INLIER_RATIO,
 ) -> AlignmentConfidence:
-    """Classify alignment quality and raise when the comparison should not proceed."""
-    if metadata.inlier_ratio < fail_inlier_ratio:
-        raise AlignmentError(
-            "Alignment confidence is too low to compare these drawings. "
-            f"Inlier ratio {metadata.inlier_ratio:.2f} is below the minimum "
-            f"{fail_inlier_ratio:.2f}. The files may show different views or lack "
-            "enough shared geometry."
-        )
+    """Classify alignment quality. Low inlier ratio warns but does not block."""
+    _ = fail_inlier_ratio
 
     if metadata.inlier_ratio < marginal_inlier_ratio:
         return AlignmentConfidence(
             status="marginal",
             message=(
                 "Alignment confidence is low. Review the comparison manually before "
-                "relying on detected regions."
+                "relying on the overlay."
             ),
         )
 

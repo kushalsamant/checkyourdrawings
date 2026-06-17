@@ -17,7 +17,7 @@ from backend.tests.fixtures.factory import (
 
 
 class TestValidateFileType:
-    @pytest.mark.parametrize("extension", [".pdf", ".png", ".jpg", ".jpeg"])
+    @pytest.mark.parametrize("extension", [".pdf", ".png", ".jpg", ".jpeg", ".dwg"])
     def test_allowed_extensions(self, extension: str, tmp_path) -> None:
         path = tmp_path / f"file{extension}"
         path.write_bytes(b"x")
