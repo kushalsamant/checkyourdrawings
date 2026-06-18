@@ -24,6 +24,7 @@ frontend/vite.config.d.ts
 *.pdf
 *.dwg
 comparison-result*.png
+sample-*.png
 kushal*
 debug-*.log
 .cursor/
