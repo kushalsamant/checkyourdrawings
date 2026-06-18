@@ -17,6 +17,10 @@ npm run dev
 
 Open **http://127.0.0.1:5173**
 
+## Smoke PDF location
+
+Keep the smoke PDFs at the **repo root** (gitignored). Paths below are relative to the project root.
+
 ## Required smoke pair
 
 | File | Role |

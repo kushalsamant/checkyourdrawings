@@ -13,6 +13,23 @@ Check Your Drawings is an AEC coordination tool for comparing two architectural 
 
 **Same file twice → all green.** That is correct diff-only behavior, not a bug.
 
+## Repository layout
+
+| Path | Purpose |
+|------|---------|
+| `backend/` | FastAPI app, compare pipeline, tests |
+| `frontend/` | React UI |
+| `docs/` | Architecture, testing, smoke-test docs |
+| `supabase/` | Pass 2 storage scaffold (not wired yet) |
+| Root config | `README.md`, `LICENSE`, `Dockerfile`, `.gitignore`, `.env.example` |
+
+**Local-only at repo root (gitignored, do not commit):**
+
+- Smoke PDFs: `0A`/`0B` (required) and optional `1A`–`3B` pairs for manual testing
+- `.env` with your `CYD_*` settings
+
+**Do not add at root:** DWG files, raster images, debug logs, or comparison output PNGs.
+
 ## Architecture
 
 - React + TypeScript frontend in `frontend/`
