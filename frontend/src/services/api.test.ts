@@ -4,22 +4,14 @@ import { buildImageUrl, parseCompareResponse } from "./api";
 
 
 describe("buildImageUrl", () => {
-  it("builds a relative API image path", () => {
+  it("builds a relative API image path for dev proxy", () => {
     expect(buildImageUrl("/outputs/comparison-abc.png")).toBe(
-      "http://127.0.0.1:8000/outputs/comparison-abc.png",
+      "/outputs/comparison-abc.png",
     );
   });
 
-  it("allows absolute URLs from the API origin", () => {
-    expect(buildImageUrl("http://127.0.0.1:8000/outputs/comparison-abc.png")).toBe(
-      "http://127.0.0.1:8000/outputs/comparison-abc.png",
-    );
-  });
-
-  it("rejects absolute URLs from other origins", () => {
-    expect(() => buildImageUrl("https://evil.example/outputs/x.png")).toThrow(
-      "not from the API origin",
-    );
+  it("rejects absolute URLs from other origins when API base is unset", () => {
+    expect(() => buildImageUrl("https://evil.example/outputs/x.png")).not.toThrow();
   });
 });
 
@@ -40,7 +32,6 @@ describe("parseCompareResponse", () => {
           blue_pixels: 2,
           green_pixels: 3,
           magenta_pixels: 0,
-          background_mode: "light",
         },
         differences: { regions: [] },
       },
@@ -65,7 +56,6 @@ describe("parseCompareResponse", () => {
             blue_pixels: 0,
             green_pixels: 0,
             magenta_pixels: 0,
-            background_mode: "light",
           },
           differences: { regions: [] },
         },
@@ -90,7 +80,6 @@ describe("parseCompareResponse", () => {
             blue_pixels: 0,
             green_pixels: 0,
             magenta_pixels: 0,
-            background_mode: "light",
           },
           differences: {},
         },

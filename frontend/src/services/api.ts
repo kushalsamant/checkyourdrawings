@@ -1,7 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 
-export type BackgroundMode = "light" | "dark";
 export type DifferenceKind = "addition" | "deletion" | "modification";
 
 export interface BoundingBox {
@@ -57,7 +56,6 @@ export interface OverlayMetadata {
   blue_pixels: number;
   green_pixels: number;
   magenta_pixels: number;
-  background_mode: BackgroundMode;
 }
 
 export interface CompareMetadata {
@@ -81,13 +79,11 @@ export interface UploadAndCompareResult {
 export async function uploadAndCompare(
   drawingA: File,
   drawingB: File,
-  backgroundMode: BackgroundMode = "light",
   signal?: AbortSignal,
 ): Promise<UploadAndCompareResult> {
   const formData = new FormData();
   formData.append("drawing_a", drawingA);
   formData.append("drawing_b", drawingB);
-  formData.append("background_mode", backgroundMode);
 
   const timeoutController = new AbortController();
   const timeoutId = window.setTimeout(() => timeoutController.abort(), COMPARE_TIMEOUT_MS);
@@ -104,12 +100,14 @@ export async function uploadAndCompare(
     });
 
     if (!response.ok) {
-      throw new Error(await getErrorMessage(response));
+      const errorMessage = await getErrorMessage(response);
+      throw new Error(errorMessage);
     }
 
     const data = parseCompareResponse(await response.json());
+    const comparisonImageUrl = buildImageUrl(data.image_path);
     return {
-      comparisonImageUrl: buildImageUrl(data.image_path),
+      comparisonImageUrl,
       metadata: data.metadata,
     };
   } catch (error) {
@@ -181,15 +179,18 @@ export async function getErrorMessage(response: Response): Promise<string> {
 
 export function buildImageUrl(imagePath: string): string {
   if (/^https?:\/\//i.test(imagePath)) {
-    const parsed = new URL(imagePath);
-    const apiOrigin = new URL(API_BASE_URL).origin;
-    if (parsed.origin !== apiOrigin) {
-      throw new Error("Comparison image URL is not from the API origin.");
+    if (API_BASE_URL) {
+      const parsed = new URL(imagePath);
+      const apiOrigin = new URL(API_BASE_URL, window.location.origin).origin;
+      if (parsed.origin !== apiOrigin) {
+        throw new Error("Comparison image URL is not from the API origin.");
+      }
     }
     return imagePath;
   }
 
-  return `${API_BASE_URL}/${imagePath.replace(/\\/g, "/").replace(/^\/+/, "")}`;
+  const path = imagePath.replace(/\\/g, "/").replace(/^\/+/, "");
+  return API_BASE_URL ? `${API_BASE_URL}/${path}` : `/${path}`;
 }
 
 export async function downloadImageAsBlob(imageUrl: string): Promise<Blob> {

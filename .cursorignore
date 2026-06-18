@@ -1,0 +1,9 @@
+*.pdf
+*.dwg
+comparison-result*.png
+kushal*
+debug-*.log
+.cursor/
+backend/outputs/
+backend/uploads/
+frontend/node_modules/

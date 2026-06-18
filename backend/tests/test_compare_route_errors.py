@@ -18,8 +18,8 @@ class TestCompareRouteErrors:
         response = client.post(
             "/compare",
             files={
-                "revision_a": ("", b"data", "image/png"),
-                "revision_b": ("b.png", b"data", "image/png"),
+                "drawing_a": ("", b"data", "application/pdf"),
+                "drawing_b": ("b.pdf", b"data", "application/pdf"),
             },
         )
         assert response.status_code in {400, 422}
@@ -28,8 +28,8 @@ class TestCompareRouteErrors:
         response = client.post(
             "/compare",
             files={
-                "revision_a": ("a.gif", b"gif", "image/gif"),
-                "revision_b": ("b.png", b"png", "image/png"),
+                "drawing_a": ("a.gif", b"gif", "image/gif"),
+                "drawing_b": ("b.png", b"png", "image/png"),
             },
         )
         assert response.status_code == 415
@@ -38,8 +38,8 @@ class TestCompareRouteErrors:
         response = client.post(
             "/compare",
             files={
-                "revision_a": ("a.png", b"", "image/png"),
-                "revision_b": ("b.png", b"x", "image/png"),
+                "drawing_a": ("a.pdf", b"", "application/pdf"),
+                "drawing_b": ("b.pdf", b"x", "application/pdf"),
             },
         )
         assert response.status_code == 400
@@ -50,18 +50,18 @@ class TestCompareRouteErrors:
         response = client.post(
             "/compare",
             files={
-                "revision_a": ("a.png", b"12", "image/png"),
-                "revision_b": ("b.png", b"12", "image/png"),
+                "drawing_a": ("a.pdf", b"12", "application/pdf"),
+                "drawing_b": ("b.pdf", b"12", "application/pdf"),
             },
         )
         assert response.status_code == 413
 
-    def test_corrupt_image(self, client: TestClient) -> None:
+    def test_corrupt_pdf(self, client: TestClient) -> None:
         response = client.post(
             "/compare",
             files={
-                "revision_a": ("a.png", b"not-a-png", "image/png"),
-                "revision_b": ("b.png", b"not-a-png", "image/png"),
+                "drawing_a": ("a.pdf", b"not-a-pdf", "application/pdf"),
+                "drawing_b": ("b.pdf", b"not-a-pdf", "application/pdf"),
             },
         )
         assert response.status_code == 400
@@ -69,13 +69,13 @@ class TestCompareRouteErrors:
     def test_success_response_shape(self, client: TestClient) -> None:
         from backend.tests.fixtures.factory import image_to_bytes, make_reference_image
 
-        content = image_to_bytes(make_reference_image(), ".png")
+        content = image_to_bytes(make_reference_image(), ".pdf")
 
         response = client.post(
             "/compare",
             files={
-                "revision_a": ("a.png", content, "image/png"),
-                "revision_b": ("b.png", content, "image/png"),
+                "drawing_a": ("a.pdf", content, "application/pdf"),
+                "drawing_b": ("b.pdf", content, "application/pdf"),
             },
         )
         assert response.status_code == 200

@@ -20,6 +20,13 @@ frontend/vite.config.d.ts
 !.env.example
 
 # Local test assets / logs
+*.pdf
+*.dwg
+comparison-result*.png
+kushal*
+debug-*.log
+.cursor/
+
 chatgpt chat prompts and answers
 Overlapped Tower E1 Plans/
 plot.log

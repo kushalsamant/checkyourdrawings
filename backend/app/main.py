@@ -33,7 +33,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title="Check Your Drawings API",
-    description="Computer vision API for comparing drawing revisions.",
+    description="PDF coordination overlay API for comparing architectural drawing revisions.",
     version="0.1.0",
     lifespan=lifespan,
 )

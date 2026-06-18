@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
-from backend.app.config import ALIGNMENT_FAIL_INLIER_RATIO, ALIGNMENT_MARGINAL_INLIER_RATIO
+from backend.app.config import ALIGNMENT_MARGINAL_INLIER_RATIO
 from backend.app.services.image_utils import ImageArray, convert_to_grayscale
 
 
@@ -39,11 +39,8 @@ def evaluate_alignment_confidence(
     metadata: AlignmentMetadata,
     *,
     marginal_inlier_ratio: float = ALIGNMENT_MARGINAL_INLIER_RATIO,
-    fail_inlier_ratio: float = ALIGNMENT_FAIL_INLIER_RATIO,
 ) -> AlignmentConfidence:
     """Classify alignment quality. Low inlier ratio warns but does not block."""
-    _ = fail_inlier_ratio
-
     if metadata.inlier_ratio < marginal_inlier_ratio:
         return AlignmentConfidence(
             status="marginal",

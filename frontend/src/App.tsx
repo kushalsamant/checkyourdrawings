@@ -3,14 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { CompareButton } from "./components/CompareButton";
 import { ResultViewer } from "./components/ResultViewer";
 import { UploadPanel } from "./components/UploadPanel";
-import type { BackgroundMode, CompareMetadata } from "./services/api";
+import type { CompareMetadata } from "./services/api";
 import { uploadAndCompare } from "./services/api";
 
 
 export default function App() {
   const [drawingA, setDrawingA] = useState<File | null>(null);
   const [drawingB, setDrawingB] = useState<File | null>(null);
-  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>("light");
   const [comparisonImageUrl, setComparisonImageUrl] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<CompareMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +20,7 @@ export default function App() {
     setComparisonImageUrl(null);
     setMetadata(null);
     setError(null);
-  }, [drawingA, drawingB, backgroundMode]);
+  }, [drawingA, drawingB]);
 
   useEffect(() => {
     return () => {
@@ -43,12 +42,7 @@ export default function App() {
     setError(null);
 
     try {
-      const result = await uploadAndCompare(
-        drawingA,
-        drawingB,
-        backgroundMode,
-        abortController.signal,
-      );
+      const result = await uploadAndCompare(drawingA, drawingB, abortController.signal);
       setComparisonImageUrl(result.comparisonImageUrl);
       setMetadata(result.metadata);
     } catch (requestError) {
@@ -72,7 +66,7 @@ export default function App() {
     <main className="app-shell">
       <header className="app-header">
         <h1>Check Your Drawings</h1>
-        <p>Upload two drawings for an auto-aligned coordination overlay.</p>
+        <p>Upload two PDF drawings for an auto-aligned coordination overlay.</p>
       </header>
 
       <UploadPanel
@@ -83,30 +77,6 @@ export default function App() {
       />
 
       <div className="compare-row">
-        <fieldset className="background-toggle">
-          <legend>Background</legend>
-          <label>
-            <input
-              type="radio"
-              name="background-mode"
-              value="light"
-              checked={backgroundMode === "light"}
-              onChange={() => setBackgroundMode("light")}
-            />
-            Light
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="background-mode"
-              value="dark"
-              checked={backgroundMode === "dark"}
-              onChange={() => setBackgroundMode("dark")}
-            />
-            Dark
-          </label>
-        </fieldset>
-
         <CompareButton
           isLoading={isComparing}
           disabled={drawingA === null || drawingB === null}

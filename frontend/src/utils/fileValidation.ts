@@ -1,17 +1,6 @@
-export const ACCEPTED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".dwg"] as const;
-export const ACCEPTED_MIME_TYPES = [
-  "application/pdf",
-  "image/png",
-  "image/jpeg",
-  "application/acad",
-  "application/x-acad",
-  "application/dwg",
-  "image/vnd.dwg",
-  "application/octet-stream",
-] as const;
+export const ACCEPTED_EXTENSIONS = [".pdf"] as const;
+export const ACCEPTED_MIME_TYPES = ["application/pdf"] as const;
 export const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
-
-export type BackgroundMode = "light" | "dark";
 
 export function getFileExtension(filename: string): string {
   const dotIndex = filename.lastIndexOf(".");
@@ -42,11 +31,11 @@ export function validateFile(file: File): string | null {
   const extension = getFileExtension(file.name);
 
   if (!isAcceptedExtension(extension)) {
-    return "Unsupported file type. Use PDF, PNG, JPG, JPEG, or DWG.";
+    return "Unsupported file type. Upload a PDF exported or plotted from CAD.";
   }
 
   if (!isAcceptedMimeType(file.type, extension)) {
-    return "Unsupported file content type. Use PDF, PNG, JPG, JPEG, or DWG.";
+    return "Unsupported file content type. Upload a PDF.";
   }
 
   if (file.size > MAX_FILE_SIZE_BYTES) {

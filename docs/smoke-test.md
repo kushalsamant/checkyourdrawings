@@ -1,99 +1,59 @@
-# Manual Smoke Test
+# Smoke test checklist
 
-Use this checklist when testing with real drawing files. Have **Revision A** (older) and **Revision B** (newer) ready.
+Manual sign-off for Pass 1. Use architectural PDF pairs plotted from CAD.
 
-## Before you start
-
-### 1. Start the backend
+## Prerequisites
 
 ```powershell
+# Terminal 1 — API
 cd C:\Users\ADMIN\Documents\GitHub\checkyourdrawings
 .\.venv\Scripts\Activate.ps1
 uvicorn backend.app.main:app --reload
-```
 
-If compare fails with `alignment confidence` missing from metadata, an old API process is probably still bound to port 8000. Stop it and start uvicorn again.
-
-### 2. Start the frontend (second terminal)
-
-```powershell
-cd C:\Users\ADMIN\Documents\GitHub\checkyourdrawings\frontend
+# Terminal 2 — UI
+cd frontend
 npm run dev
 ```
 
-### 3. Quick health check
+Open **http://127.0.0.1:5173**
 
-```powershell
-curl http://127.0.0.1:8000/health
-```
+## Required smoke pair
 
-Expected: `"status": "ok"` (or `"degraded"` with a clear issue message).
+| File | Role |
+|------|------|
+| `0A 02-Saurabh mishraR2-Model.pdf` | Drawing A |
+| `0B 02-Saurabh mishraR2-Model.pdf` | Drawing B |
 
-Open the app: **http://127.0.0.1:5173**
+## Checklist
 
----
+| # | Step | Expected | Pass |
+|---|------|----------|------|
+| 1 | Upload `0A` as Drawing A, `0B` as Drawing B | Both accepted (PDF only) | |
+| 2 | Click **Compare** | Completes in under ~30s | |
+| 3 | Result image | Visible **red** and **blue** at real drawing changes; green where ink matches | |
+| 4 | Footer | Drawing A/B filenames, timestamp, color legend | |
+| 5 | Metadata | Red/blue/green/magenta counts > 0 where expected; alignment confidence `high` or `marginal` | |
+| 6 | **Download** | PNG saves and opens | |
+| 7 | **Same file trap** | Upload same PDF twice → mostly **green** (correct for identical inputs) | |
+| 8 | **Invalid file** | Try `.png` or `.dwg` → clear client-side or 415 error | |
 
-## Smoke tests
+## Overlay semantics
 
-Record pass/fail and notes for each row.
+- **Red** = ink only in A  
+- **Blue** = ink only in B  
+- **Green** = ink in both (aligned)  
+- **Magenta** = clash  
 
-| # | Test | Steps | Pass? | Notes |
-|---|------|-------|-------|-------|
-| 1 | **PDF vs PDF** | Upload two PDF revisions of the same drawing. Click **Compare drawings**. | | |
-| 2 | **Result image** | Comparison image loads; green/red/yellow regions look reasonable. | | |
-| 3 | **Metadata** | Detected regions, changed pixels, and alignment inliers show non-error values. | | |
-| 4 | **Download** | Click **Download**; PNG saves and opens correctly. | | |
-| 5 | **Stale result** | After a successful compare, change one upload; old image should disappear before comparing again. | | |
-| 6 | **PNG vs PNG** | Repeat with two PNG exports of the same drawing pair. | | |
-| 7 | **Mixed format** | PDF as Revision A, PNG as Revision B (or vice versa). | | |
-| 8 | **Same file twice** | Upload the same file for A and B; expect near-zero changes. | | |
-| 9 | **Invalid file** | Try a `.gif` or `.txt`; expect a clear error, no crash. | | |
-| 10 | **Large file** | If you have a big sheet, confirm compare completes or returns a clear size/limit error. | | |
-| 11 | **Unequal margins** | Export the same plan twice with different white borders. Expect near-zero false edge changes. | | |
-| 12 | **Title block only changed** | Compare revisions where only the title block changed. Review whether plan regions look reasonable. | | |
-| 13 | **Different view** | Compare two files that are not the same view. Expect HTTP 400 or a marginal-confidence warning. | | |
-| 14 | **Metadata panel** | After a successful compare, confirm overlap area and alignment confidence appear in metadata. | | |
-
----
-
-## What to look for
-
-**Good signs**
-- Alignment completes without a homography error.
-- Changed regions match what you expect on the sheet.
-- Download works from the result viewer.
-- Unequal white margins do not create large false-positive bands at page edges.
-- Metadata shows overlap area and alignment confidence status.
-
-**Red flags** (tell the agent when you report back)
-- `Homography is unreliable` or alignment errors on normal drawings.
-- `Alignment confidence is too low` on revisions that should match.
-- Many false regions on unchanged areas, especially at page edges.
-- Missing obvious changes you can see by eye.
-- Download fails or image does not load.
-- App hangs on **Comparing...** for more than a few minutes.
-
----
-
-## Optional: API-only test
-
-If the UI is fine but you want to test the API directly:
+## API curl (optional)
 
 ```powershell
 curl -X POST http://127.0.0.1:8000/compare `
-  -F "revision_a=@C:\path\to\revision-a.pdf" `
-  -F "revision_b=@C:\path\to\revision-b.pdf"
+  -F "drawing_a=@C:\path\to\drawing-a.pdf" `
+  -F "drawing_b=@C:\path\to\drawing-b.pdf"
 ```
 
-Expected: JSON with `image_path` and `metadata`. Open `http://127.0.0.1:8000` + `image_path` in a browser.
+## Common mistakes
 
----
-
-## Report back
-
-When you have results, share:
-
-1. Which rows passed/failed.
-2. File types and approximate sheet size (e.g. A1 PDF, 24×36).
-3. Screenshots or a short description of bad regions, if any.
-4. Any error messages from the UI or browser console (F12 → Console).
+- Opening `:8000` in the browser — that is JSON API only; use `:5173`.
+- Comparing **same file twice** and expecting red/blue — all green is correct.
+- Comparing unrelated PDFs — alignment fails with HTTP 400 (by design).

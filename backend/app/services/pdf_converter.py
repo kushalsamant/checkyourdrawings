@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import fitz
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 
 from backend.app.config import ALLOWED_EXTENSIONS, PDF_DPI
 from backend.app.services.image_limits import validate_image_dimensions
@@ -31,21 +31,13 @@ def validate_file_type(file_path: Path) -> None:
 
 
 def load_image(file_path: Path, *, page_number: int = 0, dpi: int = PDF_DPI) -> Image.Image:
-    """Load a PDF page or raster image file as a Pillow image."""
+    """Load a PDF page as a Pillow image."""
     validate_file_type(file_path)
 
     if not file_path.is_file():
         raise FileConversionError(f"File does not exist: {file_path}")
 
-    if file_path.suffix.lower() == ".pdf":
-        return convert_pdf_page_to_image(file_path, page_number=page_number, dpi=dpi)
-
-    if file_path.suffix.lower() == ".dwg":
-        from backend.app.services.dwg_converter import convert_dwg_to_image
-
-        return convert_dwg_to_image(file_path, dpi=dpi)
-
-    return load_raster_image(file_path)
+    return convert_pdf_page_to_image(file_path, page_number=page_number, dpi=dpi)
 
 
 def convert_pdf_page_to_image(
@@ -90,19 +82,3 @@ def convert_pdf_page_to_image(
         raise CorruptedFileError(f"PDF is empty: {file_path}") from exc
     except RuntimeError as exc:
         raise CorruptedFileError(f"PDF could not be read: {file_path}") from exc
-
-
-def load_raster_image(file_path: Path) -> Image.Image:
-    """Load a PNG, JPG, or JPEG file as an RGB Pillow image."""
-    try:
-        with Image.open(file_path) as image:
-            image.load()
-            rgb_image = image.convert("RGB")
-            validate_image_dimensions(rgb_image)
-            return rgb_image
-    except FileNotFoundError as exc:
-        raise FileConversionError(f"File does not exist: {file_path}") from exc
-    except UnidentifiedImageError as exc:
-        raise CorruptedFileError(f"Image is invalid or corrupted: {file_path}") from exc
-    except OSError as exc:
-        raise CorruptedFileError(f"Image could not be read: {file_path}") from exc

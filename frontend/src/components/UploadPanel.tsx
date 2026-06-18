@@ -3,7 +3,7 @@ import type { ChangeEvent, DragEvent } from "react";
 
 import { validateFile } from "../utils/fileValidation";
 
-const ACCEPT_ATTRIBUTE = ".pdf,.png,.jpg,.jpeg,.dwg,application/pdf,image/png,image/jpeg,application/octet-stream";
+const ACCEPT_ATTRIBUTE = ".pdf,application/pdf";
 
 type DrawingKey = "drawingA" | "drawingB";
 
@@ -124,7 +124,7 @@ function UploadSlot({
         data-dragging={isDragging}
       >
         <strong>{label}</strong>
-        <span>{file ? file.name : "Drop a PDF, PNG, JPG, JPEG, or DWG file here"}</span>
+        <span>{file ? file.name : "Drop a PDF here (plot or export from CAD)"}</span>
       </label>
 
       <input

@@ -17,27 +17,12 @@ class TestOverlayRenderer:
             image,
             drawing_a_name="a.pdf",
             drawing_b_name="b.pdf",
-            background_mode="light",
         )
 
         assert output.shape[0] > image.shape[0]
         assert stats.green_pixels > 0
         assert stats.red_pixels == 0
         assert stats.blue_pixels == 0
-
-    def test_dark_mode_footer_contrast(self) -> None:
-        image = bgr_array_from_image(make_reference_image())
-        output, stats = render_coordination_overlay(
-            image,
-            image,
-            drawing_a_name="drawing-a.dwg",
-            drawing_b_name="drawing-b.dwg",
-            background_mode="dark",
-        )
-
-        assert stats.background_mode == "dark"
-        footer = output[-40:, :, :]
-        assert footer.mean() < 80
 
     def test_addition_produces_blue_pixels(self) -> None:
         from backend.app.services.alignment import align_revision_to_reference

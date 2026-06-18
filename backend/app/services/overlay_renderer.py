@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Final, Literal
+from typing import Final
 
 import cv2
 import numpy as np
@@ -8,10 +8,14 @@ from numpy.typing import NDArray
 
 from backend.app.services.image_utils import ImageArray, build_foreground_mask, convert_to_grayscale
 
-
-BackgroundMode = Literal["light", "dark"]
-
 CLASH_DILATION_RADIUS: Final[int] = 3
+
+_LIGHT_BACKGROUND: Final[tuple[int, int, int]] = (255, 255, 255)
+_LIGHT_RED: Final[tuple[int, int, int]] = (40, 40, 220)
+_LIGHT_BLUE: Final[tuple[int, int, int]] = (220, 100, 40)
+_LIGHT_GREEN: Final[tuple[int, int, int]] = (40, 180, 40)
+_LIGHT_MAGENTA: Final[tuple[int, int, int]] = (220, 40, 220)
+_LIGHT_FOOTER_TEXT: Final[tuple[int, int, int]] = (20, 20, 20)
 
 
 @dataclass(frozen=True)
@@ -20,7 +24,6 @@ class OverlayStats:
     blue_pixels: int
     green_pixels: int
     magenta_pixels: int
-    background_mode: BackgroundMode
 
 
 @dataclass(frozen=True)
@@ -40,7 +43,6 @@ def render_coordination_overlay(
     *,
     drawing_a_name: str,
     drawing_b_name: str,
-    background_mode: BackgroundMode = "light",
     low_confidence: bool = False,
     timestamp: datetime | None = None,
 ) -> tuple[ImageArray, OverlayStats]:
@@ -48,7 +50,7 @@ def render_coordination_overlay(
     if reference_image.shape[:2] != aligned_image.shape[:2]:
         raise ValueError("reference_image and aligned_image must share width and height.")
 
-    palette = _palette_for_mode(background_mode)
+    palette = _light_palette()
     a_mask, b_mask = _build_ink_masks(reference_image, aligned_image)
     classified = _classify_pixels(a_mask, b_mask)
 
@@ -63,7 +65,6 @@ def render_coordination_overlay(
         blue_pixels=int(classified["b_only"].sum()),
         green_pixels=int(classified["agree"].sum()),
         magenta_pixels=int(classified["clash"].sum()),
-        background_mode=background_mode,
     )
 
     stamped = _append_footer_band(
@@ -113,26 +114,15 @@ def _classify_pixels(
     }
 
 
-def _palette_for_mode(mode: BackgroundMode) -> OverlayPalette:
-    if mode == "dark":
-        return OverlayPalette(
-            background=(26, 26, 26),
-            red=(80, 80, 255),
-            blue=(255, 160, 80),
-            green=(80, 255, 120),
-            magenta=(255, 80, 255),
-            footer_background=(26, 26, 26),
-            footer_text=(255, 255, 255),
-        )
-
+def _light_palette() -> OverlayPalette:
     return OverlayPalette(
-        background=(255, 255, 255),
-        red=(40, 40, 220),
-        blue=(220, 100, 40),
-        green=(40, 180, 40),
-        magenta=(220, 40, 220),
-        footer_background=(255, 255, 255),
-        footer_text=(20, 20, 20),
+        background=_LIGHT_BACKGROUND,
+        red=_LIGHT_RED,
+        blue=_LIGHT_BLUE,
+        green=_LIGHT_GREEN,
+        magenta=_LIGHT_MAGENTA,
+        footer_background=_LIGHT_BACKGROUND,
+        footer_text=_LIGHT_FOOTER_TEXT,
     )
 
 

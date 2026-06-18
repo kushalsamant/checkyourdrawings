@@ -56,7 +56,6 @@ class OverlayMetadataResponse(BaseModel):
     blue_pixels: int
     green_pixels: int
     magenta_pixels: int
-    background_mode: str
 
 
 class CompareMetadataResponse(BaseModel):

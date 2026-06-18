@@ -4,12 +4,11 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
-from typing import Literal
 from uuid import uuid4
 
 import cv2
 import numpy as np
-from fastapi import APIRouter, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, HTTPException, UploadFile, status
 from PIL import Image
 
 from backend.app.config import (
@@ -32,7 +31,7 @@ from backend.app.services.content_detection import (
 )
 from backend.app.services.image_limits import ImageTooLargeError
 from backend.app.services.output_cleanup import prune_old_outputs
-from backend.app.services.overlay_renderer import BackgroundMode, render_coordination_overlay
+from backend.app.services.overlay_renderer import render_coordination_overlay
 from backend.app.services.pdf_converter import (
     FileConversionError,
     UnsupportedFileTypeError,
@@ -51,7 +50,6 @@ async def compare_drawings(
     drawing_b: UploadFile | None = None,
     revision_a: UploadFile | None = None,
     revision_b: UploadFile | None = None,
-    background_mode: Literal["light", "dark"] = Form("light"),
 ) -> CompareResponse:
     upload_a = drawing_a or revision_a
     upload_b = drawing_b or revision_b
@@ -77,7 +75,6 @@ async def compare_drawings(
             saved_drawing_b,
             upload_a.filename or saved_drawing_a.name,
             upload_b.filename or saved_drawing_b.name,
-            background_mode,
         )
 
         elapsed = time.perf_counter() - started_at
@@ -99,7 +96,6 @@ def _run_comparison_pipeline(
     drawing_b_path: Path,
     drawing_a_name: str,
     drawing_b_name: str,
-    background_mode: BackgroundMode,
 ) -> CompareResponse:
     prune_old_outputs(OUTPUT_DIR, max_age_hours=OUTPUT_MAX_AGE_HOURS)
 
@@ -114,7 +110,8 @@ def _run_comparison_pipeline(
 
     reference_bbox = detect_content_bbox(reference_image)
     revision_bbox = detect_content_bbox(aligned_image)
-    if compute_overlap_bbox(reference_bbox, revision_bbox) is None:
+    overlap_bbox = compute_overlap_bbox(reference_bbox, revision_bbox)
+    if overlap_bbox is None:
         raise AlignmentError(
             "Could not find enough overlapping drawing content between the two files. "
             "They may show different views or have incompatible framing."
@@ -129,7 +126,6 @@ def _run_comparison_pipeline(
         aligned_crop,
         drawing_a_name=drawing_a_name,
         drawing_b_name=drawing_b_name,
-        background_mode=background_mode,
         low_confidence=alignment_confidence.status == "marginal",
     )
 
@@ -159,7 +155,7 @@ def _run_comparison_pipeline(
             "content": {
                 "reference_bbox": asdict(reference_bbox),
                 "revision_bbox": asdict(revision_bbox),
-                "overlap_bbox": asdict(comparison_bbox),
+                "overlap_bbox": asdict(overlap_bbox),
             },
             "overlay": asdict(overlay_stats),
             "differences": {

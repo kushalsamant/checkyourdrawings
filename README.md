@@ -1,13 +1,24 @@
 # Check Your Drawings
 
-Check Your Drawings is a local MVP for comparing two drawing revisions. It accepts PDF, PNG, JPG, or JPEG files, aligns Revision B onto Revision A, detects visual changes, classifies regions as additions, deletions, or modifications, and renders a downloadable comparison image.
+Check Your Drawings is an AEC coordination tool for comparing two architectural drawing PDFs. Upload Drawing A and Drawing B (plotted or exported from CAD), auto-align them, and download a coordination overlay PNG.
+
+## Overlay semantics (diff-only)
+
+| Color | Meaning |
+|-------|---------|
+| Red | Ink only in Drawing A |
+| Blue | Ink only in Drawing B |
+| Green | Ink in both (aligned) |
+| Magenta | Clash (both have ink but misaligned at that pixel) |
+
+**Same file twice → all green.** That is correct diff-only behavior, not a bug.
 
 ## Architecture
 
 - React + TypeScript frontend in `frontend/`
 - FastAPI backend in `backend/`
-- OpenCV/NumPy computer vision pipeline in `backend/app/services/`
-- Generated comparison images served from `http://127.0.0.1:8000/outputs/...`
+- Pipeline: PDF rasterize → ORB/RANSAC align → content crop → coordination overlay PNG
+- Output served from `/outputs/...` (proxied in dev via Vite)
 
 ## Backend
 
@@ -26,7 +37,7 @@ curl http://127.0.0.1:8000/health
 
 ### Environment variables
 
-All backend settings use the `CYD_` prefix:
+All backend settings use the `CYD_` prefix (see [`.env.example`](.env.example)):
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -36,10 +47,9 @@ All backend settings use the `CYD_` prefix:
 | `CYD_MAX_IMAGE_DIMENSION` | `12000` | Maximum image width or height |
 | `CYD_OUTPUT_MAX_AGE_HOURS` | `24` | Delete old comparison PNGs after this many hours |
 | `CYD_COMPARE_TIMEOUT_SECONDS` | `300` | Reserved for future server-side timeout enforcement |
-| `CYD_CONTENT_BBOX_PADDING_RATIO` | `0.02` | Padding added around detected ink bounding boxes |
-| `CYD_MIN_OVERLAP_AREA_RATIO` | `0.05` | Minimum shared ink overlap required before comparing |
-| `CYD_ALIGNMENT_MARGINAL_INLIER_RATIO` | `0.55` | Below this inlier ratio, the API warns but still returns a diff |
-| `CYD_ALIGNMENT_FAIL_INLIER_RATIO` | `0.35` | Below this inlier ratio, comparison fails with HTTP 400 |
+| `CYD_CONTENT_BBOX_PADDING_RATIO` | `0.02` | Padding around detected ink bounding boxes |
+| `CYD_MIN_OVERLAP_AREA_RATIO` | `0.05` | Minimum shared ink overlap before comparing |
+| `CYD_ALIGNMENT_MARGINAL_INLIER_RATIO` | `0.55` | Below this inlier ratio, API warns but still returns overlay |
 | `CYD_CORS_ORIGINS` | localhost dev origins | Comma-separated allowed frontend origins |
 
 ## Frontend
@@ -50,13 +60,9 @@ npm install
 npm run dev
 ```
 
-Open:
+Open **http://127.0.0.1:5173** (not `:8000`, which is API-only).
 
-```text
-http://127.0.0.1:5173
-```
-
-The Vite dev server proxies `/compare`, `/outputs`, and `/health` to the backend.
+In local dev, leave `VITE_API_BASE_URL` unset so Vite proxies `/compare` and `/outputs` to the backend (see [`frontend/.env.example`](frontend/.env.example)).
 
 ### Production build
 
@@ -66,13 +72,15 @@ $env:VITE_API_BASE_URL="https://api.example.com"
 npm run build
 ```
 
-Serve the contents of `frontend/dist/` from your static host and point `VITE_API_BASE_URL` at the deployed API.
+## CAD workflow
+
+In AutoCAD or Revit: **PLOT or EXPORT PDF** for each revision, then upload Drawing A and Drawing B here.
+
+Only **`.pdf`** uploads are accepted.
 
 ## Testing
 
-See [docs/testing.md](docs/testing.md) for automated tests and [docs/smoke-test.md](docs/smoke-test.md) for manual smoke testing with real drawings.
-
-Quick start:
+See [docs/testing.md](docs/testing.md) and [docs/smoke-test.md](docs/smoke-test.md).
 
 ```powershell
 pip install -r backend/requirements.txt -r backend/requirements-dev.txt
@@ -84,8 +92,8 @@ npm test
 
 ## Pipeline
 
-1. Upload Revision A and Revision B.
-2. Convert PDF or image inputs into image arrays.
-3. Align Revision B onto Revision A using ORB features and RANSAC homography.
-4. Detect meaningful changed regions with thresholding, morphology, and contours.
-5. Render a final comparison image with green additions, red deletions, and yellow modifications.
+1. Upload Drawing A and Drawing B (PDF).
+2. Rasterize first page of each PDF at 300 DPI.
+3. Align Drawing B onto Drawing A (ORB + RANSAC homography).
+4. Crop to drawing content; classify pixels (red/blue/green/magenta).
+5. Render coordination overlay PNG with footer (filenames, timestamp, legend).

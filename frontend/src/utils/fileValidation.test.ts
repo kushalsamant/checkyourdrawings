@@ -18,31 +18,30 @@ describe("getFileExtension", () => {
 });
 
 describe("validateFile", () => {
-  it.each([
-    [".pdf", "application/pdf"],
-    [".png", "image/png"],
-    [".jpg", "image/jpeg"],
-    [".jpeg", "image/jpeg"],
-    [".dwg", "application/octet-stream"],
-  ])("accepts %s with %s", (extension, mimeType) => {
-    const file = new File(["content"], `drawing${extension}`, { type: mimeType });
+  it("accepts PDF files", () => {
+    const file = new File(["content"], "drawing.pdf", { type: "application/pdf" });
     expect(validateFile(file)).toBeNull();
   });
 
   it("rejects unsupported extensions", () => {
-    const file = new File(["content"], "drawing.gif", { type: "image/gif" });
+    const file = new File(["content"], "drawing.png", { type: "image/png" });
+    expect(validateFile(file)).toMatch(/Unsupported file type/);
+  });
+
+  it("rejects DWG files", () => {
+    const file = new File(["content"], "drawing.dwg", { type: "application/octet-stream" });
     expect(validateFile(file)).toMatch(/Unsupported file type/);
   });
 
   it("rejects files over the size limit", () => {
-    const file = new File([new Uint8Array(MAX_FILE_SIZE_BYTES + 1)], "drawing.png", {
-      type: "image/png",
+    const file = new File([new Uint8Array(MAX_FILE_SIZE_BYTES + 1)], "drawing.pdf", {
+      type: "application/pdf",
     });
     expect(validateFile(file)).toMatch(/100 MB/);
   });
 
   it("allows empty mime type when extension is valid", () => {
-    const file = new File(["content"], "drawing.png", { type: "" });
+    const file = new File(["content"], "drawing.pdf", { type: "" });
     expect(validateFile(file)).toBeNull();
   });
 });

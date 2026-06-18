@@ -1,1 +1,1 @@
-# Pass 3: install ODA File Converter Linux .deb and full production image here.
+# Pass 3: Python + OpenCV + PyMuPDF production image (PDF-only, no ODA).

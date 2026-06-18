@@ -110,7 +110,9 @@ export function ResultViewer({
             style={{
               width: `${zoom * 100}%`,
             }}
-            onError={() => setImageError("Failed to load comparison image.")}
+            onError={() => {
+              setImageError("Failed to load comparison image.");
+            }}
           />
         )}
       </div>
