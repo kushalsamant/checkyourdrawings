@@ -1,0 +1,8 @@
+markdown: kramdown
+title: Check Your Drawings
+description: Catch drawing changes and coordination clashes before they reach the site. Upload two PDF revisions, get an instant color-coded overlay, and see what was added, removed, or doesn’t line up—without manual overlay work in CAD.
+theme: null
+baseurl: "/kushalsamant.github.io"
+url: "https://checkyourdrawings.kvshvl.in"
+show_downloads: true
+google_analytics: G-JTHJJMRHT7
