@@ -67,9 +67,9 @@ class TestCompareRouteErrors:
         assert response.status_code == 400
 
     def test_success_response_shape(self, client: TestClient) -> None:
-        from backend.tests.fixtures.factory import image_to_bytes, make_reference_image
+        from backend.tests.fixtures.factory import image_to_bytes, make_drawing_a_image
 
-        content = image_to_bytes(make_reference_image(), ".pdf")
+        content = image_to_bytes(make_drawing_a_image(), ".pdf")
 
         response = client.post(
             "/compare",

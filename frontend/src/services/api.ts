@@ -1,8 +1,6 @@
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 
-export type DifferenceKind = "addition" | "deletion" | "modification";
-
 export interface BoundingBox {
   x: number;
   y: number;
@@ -10,19 +8,9 @@ export interface BoundingBox {
   height: number;
 }
 
-export interface DifferenceRegion {
-  kind: DifferenceKind;
-  bounding_box: BoundingBox;
-  area: number;
-  changed_pixels: number;
-  addition_pixels: number;
-  deletion_pixels: number;
-  confidence: number;
-}
-
 export interface AlignmentMetadata {
-  keypoints_reference: number;
-  keypoints_revision: number;
+  keypoints_drawing_a: number;
+  keypoints_drawing_b: number;
   raw_matches: number;
   good_matches: number;
   inlier_matches: number;
@@ -35,14 +23,13 @@ export interface AlignmentMetadata {
 export interface DifferenceMetadata {
   width: number;
   height: number;
-  regions: DifferenceRegion[];
   changed_pixel_count: number;
   changed_pixel_ratio: number;
 }
 
 export interface ContentMetadata {
-  reference_bbox: BoundingBox;
-  revision_bbox: BoundingBox;
+  drawing_a_bbox: BoundingBox;
+  drawing_b_bbox: BoundingBox;
   overlap_bbox: BoundingBox;
 }
 
@@ -52,10 +39,10 @@ export interface AlignmentConfidence {
 }
 
 export interface OverlayMetadata {
-  red_pixels: number;
+  orange_pixels: number;
   blue_pixels: number;
   green_pixels: number;
-  magenta_pixels: number;
+  red_pixels: number;
 }
 
 export interface CompareMetadata {
@@ -153,8 +140,8 @@ export function parseCompareResponse(data: unknown): CompareResponse {
     throw new Error("Comparison metadata is missing content framing.");
   }
 
-  if (!Array.isArray(differences.regions)) {
-    throw new Error("Comparison metadata is missing difference regions.");
+  if (typeof differences.changed_pixel_count !== "number") {
+    throw new Error("Comparison metadata is missing difference counts.");
   }
 
   return {

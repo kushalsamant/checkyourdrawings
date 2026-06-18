@@ -14,8 +14,8 @@ FloatMatrix: TypeAlias = NDArray[np.float64]
 
 @dataclass(frozen=True)
 class AlignmentMetadata:
-    keypoints_reference: int
-    keypoints_revision: int
+    keypoints_drawing_a: int
+    keypoints_drawing_b: int
     raw_matches: int
     good_matches: int
     inlier_matches: int
@@ -53,9 +53,9 @@ def evaluate_alignment_confidence(
     return AlignmentConfidence(status="high", message=None)
 
 
-def align_revision_to_reference(
-    reference_image: NDArray[np.generic],
-    revision_image: NDArray[np.generic],
+def align_drawing_b_to_a(
+    drawing_a_image: NDArray[np.generic],
+    drawing_b_image: NDArray[np.generic],
     *,
     max_features: int = 10_000,
     keep_match_ratio: float = 0.20,
@@ -63,7 +63,7 @@ def align_revision_to_reference(
     ransac_reprojection_threshold: float = 5.0,
     ecc_refinement: bool = ALIGNMENT_ECC_REFINEMENT,
 ) -> tuple[ImageArray, AlignmentMetadata]:
-    """Align Revision B onto Revision A using ORB features and a RANSAC homography."""
+    """Align Drawing B onto Drawing A using ORB features and a RANSAC homography."""
     _validate_alignment_parameters(
         max_features=max_features,
         keep_match_ratio=keep_match_ratio,
@@ -71,23 +71,23 @@ def align_revision_to_reference(
         ransac_reprojection_threshold=ransac_reprojection_threshold,
     )
 
-    reference_gray: ImageArray = convert_to_grayscale(reference_image)
-    revision_gray: ImageArray = convert_to_grayscale(revision_image)
+    drawing_a_gray: ImageArray = convert_to_grayscale(drawing_a_image)
+    drawing_b_gray: ImageArray = convert_to_grayscale(drawing_b_image)
 
     orb = cv2.ORB_create(nfeatures=max_features)
-    reference_keypoints, reference_descriptors = orb.detectAndCompute(reference_gray, None)
-    revision_keypoints, revision_descriptors = orb.detectAndCompute(revision_gray, None)
+    drawing_a_keypoints, drawing_a_descriptors = orb.detectAndCompute(drawing_a_gray, None)
+    drawing_b_keypoints, drawing_b_descriptors = orb.detectAndCompute(drawing_b_gray, None)
 
-    reference_count: int = len(reference_keypoints)
-    revision_count: int = len(revision_keypoints)
+    drawing_a_count: int = len(drawing_a_keypoints)
+    drawing_b_count: int = len(drawing_b_keypoints)
 
-    if reference_descriptors is None or revision_descriptors is None:
+    if drawing_a_descriptors is None or drawing_b_descriptors is None:
         raise AlignmentError(
             "Could not detect enough ORB features in one or both images for alignment."
         )
 
     matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-    raw_matches = matcher.match(revision_descriptors, reference_descriptors)
+    raw_matches = matcher.match(drawing_b_descriptors, drawing_a_descriptors)
 
     if len(raw_matches) < min_matches:
         raise AlignmentError(
@@ -105,16 +105,16 @@ def align_revision_to_reference(
             f"required at least {min_matches}."
         )
 
-    revision_points: FloatMatrix = np.float64(
-        [revision_keypoints[match.queryIdx].pt for match in good_matches]
+    drawing_b_points: FloatMatrix = np.float64(
+        [drawing_b_keypoints[match.queryIdx].pt for match in good_matches]
     ).reshape(-1, 1, 2)
-    reference_points: FloatMatrix = np.float64(
-        [reference_keypoints[match.trainIdx].pt for match in good_matches]
+    drawing_a_points: FloatMatrix = np.float64(
+        [drawing_a_keypoints[match.trainIdx].pt for match in good_matches]
     ).reshape(-1, 1, 2)
 
     homography, inlier_mask = cv2.findHomography(
-        revision_points,
-        reference_points,
+        drawing_b_points,
+        drawing_a_points,
         cv2.RANSAC,
         ransac_reprojection_threshold,
     )
@@ -130,11 +130,11 @@ def align_revision_to_reference(
             f"required at least {min_matches}."
         )
 
-    output_height: int = int(reference_image.shape[0])
-    output_width: int = int(reference_image.shape[1])
+    output_height: int = int(drawing_a_image.shape[0])
+    output_width: int = int(drawing_a_image.shape[1])
 
     aligned_image: ImageArray = cv2.warpPerspective(
-        revision_image,
+        drawing_b_image,
         homography,
         (output_width, output_height),
         flags=cv2.INTER_LINEAR,
@@ -143,11 +143,11 @@ def align_revision_to_reference(
     )
 
     if ecc_refinement:
-        aligned_image = refine_alignment_with_ecc(reference_image, aligned_image)
+        aligned_image = refine_alignment_with_ecc(drawing_a_image, aligned_image)
 
     metadata = AlignmentMetadata(
-        keypoints_reference=reference_count,
-        keypoints_revision=revision_count,
+        keypoints_drawing_a=drawing_a_count,
+        keypoints_drawing_b=drawing_b_count,
         raw_matches=len(raw_matches),
         good_matches=len(good_matches),
         inlier_matches=inlier_matches,
@@ -161,14 +161,14 @@ def align_revision_to_reference(
 
 
 def refine_alignment_with_ecc(
-    reference_image: NDArray[np.generic],
+    drawing_a_image: NDArray[np.generic],
     aligned_image: NDArray[np.generic],
 ) -> ImageArray:
-    """Refine an aligned revision with sub-pixel ECC on grayscale ink."""
-    reference_gray = convert_to_grayscale(reference_image).astype(np.float32) / 255.0
+    """Refine aligned Drawing B with sub-pixel ECC on grayscale ink."""
+    drawing_a_gray = convert_to_grayscale(drawing_a_image).astype(np.float32) / 255.0
     aligned_gray = convert_to_grayscale(aligned_image).astype(np.float32) / 255.0
 
-    if reference_gray.shape != aligned_gray.shape:
+    if drawing_a_gray.shape != aligned_gray.shape:
         return aligned_image
 
     warp_matrix = np.eye(2, 3, dtype=np.float32)
@@ -176,7 +176,7 @@ def refine_alignment_with_ecc(
 
     try:
         _, warp_matrix = cv2.findTransformECC(
-            reference_gray,
+            drawing_a_gray,
             aligned_gray,
             warp_matrix,
             cv2.MOTION_EUCLIDEAN,
@@ -187,7 +187,7 @@ def refine_alignment_with_ecc(
     except cv2.error:
         return aligned_image
 
-    height, width = reference_image.shape[:2]
+    height, width = drawing_a_image.shape[:2]
     return cv2.warpAffine(
         aligned_image,
         warp_matrix,

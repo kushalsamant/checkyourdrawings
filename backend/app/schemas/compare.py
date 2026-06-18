@@ -4,8 +4,8 @@ from pydantic import BaseModel
 
 
 class AlignmentMetadataResponse(BaseModel):
-    keypoints_reference: int
-    keypoints_revision: int
+    keypoints_drawing_a: int
+    keypoints_drawing_b: int
     raw_matches: int
     good_matches: int
     inlier_matches: int
@@ -22,27 +22,16 @@ class BoundingBoxResponse(BaseModel):
     height: int
 
 
-class DifferenceRegionResponse(BaseModel):
-    kind: str
-    bounding_box: BoundingBoxResponse
-    area: float
-    changed_pixels: int
-    addition_pixels: int
-    deletion_pixels: int
-    confidence: float
-
-
 class DifferenceMetadataResponse(BaseModel):
     width: int
     height: int
-    regions: list[DifferenceRegionResponse]
     changed_pixel_count: int
     changed_pixel_ratio: float
 
 
 class ContentMetadataResponse(BaseModel):
-    reference_bbox: BoundingBoxResponse
-    revision_bbox: BoundingBoxResponse
+    drawing_a_bbox: BoundingBoxResponse
+    drawing_b_bbox: BoundingBoxResponse
     overlap_bbox: BoundingBoxResponse
 
 
@@ -52,10 +41,10 @@ class AlignmentConfidenceResponse(BaseModel):
 
 
 class OverlayMetadataResponse(BaseModel):
-    red_pixels: int
+    orange_pixels: int
     blue_pixels: int
     green_pixels: int
-    magenta_pixels: int
+    red_pixels: int
 
 
 class CompareMetadataResponse(BaseModel):

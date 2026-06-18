@@ -1,10 +1,7 @@
 from pathlib import Path
-from typing import Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-OverlayMode = Literal["composite", "diff_only"]
 
 
 class Settings(BaseSettings):
@@ -24,8 +21,6 @@ class Settings(BaseSettings):
     min_overlap_area_ratio: float = 0.05
     alignment_marginal_inlier_ratio: float = 0.55
     alignment_ecc_refinement: bool = True
-    overlay_mode: OverlayMode = "composite"
-    composite_highlight_alpha: float = 0.65
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3000",
@@ -61,8 +56,6 @@ CONTENT_BBOX_PADDING_RATIO: float = _settings.content_bbox_padding_ratio
 MIN_OVERLAP_AREA_RATIO: float = _settings.min_overlap_area_ratio
 ALIGNMENT_MARGINAL_INLIER_RATIO: float = _settings.alignment_marginal_inlier_ratio
 ALIGNMENT_ECC_REFINEMENT: bool = _settings.alignment_ecc_refinement
-OVERLAY_MODE: OverlayMode = _settings.overlay_mode
-COMPOSITE_HIGHLIGHT_ALPHA: float = _settings.composite_highlight_alpha
 CORS_ORIGINS: list[str] = _settings.cors_origins
 ALLOWED_EXTENSIONS: frozenset[str] = frozenset({".pdf"})
 

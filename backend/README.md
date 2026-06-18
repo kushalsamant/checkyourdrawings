@@ -13,31 +13,32 @@ Multipart form fields:
 - `drawing_a` — PDF file (required)
 - `drawing_b` — PDF file (required)
 
-Aliases `revision_a` / `revision_b` are also accepted for backward compatibility.
-
 ## Compare response
 
 ```json
 {
   "image_path": "/outputs/comparison-<uuid>.png",
   "metadata": {
-    "alignment": { ... },
+    "alignment": {
+      "keypoints_drawing_a": 0,
+      "keypoints_drawing_b": 0,
+      "inlier_ratio": 0.0
+    },
     "alignment_confidence": { "status": "high", "message": null },
     "content": {
-      "reference_bbox": { ... },
-      "revision_bbox": { ... },
-      "overlap_bbox": { ... }
+      "drawing_a_bbox": { "x": 0, "y": 0, "width": 0, "height": 0 },
+      "drawing_b_bbox": { "x": 0, "y": 0, "width": 0, "height": 0 },
+      "overlap_bbox": { "x": 0, "y": 0, "width": 0, "height": 0 }
     },
     "overlay": {
-      "red_pixels": 0,
+      "orange_pixels": 0,
       "blue_pixels": 0,
       "green_pixels": 0,
-      "magenta_pixels": 0
+      "red_pixels": 0
     },
     "differences": {
       "width": 0,
       "height": 0,
-      "regions": [],
       "changed_pixel_count": 0,
       "changed_pixel_ratio": 0.0
     }

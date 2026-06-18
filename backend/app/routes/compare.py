@@ -13,6 +13,7 @@ from PIL import Image
 
 from backend.app.config import (
     ALLOWED_EXTENSIONS,
+    COMPARE_TIMEOUT_SECONDS,
     MAX_FILE_SIZE_MB,
     OUTPUT_DIR,
     OUTPUT_MAX_AGE_HOURS,
@@ -21,7 +22,7 @@ from backend.app.config import (
 from backend.app.schemas.compare import CompareResponse
 from backend.app.services.alignment import (
     AlignmentError,
-    align_revision_to_reference,
+    align_drawing_b_to_a,
     evaluate_alignment_confidence,
 )
 from backend.app.services.content_detection import (
@@ -48,12 +49,8 @@ _UPLOAD_CHUNK_SIZE = 1024 * 1024
 async def compare_drawings(
     drawing_a: UploadFile | None = None,
     drawing_b: UploadFile | None = None,
-    revision_a: UploadFile | None = None,
-    revision_b: UploadFile | None = None,
 ) -> CompareResponse:
-    upload_a = drawing_a or revision_a
-    upload_b = drawing_b or revision_b
-    if upload_a is None or upload_b is None:
+    if drawing_a is None or drawing_b is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Both drawing_a and drawing_b uploads are required.",
@@ -64,18 +61,30 @@ async def compare_drawings(
     started_at = time.perf_counter()
 
     try:
-        saved_drawing_a = await _save_validated_upload(upload_a)
-        saved_drawing_b = await _save_validated_upload(upload_b)
+        saved_drawing_a = await _save_validated_upload(drawing_a)
+        saved_drawing_b = await _save_validated_upload(drawing_b)
 
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(
-            _executor,
-            _run_comparison_pipeline,
-            saved_drawing_a,
-            saved_drawing_b,
-            upload_a.filename or saved_drawing_a.name,
-            upload_b.filename or saved_drawing_b.name,
-        )
+        try:
+            result = await asyncio.wait_for(
+                loop.run_in_executor(
+                    _executor,
+                    _run_comparison_pipeline,
+                    saved_drawing_a,
+                    saved_drawing_b,
+                    drawing_a.filename or saved_drawing_a.name,
+                    drawing_b.filename or saved_drawing_b.name,
+                ),
+                timeout=COMPARE_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail=(
+                    f"Comparison timed out after {COMPARE_TIMEOUT_SECONDS} seconds. "
+                    "Try smaller files or try again."
+                ),
+            ) from exc
 
         elapsed = time.perf_counter() - started_at
         logger.info("Comparison completed in %.2fs", elapsed)
@@ -99,31 +108,31 @@ def _run_comparison_pipeline(
 ) -> CompareResponse:
     prune_old_outputs(OUTPUT_DIR, max_age_hours=OUTPUT_MAX_AGE_HOURS)
 
-    reference_image = _pillow_to_bgr_array(load_image(drawing_a_path))
-    revision_image = _pillow_to_bgr_array(load_image(drawing_b_path))
+    drawing_a_image = _pillow_to_bgr_array(load_image(drawing_a_path))
+    drawing_b_image = _pillow_to_bgr_array(load_image(drawing_b_path))
 
-    aligned_image, alignment_metadata = align_revision_to_reference(
-        reference_image,
-        revision_image,
+    aligned_drawing_b, alignment_metadata = align_drawing_b_to_a(
+        drawing_a_image,
+        drawing_b_image,
     )
     alignment_confidence = evaluate_alignment_confidence(alignment_metadata)
 
-    reference_bbox = detect_content_bbox(reference_image)
-    revision_bbox = detect_content_bbox(aligned_image)
-    overlap_bbox = compute_overlap_bbox(reference_bbox, revision_bbox)
+    drawing_a_bbox = detect_content_bbox(drawing_a_image)
+    drawing_b_bbox = detect_content_bbox(aligned_drawing_b)
+    overlap_bbox = compute_overlap_bbox(drawing_a_bbox, drawing_b_bbox)
     if overlap_bbox is None:
         raise AlignmentError(
             "Could not find enough overlapping drawing content between the two files. "
             "They may show different views or have incompatible framing."
         )
 
-    comparison_bbox = reference_bbox
-    reference_crop = crop_image(reference_image, comparison_bbox)
-    aligned_crop = crop_image(aligned_image, comparison_bbox)
+    comparison_bbox = drawing_a_bbox
+    drawing_a_crop = crop_image(drawing_a_image, comparison_bbox)
+    aligned_drawing_b_crop = crop_image(aligned_drawing_b, comparison_bbox)
 
     rendered_image, overlay_stats = render_coordination_overlay(
-        reference_crop,
-        aligned_crop,
+        drawing_a_crop,
+        aligned_drawing_b_crop,
         drawing_a_name=drawing_a_name,
         drawing_b_name=drawing_b_name,
         low_confidence=alignment_confidence.status == "marginal",
@@ -135,16 +144,16 @@ def _run_comparison_pipeline(
         raise ValueError("Failed to save comparison image.")
 
     changed_pixels = (
-        overlay_stats.red_pixels
+        overlay_stats.orange_pixels
         + overlay_stats.blue_pixels
-        + overlay_stats.magenta_pixels
+        + overlay_stats.red_pixels
     )
     total_pixels = max(
         1,
-        overlay_stats.red_pixels
+        overlay_stats.orange_pixels
         + overlay_stats.blue_pixels
         + overlay_stats.green_pixels
-        + overlay_stats.magenta_pixels,
+        + overlay_stats.red_pixels,
     )
 
     return CompareResponse.from_pipeline_result(
@@ -153,15 +162,14 @@ def _run_comparison_pipeline(
             "alignment": asdict(alignment_metadata),
             "alignment_confidence": asdict(alignment_confidence),
             "content": {
-                "reference_bbox": asdict(reference_bbox),
-                "revision_bbox": asdict(revision_bbox),
+                "drawing_a_bbox": asdict(drawing_a_bbox),
+                "drawing_b_bbox": asdict(drawing_b_bbox),
                 "overlap_bbox": asdict(overlap_bbox),
             },
             "overlay": asdict(overlay_stats),
             "differences": {
                 "width": int(comparison_bbox.width),
                 "height": int(comparison_bbox.height),
-                "regions": [],
                 "changed_pixel_count": changed_pixels,
                 "changed_pixel_ratio": changed_pixels / total_pixels,
             },

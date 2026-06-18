@@ -23,17 +23,22 @@ describe("parseCompareResponse", () => {
         alignment: { inlier_matches: 10, inlier_ratio: 0.9 },
         alignment_confidence: { status: "high", message: null },
         content: {
-          reference_bbox: { x: 0, y: 0, width: 100, height: 100 },
-          revision_bbox: { x: 0, y: 0, width: 100, height: 100 },
+          drawing_a_bbox: { x: 0, y: 0, width: 100, height: 100 },
+          drawing_b_bbox: { x: 0, y: 0, width: 100, height: 100 },
           overlap_bbox: { x: 10, y: 10, width: 80, height: 80 },
         },
         overlay: {
-          red_pixels: 1,
+          orange_pixels: 1,
           blue_pixels: 2,
           green_pixels: 3,
-          magenta_pixels: 0,
+          red_pixels: 0,
         },
-        differences: { regions: [] },
+        differences: {
+          width: 100,
+          height: 100,
+          changed_pixel_count: 3,
+          changed_pixel_ratio: 0.5,
+        },
       },
     };
 
@@ -47,23 +52,28 @@ describe("parseCompareResponse", () => {
         metadata: {
           alignment: { inlier_ratio: 0.9 },
           content: {
-            reference_bbox: { x: 0, y: 0, width: 1, height: 1 },
-            revision_bbox: { x: 0, y: 0, width: 1, height: 1 },
+            drawing_a_bbox: { x: 0, y: 0, width: 1, height: 1 },
+            drawing_b_bbox: { x: 0, y: 0, width: 1, height: 1 },
             overlap_bbox: { x: 0, y: 0, width: 1, height: 1 },
           },
           overlay: {
-            red_pixels: 0,
+            orange_pixels: 0,
             blue_pixels: 0,
             green_pixels: 0,
-            magenta_pixels: 0,
+            red_pixels: 0,
           },
-          differences: { regions: [] },
+          differences: {
+            width: 1,
+            height: 1,
+            changed_pixel_count: 0,
+            changed_pixel_ratio: 0,
+          },
         },
       }),
     ).toThrow("alignment confidence");
   });
 
-  it("rejects missing metadata regions", () => {
+  it("rejects missing difference counts", () => {
     expect(() =>
       parseCompareResponse({
         image_path: "/outputs/x.png",
@@ -71,19 +81,19 @@ describe("parseCompareResponse", () => {
           alignment: {},
           alignment_confidence: { status: "high", message: null },
           content: {
-            reference_bbox: { x: 0, y: 0, width: 1, height: 1 },
-            revision_bbox: { x: 0, y: 0, width: 1, height: 1 },
+            drawing_a_bbox: { x: 0, y: 0, width: 1, height: 1 },
+            drawing_b_bbox: { x: 0, y: 0, width: 1, height: 1 },
             overlap_bbox: { x: 0, y: 0, width: 1, height: 1 },
           },
           overlay: {
-            red_pixels: 0,
+            orange_pixels: 0,
             blue_pixels: 0,
             green_pixels: 0,
-            magenta_pixels: 0,
+            red_pixels: 0,
           },
-          differences: {},
+          differences: { width: 1, height: 1 },
         },
       }),
-    ).toThrow("difference regions");
+    ).toThrow("difference counts");
   });
 });

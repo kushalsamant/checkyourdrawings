@@ -14,10 +14,10 @@ FileExtension = Literal[".pdf", ".png", ".jpg", ".jpeg"]
 
 class ContentScenario(str, Enum):
     IDENTICAL = "identical"
-    ADDITION_ONLY = "addition_only"
-    DELETION_ONLY = "deletion_only"
-    MODIFICATION_ONLY = "modification_only"
-    MIXED_ALL_THREE = "mixed_all_three"
+    B_ONLY_INK = "b_only_ink"
+    A_ONLY_INK = "a_only_ink"
+    MODIFIED_INK = "modified_ink"
+    MIXED_INK = "mixed_ink"
 
 
 def make_drawing_on_canvas(
@@ -73,11 +73,11 @@ def _make_core_drawing(width: int = 320, height: int = 220) -> Image.Image:
     draw.line((20, 140, 300, 140), fill=(0, 0, 0), width=2)
     draw.line((20, 20, 300, 180), fill=(128, 128, 128), width=1)
     draw.ellipse((220, 100, 300, 180), outline=(0, 0, 0), width=2)
-    draw.text((30, 100), "Revision A", fill=(0, 0, 0))
+    draw.text((30, 100), "Drawing A", fill=(0, 0, 0))
     return image
 
 
-def make_reference_image(width: int = 400, height: int = 300) -> Image.Image:
+def make_drawing_a_image(width: int = 400, height: int = 300) -> Image.Image:
     image = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(image)
     draw.rectangle((40, 40, 180, 120), outline=(0, 0, 0), width=3)
@@ -85,7 +85,7 @@ def make_reference_image(width: int = 400, height: int = 300) -> Image.Image:
     draw.line((40, 200, 360, 200), fill=(0, 0, 0), width=2)
     draw.line((40, 40, 360, 260), fill=(128, 128, 128), width=1)
     draw.ellipse((300, 150, 380, 230), outline=(0, 0, 0), width=2)
-    draw.text((50, 150), "Revision A", fill=(0, 0, 0))
+    draw.text((50, 150), "Drawing A", fill=(0, 0, 0))
 
     for x in range(20, width, 40):
         draw.line((x, 0, x, height), fill=(220, 220, 220), width=1)
@@ -93,30 +93,30 @@ def make_reference_image(width: int = 400, height: int = 300) -> Image.Image:
     return image
 
 
-def make_revision_image(scenario: ContentScenario, reference: Image.Image | None = None) -> Image.Image:
-    base = reference.copy() if reference is not None else make_reference_image()
+def make_drawing_b_image(scenario: ContentScenario, drawing_a: Image.Image | None = None) -> Image.Image:
+    base = drawing_a.copy() if drawing_a is not None else make_drawing_a_image()
     draw = ImageDraw.Draw(base)
 
     if scenario == ContentScenario.IDENTICAL:
         return base
 
-    if scenario == ContentScenario.ADDITION_ONLY:
+    if scenario == ContentScenario.B_ONLY_INK:
         draw.rectangle((200, 180, 280, 240), outline=(0, 0, 0), width=4)
         draw.line((200, 180, 280, 240), fill=(0, 0, 0), width=2)
         return base
 
-    if scenario == ContentScenario.DELETION_ONLY:
+    if scenario == ContentScenario.A_ONLY_INK:
         cleared = base.copy()
         cleared_draw = ImageDraw.Draw(cleared)
         cleared_draw.rectangle((250, 40, 360, 120), fill=(255, 255, 255))
         return cleared
 
-    if scenario == ContentScenario.MODIFICATION_ONLY:
+    if scenario == ContentScenario.MODIFIED_INK:
         draw.rectangle((40, 40, 180, 120), outline=(0, 0, 0), width=5)
         draw.line((40, 200, 360, 220), fill=(0, 0, 0), width=2)
         return base
 
-    if scenario == ContentScenario.MIXED_ALL_THREE:
+    if scenario == ContentScenario.MIXED_INK:
         draw.rectangle((250, 40, 360, 120), outline=(0, 0, 0), width=3)
         draw.rectangle((40, 40, 180, 120), fill=(255, 255, 255))
         draw.line((40, 200, 360, 240), fill=(0, 0, 0), width=3)
@@ -155,11 +155,11 @@ def image_to_png_bytes(image: Image.Image) -> bytes:
 
 
 def make_file_bytes(extension: FileExtension, scenario: ContentScenario) -> tuple[bytes, bytes]:
-    reference = make_reference_image()
-    revision = make_revision_image(scenario, reference)
+    drawing_a = make_drawing_a_image()
+    drawing_b = make_drawing_b_image(scenario, drawing_a)
     return (
-        image_to_bytes(reference, extension),
-        image_to_bytes(revision, extension),
+        image_to_bytes(drawing_a, extension),
+        image_to_bytes(drawing_b, extension),
     )
 
 

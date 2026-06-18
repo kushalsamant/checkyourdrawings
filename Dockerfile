@@ -1,1 +1,1 @@
-# Pass 3: Python + OpenCV + PyMuPDF production image (PDF-only, no ODA).
+# Production image placeholder — see docs/roadmap.md (Pass 2 deploy).

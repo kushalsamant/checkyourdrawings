@@ -6,7 +6,7 @@ from backend.app.services.content_detection import (
     crop_image,
     detect_content_bbox,
 )
-from backend.app.services.alignment import align_revision_to_reference
+from backend.app.services.alignment import align_drawing_b_to_a
 from backend.tests.fixtures.factory import (
     bgr_array_from_image,
     make_drawing_on_canvas,
@@ -57,15 +57,15 @@ class TestCropImage:
 
 class TestMarginShiftIntegration:
     def test_identical_ink_with_different_margins_aligns_with_overlap(self) -> None:
-        reference, revision = make_padded_identical_pair(
+        drawing_a, drawing_b = make_padded_identical_pair(
             margin_a=(40, 30, 120, 90),
             margin_b=(90, 70, 40, 30),
         )
-        reference_bgr = bgr_array_from_image(reference)
-        revision_bgr = bgr_array_from_image(revision)
+        drawing_a_bgr = bgr_array_from_image(drawing_a)
+        drawing_b_bgr = bgr_array_from_image(drawing_b)
 
-        aligned, _ = align_revision_to_reference(reference_bgr, revision_bgr)
-        reference_bbox = detect_content_bbox(reference_bgr)
-        revision_bbox = detect_content_bbox(aligned)
-        overlap = compute_overlap_bbox(reference_bbox, revision_bbox)
+        aligned, _ = align_drawing_b_to_a(drawing_a_bgr, drawing_b_bgr)
+        drawing_a_bbox = detect_content_bbox(drawing_a_bgr)
+        drawing_b_bbox = detect_content_bbox(aligned)
+        overlap = compute_overlap_bbox(drawing_a_bbox, drawing_b_bbox)
         assert overlap is not None

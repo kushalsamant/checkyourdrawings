@@ -112,8 +112,8 @@ export default function App() {
           <h2>Metadata</h2>
           <dl className="metadata-grid">
             <div>
-              <dt>Red (only A)</dt>
-              <dd>{metadata.overlay.red_pixels}</dd>
+              <dt>Orange (only A)</dt>
+              <dd>{metadata.overlay.orange_pixels}</dd>
             </div>
 
             <div>
@@ -127,8 +127,8 @@ export default function App() {
             </div>
 
             <div>
-              <dt>Magenta (clash)</dt>
-              <dd>{metadata.overlay.magenta_pixels}</dd>
+              <dt>Red (clash)</dt>
+              <dd>{metadata.overlay.red_pixels}</dd>
             </div>
 
             <div>

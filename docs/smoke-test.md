@@ -34,19 +34,19 @@ Keep the smoke PDFs at the **repo root** (gitignored). Paths below are relative 
 |---|------|----------|------|
 | 1 | Upload `0A` as Drawing A, `0B` as Drawing B | Both accepted (PDF only) | |
 | 2 | Click **Compare** | Completes in under ~30s | |
-| 3 | Result image | **Green** where sheets match; **red** and **blue** at real changes; **magenta** at misaligned edges if visible | |
+| 3 | Result image | **Green** where sheets match; **orange** and **blue** at real changes; **red** at misaligned edges if visible | |
 | 4 | Footer | Drawing A/B filenames, timestamp, color legend | |
-| 5 | Metadata | Red/blue/green/magenta counts > 0 where expected; alignment confidence `high` or `marginal` | |
+| 5 | Metadata | Orange/blue/green/red counts > 0 where expected; alignment confidence `high` or `marginal` | |
 | 6 | **Download** | PNG saves and opens | |
 | 7 | **Same file trap** | Upload same PDF twice → mostly **green** (correct for identical inputs) | |
 | 8 | **Invalid file** | Try `.png` or `.dwg` → clear client-side or 415 error | |
 
 ## Overlay semantics
 
-- **Red** = ink only in A  
+- **Orange** = ink only in A  
 - **Blue** = ink only in B  
 - **Green** = ink in both (aligned)  
-- **Magenta** = clash (misaligned overlap)  
+- **Red** = clash (misaligned overlap)  
 
 ## API curl (optional)
 
@@ -59,5 +59,5 @@ curl -X POST http://127.0.0.1:8000/compare `
 ## Common mistakes
 
 - Opening `:8000` in the browser — that is JSON API only; use `:5173`.
-- Comparing **same file twice** and expecting red/blue — all green is correct.
+- Comparing **same file twice** and expecting orange/blue — all green is correct.
 - Comparing unrelated PDFs — alignment fails with HTTP 400 (by design).
