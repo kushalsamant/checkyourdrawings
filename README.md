@@ -39,7 +39,7 @@ The coordination overlay paints every ink pixel:
 - Pipeline: PDF rasterize → ORB/RANSAC align → content crop → coordination overlay PNG
 - Output served from `/outputs/...` (proxied in dev via Vite)
 
-See [docs/roadmap.md](docs/roadmap.md) for Pass 1/2/3 scope.
+See [docs/roadmap.md](docs/roadmap.md) for Pass 1/2/3 scope. Full task list and todos: [.cursor/plans/checkyourdrawings.plan.md](.cursor/plans/checkyourdrawings.plan.md).
 
 ## Backend
 
