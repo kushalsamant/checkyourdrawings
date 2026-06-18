@@ -48,3 +48,10 @@ class TestAlignmentScenarios:
         blank = np.full((200, 200, 3), 255, dtype=np.uint8)
         with pytest.raises(AlignmentError):
             align_revision_to_reference(blank, blank)
+
+    def test_ecc_refinement_runs_without_error(self) -> None:
+        reference = bgr_array_from_image(make_reference_image())
+        revision = bgr_array_from_image(make_reference_image())
+        aligned_with, _ = align_revision_to_reference(reference, revision, ecc_refinement=True)
+        aligned_without, _ = align_revision_to_reference(reference, revision, ecc_refinement=False)
+        assert aligned_with.shape == aligned_without.shape

@@ -5,7 +5,7 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
-from backend.app.config import ALIGNMENT_MARGINAL_INLIER_RATIO
+from backend.app.config import ALIGNMENT_ECC_REFINEMENT, ALIGNMENT_MARGINAL_INLIER_RATIO
 from backend.app.services.image_utils import ImageArray, convert_to_grayscale
 
 
@@ -61,6 +61,7 @@ def align_revision_to_reference(
     keep_match_ratio: float = 0.20,
     min_matches: int = 12,
     ransac_reprojection_threshold: float = 5.0,
+    ecc_refinement: bool = ALIGNMENT_ECC_REFINEMENT,
 ) -> tuple[ImageArray, AlignmentMetadata]:
     """Align Revision B onto Revision A using ORB features and a RANSAC homography."""
     _validate_alignment_parameters(
@@ -141,6 +142,9 @@ def align_revision_to_reference(
         borderValue=255,
     )
 
+    if ecc_refinement:
+        aligned_image = refine_alignment_with_ecc(reference_image, aligned_image)
+
     metadata = AlignmentMetadata(
         keypoints_reference=reference_count,
         keypoints_revision=revision_count,
@@ -154,6 +158,44 @@ def align_revision_to_reference(
     )
 
     return aligned_image, metadata
+
+
+def refine_alignment_with_ecc(
+    reference_image: NDArray[np.generic],
+    aligned_image: NDArray[np.generic],
+) -> ImageArray:
+    """Refine an aligned revision with sub-pixel ECC on grayscale ink."""
+    reference_gray = convert_to_grayscale(reference_image).astype(np.float32) / 255.0
+    aligned_gray = convert_to_grayscale(aligned_image).astype(np.float32) / 255.0
+
+    if reference_gray.shape != aligned_gray.shape:
+        return aligned_image
+
+    warp_matrix = np.eye(2, 3, dtype=np.float32)
+    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 50, 1e-5)
+
+    try:
+        _, warp_matrix = cv2.findTransformECC(
+            reference_gray,
+            aligned_gray,
+            warp_matrix,
+            cv2.MOTION_EUCLIDEAN,
+            criteria,
+            inputMask=None,
+            gaussFiltSize=5,
+        )
+    except cv2.error:
+        return aligned_image
+
+    height, width = reference_image.shape[:2]
+    return cv2.warpAffine(
+        aligned_image,
+        warp_matrix,
+        (width, height),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=255,
+    )
 
 
 def _validate_alignment_parameters(

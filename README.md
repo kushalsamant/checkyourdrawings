@@ -1,17 +1,21 @@
 # Check Your Drawings
 
-Check Your Drawings is an AEC coordination tool for comparing two architectural drawing PDFs. Upload Drawing A and Drawing B (plotted or exported from CAD), auto-align them, and download a coordination overlay PNG.
+Check Your Drawings is an AEC coordination tool for comparing two architectural drawing PDFs. Upload Drawing A and Drawing B (plotted or exported from your design software), auto-align them, and download a coordination overlay PNG.
 
-## Overlay semantics (diff-only)
+## Overlay semantics
+
+Default output (`CYD_OVERLAY_MODE=composite`) paints every ink pixel:
 
 | Color | Meaning |
 |-------|---------|
 | Red | Ink only in Drawing A |
 | Blue | Ink only in Drawing B |
-| Green | Ink in both (aligned) |
-| Magenta | Clash (both have ink but misaligned at that pixel) |
+| Green | Ink in both (aligned overlap) |
+| Magenta | Misaligned overlap (clash) |
 
-**Same file twice → all green.** That is correct diff-only behavior, not a bug.
+Set `CYD_OVERLAY_MODE=diff_only` for the same color map (identical paint logic today).
+
+**Same file twice → mostly green.** That is correct behavior for identical inputs.
 
 ## Repository layout
 
@@ -67,6 +71,8 @@ All backend settings use the `CYD_` prefix (see [`.env.example`](.env.example)):
 | `CYD_CONTENT_BBOX_PADDING_RATIO` | `0.02` | Padding around detected ink bounding boxes |
 | `CYD_MIN_OVERLAP_AREA_RATIO` | `0.05` | Minimum shared ink overlap before comparing |
 | `CYD_ALIGNMENT_MARGINAL_INLIER_RATIO` | `0.55` | Below this inlier ratio, API warns but still returns overlay |
+| `CYD_ALIGNMENT_ECC_REFINEMENT` | `true` | Sub-pixel ECC pass after homography |
+| `CYD_OVERLAY_MODE` | `composite` | `composite` or `diff_only` (same paint logic today) |
 | `CYD_CORS_ORIGINS` | localhost dev origins | Comma-separated allowed frontend origins |
 
 ## Frontend
@@ -89,9 +95,9 @@ $env:VITE_API_BASE_URL="https://api.example.com"
 npm run build
 ```
 
-## CAD workflow
+## PDF workflow
 
-In AutoCAD or Revit: **PLOT or EXPORT PDF** for each revision, then upload Drawing A and Drawing B here.
+In your design software, **plot or export a PDF** for each revision, then upload Drawing A and Drawing B here.
 
 Only **`.pdf`** uploads are accepted.
 

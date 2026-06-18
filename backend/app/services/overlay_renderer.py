@@ -6,16 +6,21 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
+from backend.app.config import OVERLAY_MODE, OverlayMode
 from backend.app.services.image_utils import ImageArray, build_foreground_mask, convert_to_grayscale
 
 CLASH_DILATION_RADIUS: Final[int] = 3
 
-_LIGHT_BACKGROUND: Final[tuple[int, int, int]] = (255, 255, 255)
-_LIGHT_RED: Final[tuple[int, int, int]] = (40, 40, 220)
-_LIGHT_BLUE: Final[tuple[int, int, int]] = (220, 100, 40)
-_LIGHT_GREEN: Final[tuple[int, int, int]] = (40, 180, 40)
-_LIGHT_MAGENTA: Final[tuple[int, int, int]] = (220, 40, 220)
-_LIGHT_FOOTER_TEXT: Final[tuple[int, int, int]] = (20, 20, 20)
+LIGHT_BACKGROUND: Final[tuple[int, int, int]] = (255, 255, 255)
+LIGHT_RED: Final[tuple[int, int, int]] = (40, 40, 220)
+LIGHT_BLUE: Final[tuple[int, int, int]] = (220, 100, 40)
+LIGHT_GREEN: Final[tuple[int, int, int]] = (40, 180, 40)
+LIGHT_MAGENTA: Final[tuple[int, int, int]] = (220, 40, 220)
+LIGHT_FOOTER_TEXT: Final[tuple[int, int, int]] = (20, 20, 20)
+
+FOOTER_LEGEND: Final[str] = (
+    "Red = only in A | Blue = only in B | Green = in both | Magenta = clash"
+)
 
 
 @dataclass(frozen=True)
@@ -45,20 +50,17 @@ def render_coordination_overlay(
     drawing_b_name: str,
     low_confidence: bool = False,
     timestamp: datetime | None = None,
+    overlay_mode: OverlayMode = OVERLAY_MODE,
 ) -> tuple[ImageArray, OverlayStats]:
-    """Align-then-classify: per-pixel ink overlay with footer band."""
+    """Render coordination overlay: red/blue/green/magenta ink map."""
     if reference_image.shape[:2] != aligned_image.shape[:2]:
         raise ValueError("reference_image and aligned_image must share width and height.")
+
+    _ = overlay_mode  # composite and diff_only share paint logic today
 
     palette = _light_palette()
     a_mask, b_mask = _build_ink_masks(reference_image, aligned_image)
     classified = _classify_pixels(a_mask, b_mask)
-
-    output = np.full(reference_image.shape[:2] + (3,), palette.background, dtype=np.uint8)
-    output[classified["a_only"]] = palette.red
-    output[classified["b_only"]] = palette.blue
-    output[classified["agree"]] = palette.green
-    output[classified["clash"]] = palette.magenta
 
     stats = OverlayStats(
         red_pixels=int(classified["a_only"].sum()),
@@ -66,6 +68,8 @@ def render_coordination_overlay(
         green_pixels=int(classified["agree"].sum()),
         magenta_pixels=int(classified["clash"].sum()),
     )
+
+    output = _render_coordination_map(classified, palette, reference_image.shape[:2])
 
     stamped = _append_footer_band(
         output,
@@ -76,6 +80,19 @@ def render_coordination_overlay(
         timestamp=timestamp or datetime.now(timezone.utc),
     )
     return stamped, stats
+
+
+def _render_coordination_map(
+    classified: dict[str, NDArray[np.bool_]],
+    palette: OverlayPalette,
+    shape: tuple[int, int],
+) -> ImageArray:
+    output = np.full(shape + (3,), palette.background, dtype=np.uint8)
+    output[classified["a_only"]] = palette.red
+    output[classified["b_only"]] = palette.blue
+    output[classified["agree"]] = palette.green
+    output[classified["clash"]] = palette.magenta
+    return output
 
 
 def _build_ink_masks(
@@ -116,13 +133,13 @@ def _classify_pixels(
 
 def _light_palette() -> OverlayPalette:
     return OverlayPalette(
-        background=_LIGHT_BACKGROUND,
-        red=_LIGHT_RED,
-        blue=_LIGHT_BLUE,
-        green=_LIGHT_GREEN,
-        magenta=_LIGHT_MAGENTA,
-        footer_background=_LIGHT_BACKGROUND,
-        footer_text=_LIGHT_FOOTER_TEXT,
+        background=LIGHT_BACKGROUND,
+        red=LIGHT_RED,
+        blue=LIGHT_BLUE,
+        green=LIGHT_GREEN,
+        magenta=LIGHT_MAGENTA,
+        footer_background=LIGHT_BACKGROUND,
+        footer_text=LIGHT_FOOTER_TEXT,
     )
 
 
@@ -139,7 +156,7 @@ def _append_footer_band(
         f"Drawing A: {drawing_a_name}",
         f"Drawing B: {drawing_b_name}",
         f"Timestamp: {timestamp.isoformat(timespec='seconds')}",
-        "Red = only in A | Blue = only in B | Green = in both | Magenta = clash",
+        FOOTER_LEGEND,
     ]
     if low_confidence:
         footer_lines.append("Low-confidence alignment")

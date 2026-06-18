@@ -9,9 +9,9 @@ Check Your Drawings compares two **PDF** architectural drawings and produces a *
 | `frontend/` | Upload UI, result viewer, metadata panel |
 | `backend/app/routes/compare.py` | `POST /compare` — validate uploads, run pipeline |
 | `backend/app/services/pdf_converter.py` | PyMuPDF rasterize PDF → RGB image |
-| `backend/app/services/alignment.py` | ORB features + RANSAC homography |
+| `backend/app/services/alignment.py` | ORB features + RANSAC homography + optional ECC refinement |
 | `backend/app/services/content_detection.py` | Ink bounding boxes, overlap gate, crop |
-| `backend/app/services/overlay_renderer.py` | Diff-only pixel overlay + footer band |
+| `backend/app/services/overlay_renderer.py` | Red/blue/green/magenta ink map + footer band |
 | `backend/outputs/` | Generated comparison PNGs (served at `/outputs/`) |
 
 ## Request flow
@@ -19,9 +19,9 @@ Check Your Drawings compares two **PDF** architectural drawings and produces a *
 ```text
 Drawing A PDF + Drawing B PDF
   → load_image (PyMuPDF)
-  → align_revision_to_reference
+  → align_revision_to_reference (ORB + RANSAC + optional ECC)
   → detect_content_bbox + compute_overlap_bbox (gate)
-  → render_coordination_overlay
+  → render_coordination_overlay (red / blue / green / magenta)
   → comparison-{uuid}.png
 ```
 

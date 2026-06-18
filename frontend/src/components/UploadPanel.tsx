@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import type { ChangeEvent, DragEvent } from "react";
 
-import { validateFile } from "../utils/fileValidation";
+import { UPLOAD_DROP_HINT, validateFile } from "../utils/fileValidation";
 
 const ACCEPT_ATTRIBUTE = ".pdf,application/pdf";
 
@@ -124,7 +124,7 @@ function UploadSlot({
         data-dragging={isDragging}
       >
         <strong>{label}</strong>
-        <span>{file ? file.name : "Drop a PDF here (plot or export from CAD)"}</span>
+        <span>{file ? file.name : UPLOAD_DROP_HINT}</span>
       </label>
 
       <input

@@ -1,6 +1,6 @@
 # Smoke test checklist
 
-Manual sign-off for Pass 1. Use architectural PDF pairs plotted from CAD.
+Manual sign-off for Pass 1. Use architectural PDF pairs plotted from your design software.
 
 ## Prerequisites
 
@@ -34,7 +34,7 @@ Keep the smoke PDFs at the **repo root** (gitignored). Paths below are relative 
 |---|------|----------|------|
 | 1 | Upload `0A` as Drawing A, `0B` as Drawing B | Both accepted (PDF only) | |
 | 2 | Click **Compare** | Completes in under ~30s | |
-| 3 | Result image | Visible **red** and **blue** at real drawing changes; green where ink matches | |
+| 3 | Result image | **Green** where sheets match; **red** and **blue** at real changes; **magenta** at misaligned edges if visible | |
 | 4 | Footer | Drawing A/B filenames, timestamp, color legend | |
 | 5 | Metadata | Red/blue/green/magenta counts > 0 where expected; alignment confidence `high` or `marginal` | |
 | 6 | **Download** | PNG saves and opens | |
@@ -46,7 +46,7 @@ Keep the smoke PDFs at the **repo root** (gitignored). Paths below are relative 
 - **Red** = ink only in A  
 - **Blue** = ink only in B  
 - **Green** = ink in both (aligned)  
-- **Magenta** = clash  
+- **Magenta** = clash (misaligned overlap)  
 
 ## API curl (optional)
 
