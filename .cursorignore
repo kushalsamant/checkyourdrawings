@@ -1,10 +1,27 @@
-*.pdf
-*.dwg
-comparison-result*.png
-kushal*
-debug-*.log
-.cursor/
+﻿# Secrets
+.env
+.env.*
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Node / frontend build
+frontend/node_modules/
+frontend/dist/
+
+# Generated compare artifacts
 backend/outputs/
 backend/uploads/
-frontend/node_modules/
-plot.log
+backend/tmp-smoke/
+comparison-result*.png
+sample-*.png
+
+# Local test assets (large binaries)
+*.pdf
+*.dwg
+
+# Logs
+debug-*.log

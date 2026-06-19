@@ -7,9 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.app.config import (
+    AUTH_REQUIRED,
     CORS_ORIGINS,
     OUTPUT_DIR,
     OUTPUT_MAX_AGE_HOURS,
+    PLATFORM_DATABASE_URL,
     UPLOAD_DIR,
     ensure_runtime_directories,
 )
@@ -78,3 +80,33 @@ def health_check() -> dict[str, object]:
         return {"status": "degraded", "issues": issues}
 
     return {"status": "ok", "upload_dir": str(UPLOAD_DIR), "output_dir": str(OUTPUT_DIR)}
+
+
+@app.get("/health/ready", tags=["health"])
+def readiness_check() -> dict[str, object]:
+    if not AUTH_REQUIRED:
+        return {"status": "ok", "auth_required": False}
+
+    if not PLATFORM_DATABASE_URL:
+        return {
+            "status": "degraded",
+            "auth_required": True,
+            "issues": ["PLATFORM_DATABASE_URL is not configured."],
+        }
+
+    try:
+        from sqlalchemy import text
+
+        from backend.app.database import _get_engine
+
+        with _get_engine().connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except Exception as exc:
+        logger.exception("Readiness check failed")
+        return {
+            "status": "degraded",
+            "auth_required": True,
+            "issues": [f"Database check failed: {exc}"],
+        }
+
+    return {"status": "ok", "auth_required": True}

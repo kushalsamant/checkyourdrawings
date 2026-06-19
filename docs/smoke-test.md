@@ -61,3 +61,48 @@ curl -X POST http://127.0.0.1:8000/compare `
 - Opening `:8000` in the browser — that is JSON API only; use `:5173`.
 - Comparing **same file twice** and expecting orange/blue — all green is correct.
 - Comparing unrelated PDFs — alignment fails with HTTP 400 (by design).
+
+---
+
+## Hosted smoke test (Pass 2)
+
+Sign-off after deploy to Vercel + Render. Production URLs:
+
+| Service | URL |
+|---------|-----|
+| Frontend | https://checkyourdrawings.kvshvl.in |
+| API | https://api.checkyourdrawings.kvshvl.in (or `*.onrender.com` until custom domain is set) |
+
+### Prerequisites
+
+- Render service live with `CYD_AUTH_REQUIRED=false`, `CYD_STORAGE_BYPASS=true`
+- Vercel build has `VITE_API_BASE_URL` pointing at the Render API URL
+- DNS: `checkyourdrawings.kvshvl.in` → Vercel, `api.checkyourdrawings.kvshvl.in` → Render (optional at first deploy)
+
+### Checklist
+
+| # | Step | Expected | Pass |
+|---|------|----------|------|
+| H1 | Open [kvshvl.in](https://www.kvshvl.in) → **Check Your Drawings** side tab | Lands on `checkyourdrawings.kvshvl.in` | |
+| H2 | Page styling | kvshvl palette: red accent `#f12345`, gray text, white background | |
+| H3 | Upload `0A` / `0B` smoke PDFs → **Compare** | Completes; overlay renders | |
+| H4 | **Download** PNG | File saves and opens | |
+| H5 | API health | `curl https://<api-url>/health` returns `"status":"ok"` | |
+| H6 | CORS | Compare works from production frontend (no browser CORS error) | |
+
+### Production env reference
+
+**Render:**
+
+```
+CYD_AUTH_REQUIRED=false
+CYD_STORAGE_BYPASS=true
+CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in
+```
+
+**Vercel (build time):**
+
+```
+VITE_API_BASE_URL=https://api.checkyourdrawings.kvshvl.in
+```
+

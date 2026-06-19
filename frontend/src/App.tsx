@@ -3,11 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { CompareButton } from "./components/CompareButton";
 import { ResultViewer } from "./components/ResultViewer";
 import { UploadPanel } from "./components/UploadPanel";
+import { isAuthConfigured, useAuth } from "./lib/auth-provider";
 import type { CompareMetadata } from "./services/api";
-import { uploadAndCompare } from "./services/api";
+import { getUpgradeUrl, uploadAndCompare } from "./services/api";
 
 
 export default function App() {
+  const authConfigured = isAuthConfigured();
+  const { user, loading: authLoading, signIn, signOut } = useAuth();
   const [drawingA, setDrawingA] = useState<File | null>(null);
   const [drawingB, setDrawingB] = useState<File | null>(null);
   const [comparisonImageUrl, setComparisonImageUrl] = useState<string | null>(null);
@@ -63,10 +66,34 @@ export default function App() {
   }
 
   return (
-    <main className="app-shell">
-      <header className="app-header">
-        <h1>Check Your Drawings</h1>
-        <p>Upload two PDF drawings for an auto-aligned coordination overlay.</p>
+    <div className="page-body">
+      <main className="app-shell">
+        <header className="app-header">
+        <div className="app-header-row">
+          <div>
+            <h1>Check Your Drawings</h1>
+            <p>Upload two PDF drawings for an auto-aligned coordination overlay.</p>
+          </div>
+
+          {authConfigured && (
+            <div className="auth-actions">
+              {authLoading ? (
+                <span>Checking session...</span>
+              ) : user ? (
+                <>
+                  <span className="auth-email">{user.email}</span>
+                  <button type="button" onClick={() => void signOut()}>
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <button type="button" onClick={() => void signIn()}>
+                  Sign in
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </header>
 
       <UploadPanel
@@ -87,6 +114,14 @@ export default function App() {
       {error && (
         <p className="alert" role="alert">
           {error}
+          {error.includes("subscription required") && (
+            <>
+              {" "}
+              <a href={getUpgradeUrl()} target="_blank" rel="noreferrer">
+                Upgrade on kvshvl.in
+              </a>
+            </>
+          )}
         </p>
       )}
 
@@ -155,6 +190,11 @@ export default function App() {
           </dl>
         </section>
       )}
-    </main>
+
+        <footer className="app-footer">
+          <p>&copy; {new Date().getFullYear()} Check Your Drawings</p>
+        </footer>
+      </main>
+    </div>
   );
 }

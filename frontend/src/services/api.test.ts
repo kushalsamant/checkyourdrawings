@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { buildImageUrl, parseCompareResponse } from "./api";
 
@@ -10,8 +10,18 @@ describe("buildImageUrl", () => {
     );
   });
 
-  it("rejects absolute URLs from other origins when API base is unset", () => {
-    expect(() => buildImageUrl("https://evil.example/outputs/x.png")).not.toThrow();
+  it("rejects absolute URLs from disallowed origins when API base is unset", () => {
+    expect(() => buildImageUrl("https://evil.example/outputs/x.png")).toThrow();
+  });
+
+  it("allows Supabase storage URLs when configured", () => {
+    vi.stubEnv("VITE_SUPABASE_URL", "https://project.supabase.co");
+
+    expect(
+      buildImageUrl("https://project.supabase.co/storage/v1/object/public/cyd_outputs/1/x.png"),
+    ).toBe("https://project.supabase.co/storage/v1/object/public/cyd_outputs/1/x.png");
+
+    vi.unstubAllEnvs();
   });
 });
 

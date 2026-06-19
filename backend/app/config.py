@@ -4,6 +4,19 @@ from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class PlatformSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        env_file=".env",
+        extra="ignore",
+    )
+
+    platform_database_url: str | None = None
+    supabase_url: str | None = None
+    supabase_service_role_key: str | None = None
+    supabase_jwt_secret: str | None = None
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="CYD_",
@@ -21,6 +34,8 @@ class Settings(BaseSettings):
     min_overlap_area_ratio: float = 0.05
     alignment_marginal_inlier_ratio: float = 0.55
     alignment_ecc_refinement: bool = True
+    auth_required: bool = False
+    storage_bypass: bool = True
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3000",
@@ -39,6 +54,7 @@ class Settings(BaseSettings):
 
 
 _settings = Settings()
+_platform_settings = PlatformSettings()
 
 BASE_DIR: Path = Path(__file__).resolve().parent
 PROJECT_DIR: Path = BASE_DIR.parent
@@ -56,8 +72,23 @@ CONTENT_BBOX_PADDING_RATIO: float = _settings.content_bbox_padding_ratio
 MIN_OVERLAP_AREA_RATIO: float = _settings.min_overlap_area_ratio
 ALIGNMENT_MARGINAL_INLIER_RATIO: float = _settings.alignment_marginal_inlier_ratio
 ALIGNMENT_ECC_REFINEMENT: bool = _settings.alignment_ecc_refinement
+AUTH_REQUIRED: bool = _settings.auth_required
+STORAGE_BYPASS: bool = _settings.storage_bypass
 CORS_ORIGINS: list[str] = _settings.cors_origins
 ALLOWED_EXTENSIONS: frozenset[str] = frozenset({".pdf"})
+
+PLATFORM_DATABASE_URL: str | None = _platform_settings.platform_database_url
+SUPABASE_URL: str | None = _platform_settings.supabase_url
+SUPABASE_SERVICE_ROLE_KEY: str | None = _platform_settings.supabase_service_role_key
+SUPABASE_JWT_SECRET: str | None = _platform_settings.supabase_jwt_secret
+
+
+def get_settings() -> Settings:
+    return _settings
+
+
+def get_platform_settings() -> PlatformSettings:
+    return _platform_settings
 
 
 def ensure_runtime_directories() -> None:

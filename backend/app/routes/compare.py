@@ -8,17 +8,23 @@ from uuid import uuid4
 
 import cv2
 import numpy as np
-from fastapi import APIRouter, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from PIL import Image
+from sqlalchemy.orm import Session
 
+from backend.app.auth.deps import get_current_user, require_active_subscription
 from backend.app.config import (
     ALLOWED_EXTENSIONS,
     COMPARE_TIMEOUT_SECONDS,
     MAX_FILE_SIZE_MB,
     OUTPUT_DIR,
     OUTPUT_MAX_AGE_HOURS,
+    STORAGE_BYPASS,
     UPLOAD_DIR,
 )
+from backend.app.database import get_db
+from backend.app.models.comparison import Comparison
+from backend.app.models.user import User
 from backend.app.schemas.compare import CompareResponse
 from backend.app.services.alignment import (
     AlignmentError,
@@ -45,10 +51,17 @@ _executor = ThreadPoolExecutor(max_workers=2)
 _UPLOAD_CHUNK_SIZE = 1024 * 1024
 
 
-@router.post("/compare", status_code=status.HTTP_200_OK, response_model=CompareResponse)
+@router.post(
+    "/compare",
+    status_code=status.HTTP_200_OK,
+    response_model=CompareResponse,
+    dependencies=[Depends(require_active_subscription())],
+)
 async def compare_drawings(
     drawing_a: UploadFile | None = None,
     drawing_b: UploadFile | None = None,
+    user: User | None = Depends(get_current_user),
+    db: Session | None = Depends(get_db),
 ) -> CompareResponse:
     if drawing_a is None or drawing_b is None:
         raise HTTPException(
@@ -88,6 +101,8 @@ async def compare_drawings(
 
         elapsed = time.perf_counter() - started_at
         logger.info("Comparison completed in %.2fs", elapsed)
+        if not STORAGE_BYPASS:
+            result = _store_comparison_in_cloud(result, user, db)
         return result
     except UnsupportedFileTypeError as exc:
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(exc)) from exc
@@ -98,6 +113,47 @@ async def compare_drawings(
     finally:
         _remove_file(saved_drawing_a)
         _remove_file(saved_drawing_b)
+
+
+def _store_comparison_in_cloud(
+    result: CompareResponse,
+    user: User | None,
+    db: Session | None,
+) -> CompareResponse:
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sign in to compare drawings.",
+        )
+
+    local_filename = Path(result.image_path).name
+    local_path = OUTPUT_DIR / local_filename
+    if not local_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Comparison output file was not found for cloud upload.",
+        )
+
+    from backend.app.services.storage import upload_png_bytes
+
+    comparison_id = uuid4()
+    remote_path = f"{user.id}/{comparison_id}.png"
+    png_bytes = local_path.read_bytes()
+    image_url = upload_png_bytes(png_bytes, remote_path)
+
+    if db is not None:
+        db.add(
+            Comparison(
+                id=comparison_id,
+                user_id=user.id,
+                storage_path=remote_path,
+                metadata_json=result.metadata.model_dump(),
+            )
+        )
+        db.commit()
+
+    _remove_file(local_path)
+    return CompareResponse(image_path=image_url, metadata=result.metadata)
 
 
 def _run_comparison_pipeline(

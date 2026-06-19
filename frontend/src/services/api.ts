@@ -1,4 +1,8 @@
+import { getAuthAccessToken } from "../lib/auth-provider";
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+const UPGRADE_URL =
+  (import.meta.env.VITE_KVSHVL_UPGRADE_URL ?? "https://kvshvl.in").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 
 export interface BoundingBox {
@@ -80,9 +84,16 @@ export async function uploadAndCompare(
     : timeoutController.signal;
 
   try {
+    const headers: Record<string, string> = {};
+    const accessToken = getAuthAccessToken();
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/compare`, {
       method: "POST",
       body: formData,
+      headers,
       signal: combinedSignal,
     });
 
@@ -151,6 +162,13 @@ export function parseCompareResponse(data: unknown): CompareResponse {
 }
 
 export async function getErrorMessage(response: Response): Promise<string> {
+  if (response.status === 401) {
+    return "Sign in to compare drawings.";
+  }
+  if (response.status === 402) {
+    return `Active subscription required. Upgrade at ${UPGRADE_URL}.`;
+  }
+
   try {
     const data = (await response.json()) as { detail?: unknown };
     const message = formatFastApiDetail(data.detail);
@@ -166,13 +184,22 @@ export async function getErrorMessage(response: Response): Promise<string> {
 
 export function buildImageUrl(imagePath: string): string {
   if (/^https?:\/\//i.test(imagePath)) {
-    if (API_BASE_URL) {
-      const parsed = new URL(imagePath);
-      const apiOrigin = new URL(API_BASE_URL, window.location.origin).origin;
-      if (parsed.origin !== apiOrigin) {
-        throw new Error("Comparison image URL is not from the API origin.");
-      }
+    const parsed = new URL(imagePath);
+    const allowedOrigins = new Set<string>();
+    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
+
+    if (apiBaseUrl) {
+      allowedOrigins.add(new URL(apiBaseUrl, window.location.origin).origin);
     }
+    if (supabaseUrl) {
+      allowedOrigins.add(new URL(supabaseUrl).origin);
+    }
+
+    if (allowedOrigins.size > 0 && !allowedOrigins.has(parsed.origin)) {
+      throw new Error("Comparison image URL is not from an allowed origin.");
+    }
+
     return imagePath;
   }
 
@@ -216,6 +243,10 @@ function formatFastApiDetail(detail: unknown): string | null {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+export function getUpgradeUrl(): string {
+  return UPGRADE_URL;
 }
 
 function mergeAbortSignals(first: AbortSignal, second: AbortSignal): AbortSignal {

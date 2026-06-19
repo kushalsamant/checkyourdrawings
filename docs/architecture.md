@@ -34,7 +34,7 @@ Drawing A PDF + Drawing B PDF
 ## Out of scope (Pass 1)
 
 - DWG, PNG, JPG, GIF inputs
-- Auth, billing, cloud storage — see [roadmap.md](roadmap.md) Pass 2
+- Auth, billing, cloud storage — see [checkyourdrawings.plan.md](../checkyourdrawings.plan.md) Pass 2
 
 ## Highest-risk code
 
