@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { getSupabaseClient } from "../lib/supabase";
 
@@ -19,16 +19,17 @@ function readOAuthError(): string | null {
   return hashParams.get("error_description") ?? hashParams.get("error");
 }
 
+function sessionStorageKey(code: string): string {
+  return `cyd_oauth_exchange_${code}`;
+}
+
+let inflightExchange: Promise<{ error: { message: string } | null }> | null =
+  null;
+
 export function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
-  const exchangeStarted = useRef(false);
 
   useEffect(() => {
-    if (exchangeStarted.current) {
-      return;
-    }
-    exchangeStarted.current = true;
-
     const supabase = getSupabaseClient();
     if (supabase === null) {
       setError("Supabase is not configured.");
@@ -55,8 +56,37 @@ export function AuthCallback() {
         return;
       }
 
-      const { error: exchangeError } =
-        await authClient.auth.exchangeCodeForSession(code);
+      const storageKey = sessionStorageKey(code);
+
+      const { data: existingSession } = await authClient.auth.getSession();
+      if (existingSession.session) {
+        window.location.replace("/");
+        return;
+      }
+
+      if (sessionStorage.getItem(storageKey) === "done") {
+        const { data: storedSession } = await authClient.auth.getSession();
+        if (storedSession.session) {
+          window.location.replace("/");
+          return;
+        }
+      }
+
+      if (inflightExchange === null) {
+        inflightExchange = authClient.auth
+          .exchangeCodeForSession(code)
+          .then((result) => {
+            if (!result.error) {
+              sessionStorage.setItem(storageKey, "done");
+            }
+            return { error: result.error };
+          })
+          .finally(() => {
+            inflightExchange = null;
+          });
+      }
+
+      const { error: exchangeError } = await inflightExchange;
       if (exchangeError) {
         if (!cancelled) {
           setError(exchangeError.message);

@@ -26,13 +26,13 @@ function AppRoutes() {
 const path = window.location.pathname;
 
 createRoot(rootElement).render(
-  <StrictMode>
-    {path === "/auth/callback" ? (
-      <AuthCallback />
-    ) : (
+  path === "/auth/callback" ? (
+    <AuthCallback />
+  ) : (
+    <StrictMode>
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
-    )}
-  </StrictMode>,
+    </StrictMode>
+  ),
 );

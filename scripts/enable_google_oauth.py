@@ -54,9 +54,14 @@ def main() -> int:
     print(f"google_enabled={data.get('external_google_enabled')}")
     print(f"client_id={data.get('external_google_client_id')}")
     print(f"callback_uri={CALLBACK_URI}")
+    print()
+    print("REQUIRED: Add this Authorized redirect URI in Google Cloud Console")
+    print("(APIs & Services > Credentials > OAuth 2.0 Client IDs > same client as above):")
+    print(f"  {CALLBACK_URI}")
+    print()
     print(
-        "Add the callback URI to the Google OAuth client in Cloud Console, "
-        "then test Sign in on https://checkyourdrawings.kvshvl.in/"
+        "Without it, sign-in fails with 'Unable to exchange external code'. "
+        "Then test Sign in on https://checkyourdrawings.kvshvl.in/"
     )
     return 0
 
