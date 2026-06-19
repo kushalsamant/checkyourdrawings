@@ -21,7 +21,7 @@ isProject: true
 
 Canonical plan for the repo. AEC coordination tool for comparing two architectural drawing PDFs. Upload Drawing A and Drawing B (plotted or exported from your design software), auto-align them, and download a coordination overlay PNG.
 
-**Work one task at a time** (see frontmatter todos). **4 tasks remain** for Pass 2.
+**Work one task at a time** (see frontmatter todos). **Pass 2 complete** — production smoke verified 2026-06-20.
 
 ---
 
@@ -193,15 +193,15 @@ Open **http://127.0.0.1:5173**. Leave `VITE_API_BASE_URL` unset (Vite proxies `/
 
 **Goal:** Ship the free compare tool to `checkyourdrawings.kvshvl.in`. No login, no billing.
 
-**What's still missing:** deploy artifacts + live hosting + hosted smoke test.
+**Pass 2 status:** live at `checkyourdrawings.kvshvl.in`; production smoke verified 2026-06-20 (`/`, `/about`, nav links, OAuth redirect → `/auth/callback` → `/`).
 
-| Still needed | Status |
-|--------------|--------|
+| Item | Status |
+|------|--------|
 | kvshvl.in brand shell in React | **Done** |
-| [Dockerfile](Dockerfile) + [render.yaml](render.yaml) | **Done** — apply blueprint on Render dashboard |
-| [frontend/vercel.json](frontend/vercel.json) | **Done** — preview deployed; set `VITE_API_BASE_URL` + custom domain |
-| Live deploy + DNS | **Manual** — see [docs/deploy.md](docs/deploy.md) |
-| Hosted smoke doc section | **Done** — [docs/smoke-test.md](docs/smoke-test.md) |
+| [Dockerfile](Dockerfile) + [render.yaml](render.yaml) | **Done** |
+| [frontend/vercel.json](frontend/vercel.json) | **Done** |
+| Live deploy + DNS | **Done** |
+| Hosted smoke (production) | **Done** — [docs/smoke-test.md](docs/smoke-test.md) |
 
 ### Production architecture
 

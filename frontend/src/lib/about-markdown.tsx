@@ -1,5 +1,12 @@
 import { Fragment, type ReactNode } from "react";
 
+const OVERLAY_COLOR_CLASS: Record<string, string> = {
+  Blue: "overlay-color overlay-color--blue",
+  Orange: "overlay-color overlay-color--orange",
+  Green: "overlay-color overlay-color--green",
+  Red: "overlay-color overlay-color--red",
+};
+
 function renderInline(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
   const pattern = /\*\*([^*]+)\*\*/g;
@@ -11,7 +18,18 @@ function renderInline(text: string): ReactNode[] {
       parts.push(text.slice(lastIndex, match.index));
     }
 
-    parts.push(<strong key={`${match.index}-${match[1]}`}>{match[1]}</strong>);
+    const label = match[1];
+    const colorClass = OVERLAY_COLOR_CLASS[label];
+
+    parts.push(
+      colorClass ? (
+        <strong key={`${match.index}-${label}`} className={colorClass}>
+          {label}
+        </strong>
+      ) : (
+        <strong key={`${match.index}-${label}`}>{label}</strong>
+      ),
+    );
     lastIndex = pattern.lastIndex;
     match = pattern.exec(text);
   }

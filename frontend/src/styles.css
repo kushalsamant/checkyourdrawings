@@ -336,6 +336,27 @@ h2 {
   margin-bottom: 0.4rem;
 }
 
+/* Overlay legend colors — match backend/app/services/overlay_renderer.py */
+.overlay-color {
+  font-weight: 600;
+}
+
+.overlay-color--blue {
+  color: #2864dc;
+}
+
+.overlay-color--orange {
+  color: #ff8000;
+}
+
+.overlay-color--green {
+  color: #28b428;
+}
+
+.overlay-color--red {
+  color: #ff0000;
+}
+
 .landing-cta {
   display: inline-block;
   width: fit-content;

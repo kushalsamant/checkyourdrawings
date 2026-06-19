@@ -23,6 +23,7 @@ frontend/vite.config.d.ts
 .env.pass3.local
 
 # Local test assets / logs
+Demo_WhatsApp*.mp4
 *.pdf
 *.dwg
 comparison-result*.png
