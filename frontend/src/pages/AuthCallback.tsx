@@ -19,17 +19,17 @@ function readOAuthError(): string | null {
   return hashParams.get("error_description") ?? hashParams.get("error");
 }
 
-function sessionStorageKey(code: string): string {
-  return `cyd_oauth_exchange_${code}`;
-}
-
-let inflightExchange: Promise<{ error: { message: string } | null }> | null =
-  null;
+let callbackStarted = false;
 
 export function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (callbackStarted) {
+      return;
+    }
+    callbackStarted = true;
+
     const supabase = getSupabaseClient();
     if (supabase === null) {
       setError("Supabase is not configured.");
@@ -48,53 +48,23 @@ export function AuthCallback() {
         return;
       }
 
-      const code = new URL(window.location.href).searchParams.get("code");
-      if (!code) {
+      // detectSessionInUrl exchanges ?code= during getSession().
+      const { data, error: sessionError } = await authClient.auth.getSession();
+      if (sessionError) {
         if (!cancelled) {
-          setError("Could not complete sign-in. Try again from the app.");
+          setError(sessionError.message);
         }
         return;
       }
 
-      const storageKey = sessionStorageKey(code);
-
-      const { data: existingSession } = await authClient.auth.getSession();
-      if (existingSession.session) {
+      if (data.session) {
         window.location.replace("/");
         return;
       }
 
-      if (sessionStorage.getItem(storageKey) === "done") {
-        const { data: storedSession } = await authClient.auth.getSession();
-        if (storedSession.session) {
-          window.location.replace("/");
-          return;
-        }
+      if (!cancelled) {
+        setError("Could not complete sign-in. Try again from the app.");
       }
-
-      if (inflightExchange === null) {
-        inflightExchange = authClient.auth
-          .exchangeCodeForSession(code)
-          .then((result) => {
-            if (!result.error) {
-              sessionStorage.setItem(storageKey, "done");
-            }
-            return { error: result.error };
-          })
-          .finally(() => {
-            inflightExchange = null;
-          });
-      }
-
-      const { error: exchangeError } = await inflightExchange;
-      if (exchangeError) {
-        if (!cancelled) {
-          setError(exchangeError.message);
-        }
-        return;
-      }
-
-      window.location.replace("/");
     }
 
     void completeSignIn();

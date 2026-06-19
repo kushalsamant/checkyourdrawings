@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""Enable Google OAuth on the linked Supabase project via Management API."""
+"""Enable Google OAuth on the linked Supabase project via Management API.
+
+The Management API returns external_google_secret as a SHA256 hash on GET.
+You must supply the plaintext Google OAuth client secret via GOOGLE_OAUTH_CLIENT_SECRET.
+Copy it from Google Cloud Console > Credentials > OAuth 2.0 Client IDs.
+"""
 
 from __future__ import annotations
 
+import os
 import sys
 
 import httpx
@@ -10,6 +16,9 @@ import httpx
 PROJECT_REF = "ytcnzhapqainbtkoshvh"
 SOURCE_PROJECT_REF = "twxudlzipbiavnzcitzb"
 CALLBACK_URI = f"https://{PROJECT_REF}.supabase.co/auth/v1/callback"
+GOOGLE_CLIENT_ID = (
+    "620186529337-lrr0bflcuihq2gnsko6vbrnsdv2u3ugu.apps.googleusercontent.com"
+)
 
 
 def _load_supabase_token() -> str:
@@ -23,27 +32,29 @@ def _load_supabase_token() -> str:
 
 
 def main() -> int:
+    google_secret = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "").strip()
+    if not google_secret:
+        print(
+            "Set GOOGLE_OAUTH_CLIENT_SECRET to the plaintext client secret from "
+            "Google Cloud Console, then re-run this script.",
+            file=sys.stderr,
+        )
+        print(
+            "Dashboard fallback: Supabase > Authentication > Providers > Google",
+            file=sys.stderr,
+        )
+        return 1
+
     token = _load_supabase_token()
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
     with httpx.Client(timeout=30.0) as client:
-        source = client.get(
-            f"https://api.supabase.com/v1/projects/{SOURCE_PROJECT_REF}/config/auth",
-            headers=headers,
-        )
-        source.raise_for_status()
-        google_client_id = source.json()["external_google_client_id"]
-        google_secret = source.json()["external_google_secret"]
-        if not google_client_id or not google_secret:
-            print("Source project has no Google OAuth credentials.", file=sys.stderr)
-            return 1
-
         response = client.patch(
             f"https://api.supabase.com/v1/projects/{PROJECT_REF}/config/auth",
             headers=headers,
             json={
                 "external_google_enabled": True,
-                "external_google_client_id": google_client_id,
+                "external_google_client_id": GOOGLE_CLIENT_ID,
                 "external_google_secret": google_secret,
                 "external_google_skip_nonce_check": False,
             },
@@ -59,10 +70,7 @@ def main() -> int:
     print("(APIs & Services > Credentials > OAuth 2.0 Client IDs > same client as above):")
     print(f"  {CALLBACK_URI}")
     print()
-    print(
-        "Without it, sign-in fails with 'Unable to exchange external code'. "
-        "Then test Sign in on https://checkyourdrawings.kvshvl.in/"
-    )
+    print("Then test Sign in on https://checkyourdrawings.kvshvl.in/")
     return 0
 
 
