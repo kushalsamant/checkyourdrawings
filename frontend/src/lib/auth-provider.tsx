@@ -2,14 +2,12 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type ReactNode,
 } from "react";
-import { createClient, type Session, type SupabaseClient, type User } from "@supabase/supabase-js";
+import type { Session, User } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? "";
+import { getSupabaseClient, isSupabaseConfigured } from "./supabase";
 
 interface AuthContextValue {
   user: User | null;
@@ -33,12 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const supabase = useMemo<SupabaseClient | null>(() => {
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return null;
-    }
-    return createClient(supabaseUrl, supabaseAnonKey);
-  }, []);
+  const supabase = getSupabaseClient();
 
   useEffect(() => {
     if (supabase === null) {
@@ -126,5 +119,5 @@ export function useAuth(): AuthContextValue {
 }
 
 export function isAuthConfigured(): boolean {
-  return Boolean(supabaseUrl && supabaseAnonKey);
+  return isSupabaseConfigured();
 }

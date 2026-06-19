@@ -75,9 +75,12 @@ export default function App() {
             <p>Upload two PDF drawings for an auto-aligned coordination overlay.</p>
           </div>
 
-          {authConfigured && (
-            <div className="auth-actions">
-              {authLoading ? (
+          <div className="auth-actions">
+            <a href="/about" className="header-link">
+              About
+            </a>
+            {authConfigured &&
+              (authLoading ? (
                 <span>Checking session...</span>
               ) : user ? (
                 <>
@@ -90,9 +93,8 @@ export default function App() {
                 <button type="button" onClick={() => void signIn()}>
                   Sign in
                 </button>
-              )}
-            </div>
-          )}
+              ))}
+          </div>
         </div>
       </header>
 
@@ -192,11 +194,7 @@ export default function App() {
       )}
 
         <footer className="app-footer">
-          <p>
-            <a href="/about">About</a>
-            {" · "}
-            &copy; {new Date().getFullYear()} Check Your Drawings
-          </p>
+          <p>&copy; {new Date().getFullYear()} Check Your Drawings</p>
         </footer>
       </main>
     </div>

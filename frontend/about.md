@@ -28,7 +28,7 @@ No manual overlay. No CAD license. No hunting for changes with a red pen.
 
 ---
 
-[Upload Your Drawings](/app)
+[Upload Your Drawings](/)
 
 ---
 
