@@ -13,12 +13,8 @@ if (rootElement === null) {
   throw new Error("Root element was not found.");
 }
 
-function RootPage() {
+function AppRoutes() {
   const path = window.location.pathname;
-
-  if (path === "/auth/callback") {
-    return <AuthCallback />;
-  }
 
   if (path === "/about") {
     return <AboutPage />;
@@ -27,10 +23,16 @@ function RootPage() {
   return <App />;
 }
 
+const path = window.location.pathname;
+
 createRoot(rootElement).render(
   <StrictMode>
-    <AuthProvider>
-      <RootPage />
-    </AuthProvider>
+    {path === "/auth/callback" ? (
+      <AuthCallback />
+    ) : (
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    )}
   </StrictMode>,
 );

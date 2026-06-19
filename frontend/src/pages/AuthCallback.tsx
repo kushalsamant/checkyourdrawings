@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { getSupabaseClient } from "../lib/supabase";
 
@@ -21,8 +21,14 @@ function readOAuthError(): string | null {
 
 export function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
+  const exchangeStarted = useRef(false);
 
   useEffect(() => {
+    if (exchangeStarted.current) {
+      return;
+    }
+    exchangeStarted.current = true;
+
     const supabase = getSupabaseClient();
     if (supabase === null) {
       setError("Supabase is not configured.");
@@ -41,69 +47,30 @@ export function AuthCallback() {
         return;
       }
 
-      // AuthProvider may have already exchanged ?code= via detectSessionInUrl.
-      const { data: existingSession, error: sessionError } =
-        await authClient.auth.getSession();
-      if (sessionError) {
-        if (!cancelled) {
-          setError(sessionError.message);
-        }
-        return;
-      }
-
-      if (existingSession.session) {
-        window.location.replace("/");
-        return;
-      }
-
       const code = new URL(window.location.href).searchParams.get("code");
-      if (code) {
-        const { error: exchangeError } =
-          await authClient.auth.exchangeCodeForSession(code);
-        if (exchangeError) {
-          if (!cancelled) {
-            setError(exchangeError.message);
-          }
-          return;
-        }
-
-        window.location.replace("/");
-        return;
-      }
-
-      // Implicit/hash callback — getSession triggers detectSessionInUrl again.
-      const { data: detectedSession, error: detectError } =
-        await authClient.auth.getSession();
-      if (detectError) {
+      if (!code) {
         if (!cancelled) {
-          setError(detectError.message);
+          setError("Could not complete sign-in. Try again from the app.");
         }
         return;
       }
 
-      if (detectedSession.session) {
-        window.location.replace("/");
+      const { error: exchangeError } =
+        await authClient.auth.exchangeCodeForSession(code);
+      if (exchangeError) {
+        if (!cancelled) {
+          setError(exchangeError.message);
+        }
         return;
       }
 
-      if (!cancelled) {
-        setError("Could not complete sign-in. Try again from the app.");
-      }
+      window.location.replace("/");
     }
-
-    const {
-      data: { subscription },
-    } = authClient.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        window.location.replace("/");
-      }
-    });
 
     void completeSignIn();
 
     return () => {
       cancelled = true;
-      subscription.unsubscribe();
     };
   }, []);
 
