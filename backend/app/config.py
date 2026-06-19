@@ -1,7 +1,14 @@
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_DEFAULT_CORS_ORIGINS = (
+    "http://localhost:3000,"
+    "http://localhost:5173,"
+    "http://127.0.0.1:3000,"
+    "http://127.0.0.1:5173"
+)
 
 
 class PlatformSettings(BaseSettings):
@@ -36,21 +43,11 @@ class Settings(BaseSettings):
     alignment_ecc_refinement: bool = True
     auth_required: bool = False
     storage_bypass: bool = True
-    cors_origins: list[str] = Field(
-        default_factory=lambda: [
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:5173",
-        ]
-    )
+    cors_origins: str = Field(default=_DEFAULT_CORS_ORIGINS)
 
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, value: object) -> object:
-        if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 _settings = Settings()
@@ -74,7 +71,7 @@ ALIGNMENT_MARGINAL_INLIER_RATIO: float = _settings.alignment_marginal_inlier_rat
 ALIGNMENT_ECC_REFINEMENT: bool = _settings.alignment_ecc_refinement
 AUTH_REQUIRED: bool = _settings.auth_required
 STORAGE_BYPASS: bool = _settings.storage_bypass
-CORS_ORIGINS: list[str] = _settings.cors_origins
+CORS_ORIGINS: list[str] = _settings.cors_origins_list
 ALLOWED_EXTENSIONS: frozenset[str] = frozenset({".pdf"})
 
 PLATFORM_DATABASE_URL: str | None = _platform_settings.platform_database_url

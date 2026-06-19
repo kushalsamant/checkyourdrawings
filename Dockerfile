@@ -23,4 +23,4 @@ ENV PYTHONPATH=/app
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "gunicorn backend.app.main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8000} --timeout 300 --graceful-timeout 30 --access-logfile - --error-logfile -"]
+CMD ["sh", "-c", "gunicorn backend.app.main:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8000} --timeout 300 --graceful-timeout 30 --access-logfile - --error-logfile -"]
