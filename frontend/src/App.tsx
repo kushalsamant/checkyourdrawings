@@ -192,7 +192,11 @@ export default function App() {
       )}
 
         <footer className="app-footer">
-          <p>&copy; {new Date().getFullYear()} Check Your Drawings</p>
+          <p>
+            <a href="/about">About</a>
+            {" · "}
+            &copy; {new Date().getFullYear()} Check Your Drawings
+          </p>
         </footer>
       </main>
     </div>

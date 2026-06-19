@@ -10,6 +10,12 @@ SUBSCRIPTION_DURATIONS: dict[str, timedelta] = {
 }
 
 
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 def calculate_expiry(
     tier: str,
     reference: datetime | None = None,
@@ -33,7 +39,7 @@ def has_active_subscription(user) -> bool:
         return False
     if user.subscription_expires_at is None:
         return False
-    return user.subscription_expires_at > datetime.utcnow()
+    return _as_utc(user.subscription_expires_at) > datetime.now(UTC)
 
 
 def ensure_subscription_status(user, db) -> None:
@@ -41,7 +47,7 @@ def ensure_subscription_status(user, db) -> None:
         return
     if user.subscription_expires_at is None:
         return
-    if user.subscription_expires_at > datetime.utcnow():
+    if _as_utc(user.subscription_expires_at) > datetime.now(UTC):
         return
 
     user.subscription_status = "inactive"
