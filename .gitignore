@@ -35,3 +35,6 @@ debug-*.log
 chatgpt chat prompts and answers
 Overlapped Tower E1 Plans/
 plot.log
+
+client_secret*.json
+client_secrets*.json
