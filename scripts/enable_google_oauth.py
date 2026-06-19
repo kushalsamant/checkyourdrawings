@@ -43,6 +43,10 @@ def main() -> int:
             "Dashboard fallback: Supabase > Authentication > Providers > Google",
             file=sys.stderr,
         )
+        print(
+            f"If sign-in fails, add this redirect URI in Google Cloud Console:\n  {CALLBACK_URI}",
+            file=sys.stderr,
+        )
         return 1
 
     token = _load_supabase_token()
@@ -65,12 +69,9 @@ def main() -> int:
     print(f"google_enabled={data.get('external_google_enabled')}")
     print(f"client_id={data.get('external_google_client_id')}")
     print(f"callback_uri={CALLBACK_URI}")
+    print("secret_applied=ok")
     print()
-    print("REQUIRED: Add this Authorized redirect URI in Google Cloud Console")
-    print("(APIs & Services > Credentials > OAuth 2.0 Client IDs > same client as above):")
-    print(f"  {CALLBACK_URI}")
-    print()
-    print("Then test Sign in on https://checkyourdrawings.kvshvl.in/")
+    print("Test Sign in on https://checkyourdrawings.kvshvl.in/")
     return 0
 
 
