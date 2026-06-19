@@ -9,6 +9,7 @@ from pathlib import Path
 import httpx
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
 SECRETS_FILE = REPO_ROOT / ".env.pass3.local"
 API_URL = "https://checkyourdrawings.onrender.com"
 TEST_EMAIL = "cyd-smoke@kvshvl.in"
