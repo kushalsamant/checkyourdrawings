@@ -3,7 +3,7 @@ name: Check Your Drawings — Master Plan
 overview: "Pass 1 + optional auth code shipped in repo (disabled by default). Pass 2 = deploy free hosted MVP at checkyourdrawings.kvshvl.in. Pass 3 = turn on auth/storage/billing if needed."
 todos:
   - id: kvshvl-brand-colors
-    content: "Port cleanpaws _layouts/default.html brand shell into React (styles.css + App.tsx main/footer) — not Jekyll for SPA"
+    content: "kvshvl brand shell in React (styles.css, App.tsx, AboutPage from index.md, GA in index.html)"
     status: completed
   - id: dockerfile-render
     content: "Production Dockerfile + render.yaml; deploy API on Render (gunicorn timeout 300s, CYD_CORS_ORIGINS, auth bypass env)"
@@ -27,32 +27,33 @@ Canonical plan for the repo. AEC coordination tool for comparing two architectur
 
 ## kvshvl.in brand shell (Pass 2)
 
-Check Your Drawings should look like **kvshvl.in / Clean Paws** — same colors, typography, and page chrome.
+Check Your Drawings should look like **kvshvl.in** — same colors, typography, and page chrome.
 
-### Jekyll `_layouts` vs React (important)
+### Layout (React SPA)
 
-| Repo | Stack | Layout mechanism |
-|------|-------|------------------|
-| **cleanpaws** | Jekyll static site | [`_layouts/default.html`](../cleanpaws/_layouts/default.html) — inline CSS + `<main>` + `<footer>` |
-| **checkyourdrawings** | React + Vite SPA (Vercel) | **No `_layouts/` today** — UI is `frontend/src/App.tsx` + `styles.css` |
+| Surface | Mechanism |
+|---------|-----------|
+| Compare app (`/`) | `frontend/src/App.tsx` + `styles.css` (`.app-shell`, `.app-footer`) |
+| About page (`/about`) | `index.md` → build-time import → `frontend/src/pages/AboutPage.tsx` |
+| Site chrome | `frontend/index.html` (meta, GA `G-JTHJJMRHT7`) |
 
-**Vercel deploys `frontend/` only.** A Jekyll `_layouts` folder at repo root would **not** wrap the compare app. Pinterest verify HTML (`pinterest-bdc46.html`) and root `_config.yml` are leftovers / static utilities, not the live product shell.
+**Vercel deploys `frontend/` only.** No Jekyll at repo root. Pinterest verify HTML (`pinterest-bdc46.html`) is a static utility, not the live product shell.
 
-**Correct approach:** Port the **cleanpaws layout format** into React:
+**Brand shell mapping:**
 
-| cleanpaws `default.html` | CYD equivalent |
-|--------------------------|----------------|
+| Pattern | CYD equivalent |
+|---------|----------------|
 | `:root` CSS variables | `frontend/src/styles.css` |
-| `<main>{{ content }}</main>` | `.app-shell` in `App.tsx` |
-| `<footer>© year title</footer>` | Footer block in `App.tsx` |
-| system-ui font stack | Match kvshvl / cleanpaws |
-| Google Analytics in `<head>` | `frontend/index.html` (optional, `G-JTHJJMRHT7` from `_config.yml`) |
+| `<main>{{ content }}</main>` | `.app-shell` in `App.tsx`; `.landing-shell` on `/about` |
+| `<footer>© year title</footer>` | `.app-footer` in `App.tsx` and `AboutPage.tsx` |
+| Narrow prose column (`72ch`) | `.landing-shell` on `/about` only |
+| Google Analytics in `<head>` | `frontend/index.html` (`G-JTHJJMRHT7`) |
 
 **Source of truth for colors:** [`kushalsamant.github.io/assets/css/main.css`](../kushalsamant.github.io/assets/css/main.css) (canonical kvshvl tokens).
 
-**Layout/structure reference:** [`cleanpaws/_layouts/default.html`](../cleanpaws/_layouts/default.html) (`<main>`, `<footer>`, spacing).
+**Layout/structure reference:** `frontend/src/App.tsx`, `frontend/src/pages/AboutPage.tsx`, `frontend/src/styles.css`.
 
-> **Note:** Clean Paws inlines CSS variable names that are **swapped** vs kvshvl.in (`--text-muted` is red in cleanpaws; `--accent` is gray). When porting, use **kvshvl.in token meanings**, not cleanpaws variable names literally.
+> **Note:** Use **kvshvl.in token meanings** in `styles.css` (`--accent` = red, `--text-muted` = gray).
 
 | Token (kvshvl.in) | Value |
 |-------------------|--------|
@@ -63,9 +64,7 @@ Check Your Drawings should look like **kvshvl.in / Clean Paws** — same colors,
 
 **Keep unchanged:** coordination overlay colors (orange/blue/green/red) — drawing semantics, not UI chrome.
 
-**Optional (not required for Pass 2):** Add `_layouts/default.html` at repo root **only** if you later publish static Jekyll pages from CYD root (e.g. marketing). The compare app itself stays React.
-
-**Task:** `kvshvl-brand-colors` — do **before** `vercel-frontend`.
+**Status:** `kvshvl-brand-colors` — **Done** (includes `/about` from `index.md`).
 
 ---
 
@@ -145,14 +144,15 @@ Do **not** set `PLATFORM_DATABASE_URL`, `SUPABASE_*`, or `VITE_SUPABASE_*` until
 | Path | Purpose |
 |------|---------|
 | `backend/` | FastAPI app, compare pipeline, tests |
-| `frontend/` | React UI |
+| `frontend/` | React UI (`/`, `/about`, `/auth/callback`) |
+| `index.md` | About-page copy (bundled at build into `/about`) |
 | `docs/` | Architecture, testing, smoke-test docs |
 | `supabase/` | Pass 3 migrations (not required for Pass 2 deploy) |
 | Root config | `checkyourdrawings.plan.md`, `LICENSE`, `Dockerfile`, `.gitignore`, `.env.example` |
 
 **Local-only at repo root (gitignored):** smoke PDFs `0A`/`0B`, `.env`
 
-**Root leftovers (not part of Vercel SPA deploy):** `_config.yml` (stale `baseurl: "/kushalsamant.github.io"`), `pinterest-bdc46.html` (Pinterest domain verify)
+**Root static utilities (not part of Vercel SPA deploy):** `pinterest-bdc46.html` (Pinterest domain verify)
 
 ---
 
@@ -231,14 +231,12 @@ flowchart LR
 
 ### Pass 2 tasks (remaining)
 
-#### 0. kvshvl brand shell (`kvshvl-brand-colors`)
+#### 0. kvshvl brand shell (`kvshvl-brand-colors`) — **Done**
 
-Port [`cleanpaws/_layouts/default.html`](../cleanpaws/_layouts/default.html) format into the React app (not a Jekyll `_layouts` folder for the SPA):
-
-- [frontend/src/styles.css](frontend/src/styles.css) — kvshvl `:root` tokens; replace slate/green hex values
-- [frontend/src/App.tsx](frontend/src/App.tsx) — match cleanpaws `<main>` + `<footer>` structure
-- [frontend/index.html](frontend/index.html) — meta description, optional GA tag from `_config.yml`
-- Visual check at `http://127.0.0.1:5173` before deploy
+- [frontend/src/styles.css](frontend/src/styles.css) — kvshvl `:root` tokens; `.landing-shell` for `/about`
+- [frontend/src/App.tsx](frontend/src/App.tsx) — `.app-shell` + `.app-footer`; footer link to `/about`
+- [frontend/src/pages/AboutPage.tsx](frontend/src/pages/AboutPage.tsx) — renders [index.md](index.md) at `/about`
+- [frontend/index.html](frontend/index.html) — meta description, GA `G-JTHJJMRHT7`
 
 #### 1. API on Render (`dockerfile-render`)
 
@@ -302,6 +300,7 @@ Other growth: team features, analytics, DWG/raster inputs.
 | kvshvl.in side tab CTA | Done |
 | Config + gunicorn + `.env.example` | Done |
 | Auth/storage code scaffold | Done (disabled by default) |
+| kvshvl brand shell | Done |
 | Full Sketch2BIM SaaS port | Declined |
 | CLI install + login | Done |
 
