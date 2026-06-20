@@ -17,6 +17,7 @@ frontend/vite.config.d.ts
 .ruff_cache/
 
 .env
+*.env
 .env.*
 !.env.example
 .env.pass3.tmp

@@ -1,0 +1,12 @@
+.venv
+backend/uploads
+backend/outputs
+**/*.pdf
+**/*.dwg
+node_modules
+frontend/node_modules
+frontend/dist
+.pytest_cache
+.git
+Demo_WhatsApp*
+Overlapped*
