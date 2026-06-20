@@ -357,25 +357,44 @@ h2 {
   margin-bottom: 0.4rem;
 }
 
-/* Overlay legend colors — match backend/app/services/overlay_renderer.py */
-.overlay-color {
-  font-weight: 600;
+/* Overlay legend — swatches match backend/app/services/overlay_renderer.py */
+.overlay-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.75rem 0 1rem;
 }
 
-.overlay-color--blue {
-  color: #2864dc;
+.overlay-legend-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  line-height: 1.45;
 }
 
-.overlay-color--orange {
-  color: #ff8000;
+.overlay-swatch {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin-top: 0.2rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
 }
 
-.overlay-color--green {
-  color: #28b428;
+.overlay-swatch--blue {
+  background-color: #2864dc;
 }
 
-.overlay-color--red {
-  color: #ff0000;
+.overlay-swatch--orange {
+  background-color: #ff8000;
+}
+
+.overlay-swatch--green {
+  background-color: #28b428;
+}
+
+.overlay-swatch--red {
+  background-color: #ff0000;
 }
 
 .landing-cta {

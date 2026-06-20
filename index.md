@@ -10,12 +10,12 @@ Tomorrow, they send new revisions and you start again.
 
 ## A simple coordination routine
 
-Sign in with Google. Upload two drawing PDFs. Get a color-coded comparison in seconds.
+Upload two drawing PDFs. Get a color-coded comparison in seconds — no sign-in required.
 
-**Blue** — New additions (only in the second drawing)  
-**Orange** — Removed elements (only in the first drawing)  
-**Green** — Aligned overlap (matching in both)  
-**Red** — Misaligned overlap (clashes and conflicts — review manually)
+Blue — New additions (only in the second drawing)  
+Orange — Removed elements (only in the first drawing)  
+Green — Aligned overlap (matching in both)  
+Red — Misaligned overlap (clashes and conflicts — review manually)
 
 No manual overlay. No CAD license. No hunting for changes with a red pen.
 
@@ -23,8 +23,16 @@ No manual overlay. No CAD license. No hunting for changes with a red pen.
 
 - Compare two revision PDFs in seconds instead of stacking them by hand  
 - Catch consultant mismatches before they become RFIs  
-- Download PNG proof for coordination reports  
+- See the overlay on screen and download a watermarked PNG to check the result  
 - Works with PDF plots and exports from your design software (scanned sheets are fine if saved as PDF)
+
+## Free vs paid
+
+Compare single drawing pairs for free as often as you need. Downloads include a watermark.
+
+Need to run a full revision stack or send clean overlays to your team? Sign in and subscribe at [kvshvl.in](https://kvshvl.in) for batch compare and unwatermarked PNGs.
+
+Part of the [kvshvl](https://kvshvl.in) platform.
 
 ---
 
@@ -35,10 +43,3 @@ No manual overlay. No CAD license. No hunting for changes with a red pen.
 Built by a coordination architect who sat in your seat.  
 I used to do this at my previous job.  
 Now the computer does it.
-
----
-
-**Pricing**
-
-Sign in to compare. New accounts get a **7-day trial**.  
-When your trial ends, upgrade at [kvshvl.in](https://kvshvl.in).

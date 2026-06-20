@@ -1,11 +1,41 @@
 import { Fragment, type ReactNode } from "react";
 
-const OVERLAY_COLOR_CLASS: Record<string, string> = {
-  Blue: "overlay-color overlay-color--blue",
-  Orange: "overlay-color overlay-color--orange",
-  Green: "overlay-color overlay-color--green",
-  Red: "overlay-color overlay-color--red",
+const OVERLAY_LABELS = ["Blue", "Orange", "Green", "Red"] as const;
+type OverlayLabel = (typeof OVERLAY_LABELS)[number];
+
+const LEGEND_LINE = /^(Blue|Orange|Green|Red) — (.*)$/;
+
+const SWATCH_CLASS: Record<OverlayLabel, string> = {
+  Blue: "overlay-swatch overlay-swatch--blue",
+  Orange: "overlay-swatch overlay-swatch--orange",
+  Green: "overlay-swatch overlay-swatch--green",
+  Red: "overlay-swatch overlay-swatch--red",
 };
+
+function isLegendLine(line: string): boolean {
+  return LEGEND_LINE.test(line.trim());
+}
+
+function renderLegendLine(line: string, key: string): ReactNode {
+  const match = line.trim().match(LEGEND_LINE);
+  if (match === null) {
+    return null;
+  }
+
+  const label = match[1] as OverlayLabel;
+  const description = match[2];
+
+  return (
+    <div className="overlay-legend-row" key={key}>
+      <span className={SWATCH_CLASS[label]} aria-hidden="true" />
+      <span>
+        <strong>{label}</strong>
+        {" — "}
+        {description}
+      </span>
+    </div>
+  );
+}
 
 function renderInline(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
@@ -19,18 +49,7 @@ function renderInline(text: string): ReactNode[] {
     }
 
     if (match[2] !== undefined) {
-      const label = match[2];
-      const colorClass = OVERLAY_COLOR_CLASS[label];
-
-      parts.push(
-        colorClass ? (
-          <strong key={`${match.index}-${label}`} className={colorClass}>
-            {label}
-          </strong>
-        ) : (
-          <strong key={`${match.index}-${label}`}>{label}</strong>
-        ),
-      );
+      parts.push(<strong key={`${match.index}-${match[2]}`}>{match[2]}</strong>);
     } else if (match[3] !== undefined && match[4] !== undefined) {
       parts.push(
         <a key={`${match.index}-${match[3]}`} href={match[4]} className="landing-inline-link">
@@ -51,14 +70,24 @@ function renderInline(text: string): ReactNode[] {
 }
 
 function renderParagraph(text: string, key: number): ReactNode {
-  const lines = text.split("\n");
+  const lines = text.split("\n").map((line) => line.trimEnd());
+
+  if (lines.some((line) => line.length > 0) && lines.filter((line) => line.length > 0).every(isLegendLine)) {
+    return (
+      <div key={key} className="overlay-legend">
+        {lines
+          .filter((line) => line.length > 0)
+          .map((line, lineIndex) => renderLegendLine(line, `${key}-${lineIndex}`))}
+      </div>
+    );
+  }
 
   return (
     <p key={key}>
       {lines.map((line, lineIndex) => (
         <Fragment key={lineIndex}>
           {lineIndex > 0 && <br />}
-          {renderInline(line.trimEnd())}
+          {line.length > 0 ? renderInline(line) : null}
         </Fragment>
       ))}
     </p>
