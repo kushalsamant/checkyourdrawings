@@ -173,6 +173,9 @@ export async function getErrorMessage(response: Response): Promise<string> {
   if (response.status === 402) {
     return `Active subscription required. Upgrade at ${UPGRADE_URL}.`;
   }
+  if (response.status === 503) {
+    return "Another comparison is in progress. Try again in a moment.";
+  }
 
   try {
     const data = (await response.json()) as { detail?: unknown };

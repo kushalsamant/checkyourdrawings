@@ -5,7 +5,13 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
-from backend.app.config import ALIGNMENT_ECC_REFINEMENT, ALIGNMENT_MARGINAL_INLIER_RATIO
+from backend.app.config import (
+    ALIGNMENT_ECC_REFINEMENT,
+    ALIGNMENT_LARGE_IMAGE_MAX_FEATURES,
+    ALIGNMENT_LARGE_IMAGE_PIXELS,
+    ALIGNMENT_MARGINAL_INLIER_RATIO,
+    COMPARE_DISABLE_ECC_ABOVE_PIXELS,
+)
 from backend.app.services.image_utils import ImageArray, convert_to_grayscale
 
 
@@ -51,6 +57,35 @@ def evaluate_alignment_confidence(
         )
 
     return AlignmentConfidence(status="high", message=None)
+
+
+def max_features_for_image(
+    image: NDArray[np.generic],
+    *,
+    default_max_features: int = 10_000,
+    large_image_pixels: int = ALIGNMENT_LARGE_IMAGE_PIXELS,
+    large_image_max_features: int = ALIGNMENT_LARGE_IMAGE_MAX_FEATURES,
+) -> int:
+    """Use fewer ORB features on large rasters to reduce peak memory."""
+    height, width = image.shape[:2]
+    if height * width > large_image_pixels:
+        return large_image_max_features
+    return default_max_features
+
+
+def use_ecc_refinement_for_images(
+    drawing_a_image: NDArray[np.generic],
+    drawing_b_image: NDArray[np.generic],
+    *,
+    ecc_refinement_enabled: bool = ALIGNMENT_ECC_REFINEMENT,
+    disable_above_pixels: int = COMPARE_DISABLE_ECC_ABOVE_PIXELS,
+) -> bool:
+    if not ecc_refinement_enabled:
+        return False
+
+    drawing_a_pixels = int(drawing_a_image.shape[0] * drawing_a_image.shape[1])
+    drawing_b_pixels = int(drawing_b_image.shape[0] * drawing_b_image.shape[1])
+    return max(drawing_a_pixels, drawing_b_pixels) <= disable_above_pixels
 
 
 def align_drawing_b_to_a(

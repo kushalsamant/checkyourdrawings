@@ -1,5 +1,7 @@
 import asyncio
+import gc
 import logging
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
@@ -15,6 +17,7 @@ from sqlalchemy.orm import Session
 from backend.app.auth.deps import get_current_user, require_active_subscription
 from backend.app.config import (
     ALLOWED_EXTENSIONS,
+    COMPARE_MAX_WORKERS,
     COMPARE_TIMEOUT_SECONDS,
     MAX_FILE_SIZE_MB,
     OUTPUT_DIR,
@@ -30,6 +33,8 @@ from backend.app.services.alignment import (
     AlignmentError,
     align_drawing_b_to_a,
     evaluate_alignment_confidence,
+    max_features_for_image,
+    use_ecc_refinement_for_images,
 )
 from backend.app.services.content_detection import (
     compute_overlap_bbox,
@@ -47,8 +52,10 @@ from backend.app.services.pdf_converter import (
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["comparison"])
-_executor = ThreadPoolExecutor(max_workers=2)
+_compare_lock = threading.Lock()
+_executor = ThreadPoolExecutor(max_workers=COMPARE_MAX_WORKERS)
 _UPLOAD_CHUNK_SIZE = 1024 * 1024
+_COMPARE_BUSY_MESSAGE = "Another comparison is in progress. Try again in a moment."
 
 
 @router.post(
@@ -72,6 +79,12 @@ async def compare_drawings(
     saved_drawing_a: Path | None = None
     saved_drawing_b: Path | None = None
     started_at = time.perf_counter()
+
+    if not _compare_lock.acquire(blocking=False):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=_COMPARE_BUSY_MESSAGE,
+        )
 
     try:
         saved_drawing_a = await _save_validated_upload(drawing_a)
@@ -111,6 +124,7 @@ async def compare_drawings(
     except (FileConversionError, AlignmentError, ValueError) as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     finally:
+        _compare_lock.release()
         _remove_file(saved_drawing_a)
         _remove_file(saved_drawing_b)
 
@@ -167,70 +181,82 @@ def _run_comparison_pipeline(
     drawing_a_image = _pillow_to_bgr_array(load_image(drawing_a_path))
     drawing_b_image = _pillow_to_bgr_array(load_image(drawing_b_path))
 
-    aligned_drawing_b, alignment_metadata = align_drawing_b_to_a(
-        drawing_a_image,
-        drawing_b_image,
-    )
-    alignment_confidence = evaluate_alignment_confidence(alignment_metadata)
+    try:
+        aligned_drawing_b, alignment_metadata = align_drawing_b_to_a(
+            drawing_a_image,
+            drawing_b_image,
+            max_features=max_features_for_image(drawing_a_image),
+            ecc_refinement=use_ecc_refinement_for_images(
+                drawing_a_image,
+                drawing_b_image,
+            ),
+        )
+        alignment_confidence = evaluate_alignment_confidence(alignment_metadata)
 
-    drawing_a_bbox = detect_content_bbox(drawing_a_image)
-    drawing_b_bbox = detect_content_bbox(aligned_drawing_b)
-    overlap_bbox = compute_overlap_bbox(drawing_a_bbox, drawing_b_bbox)
-    if overlap_bbox is None:
-        raise AlignmentError(
-            "Could not find enough overlapping drawing content between the two files. "
-            "They may show different views or have incompatible framing."
+        drawing_a_bbox = detect_content_bbox(drawing_a_image)
+        drawing_b_bbox = detect_content_bbox(aligned_drawing_b)
+        overlap_bbox = compute_overlap_bbox(drawing_a_bbox, drawing_b_bbox)
+        if overlap_bbox is None:
+            raise AlignmentError(
+                "Could not find enough overlapping drawing content between the two files. "
+                "They may show different views or have incompatible framing."
+            )
+
+        comparison_bbox = drawing_a_bbox
+        drawing_a_crop = crop_image(drawing_a_image, comparison_bbox)
+        aligned_drawing_b_crop = crop_image(aligned_drawing_b, comparison_bbox)
+
+        rendered_image, overlay_stats = render_coordination_overlay(
+            drawing_a_crop,
+            aligned_drawing_b_crop,
+            drawing_a_name=drawing_a_name,
+            drawing_b_name=drawing_b_name,
+            low_confidence=alignment_confidence.status == "marginal",
         )
 
-    comparison_bbox = drawing_a_bbox
-    drawing_a_crop = crop_image(drawing_a_image, comparison_bbox)
-    aligned_drawing_b_crop = crop_image(aligned_drawing_b, comparison_bbox)
+        output_filename: str = f"comparison-{uuid4().hex}.png"
+        output_path: Path = OUTPUT_DIR / output_filename
+        if not cv2.imwrite(str(output_path), rendered_image):
+            raise ValueError("Failed to save comparison image.")
 
-    rendered_image, overlay_stats = render_coordination_overlay(
-        drawing_a_crop,
-        aligned_drawing_b_crop,
-        drawing_a_name=drawing_a_name,
-        drawing_b_name=drawing_b_name,
-        low_confidence=alignment_confidence.status == "marginal",
-    )
+        changed_pixels = (
+            overlay_stats.orange_pixels
+            + overlay_stats.blue_pixels
+            + overlay_stats.red_pixels
+        )
+        total_pixels = max(
+            1,
+            overlay_stats.orange_pixels
+            + overlay_stats.blue_pixels
+            + overlay_stats.green_pixels
+            + overlay_stats.red_pixels,
+        )
 
-    output_filename: str = f"comparison-{uuid4().hex}.png"
-    output_path: Path = OUTPUT_DIR / output_filename
-    if not cv2.imwrite(str(output_path), rendered_image):
-        raise ValueError("Failed to save comparison image.")
-
-    changed_pixels = (
-        overlay_stats.orange_pixels
-        + overlay_stats.blue_pixels
-        + overlay_stats.red_pixels
-    )
-    total_pixels = max(
-        1,
-        overlay_stats.orange_pixels
-        + overlay_stats.blue_pixels
-        + overlay_stats.green_pixels
-        + overlay_stats.red_pixels,
-    )
-
-    return CompareResponse.from_pipeline_result(
-        image_path=f"/outputs/{output_filename}",
-        metadata={
-            "alignment": asdict(alignment_metadata),
-            "alignment_confidence": asdict(alignment_confidence),
-            "content": {
-                "drawing_a_bbox": asdict(drawing_a_bbox),
-                "drawing_b_bbox": asdict(drawing_b_bbox),
-                "overlap_bbox": asdict(overlap_bbox),
+        return CompareResponse.from_pipeline_result(
+            image_path=f"/outputs/{output_filename}",
+            metadata={
+                "alignment": asdict(alignment_metadata),
+                "alignment_confidence": asdict(alignment_confidence),
+                "content": {
+                    "drawing_a_bbox": asdict(drawing_a_bbox),
+                    "drawing_b_bbox": asdict(drawing_b_bbox),
+                    "overlap_bbox": asdict(overlap_bbox),
+                },
+                "overlay": asdict(overlay_stats),
+                "differences": {
+                    "width": int(comparison_bbox.width),
+                    "height": int(comparison_bbox.height),
+                    "changed_pixel_count": changed_pixels,
+                    "changed_pixel_ratio": changed_pixels / total_pixels,
+                },
             },
-            "overlay": asdict(overlay_stats),
-            "differences": {
-                "width": int(comparison_bbox.width),
-                "height": int(comparison_bbox.height),
-                "changed_pixel_count": changed_pixels,
-                "changed_pixel_ratio": changed_pixels / total_pixels,
-            },
-        },
-    )
+        )
+    finally:
+        del drawing_a_image
+        del drawing_b_image
+        if "aligned_drawing_b" in locals():
+            del aligned_drawing_b
+        gc.collect()
 
 
 async def _save_validated_upload(upload: UploadFile) -> Path:
