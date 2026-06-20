@@ -32,8 +32,6 @@ Compare single drawing pairs for free as often as you need.
 
 Need to run a full revision stack? Sign in and subscribe at [kvshvl.in](https://kvshvl.in) for batch compare and ZIP export of PDF overlays.
 
-Part of the [kvshvl](https://kvshvl.in) platform.
-
 ---
 
 [Upload Your Drawings](/)
@@ -43,3 +41,5 @@ Part of the [kvshvl](https://kvshvl.in) platform.
 Built by a coordination architect who sat in your seat.  
 I used to do this at my previous job.  
 Now the computer does it.
+
+Part of the [kvshvl](https://kvshvl.in) platform.

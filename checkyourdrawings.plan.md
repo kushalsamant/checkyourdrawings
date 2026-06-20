@@ -1,6 +1,6 @@
 ---
 name: Check Your Drawings — Master Plan
-overview: "Pass 1 + optional auth code shipped in repo. Pass 2 = hosted MVP at checkyourdrawings.kvshvl.in. Pass 3 = freemium compare + paid batch (commit 40db813 on main)."
+overview: "Pass 1 + auth/batch shipped. Hosted MVP + PDF export live (f854e7f). Render /outputs/ only; Supabase auth+batch only."
 todos:
   - id: kvshvl-brand-colors
     content: "kvshvl brand shell in React (styles.css, App.tsx, AboutPage from index.md, GA in index.html)"
@@ -19,17 +19,17 @@ isProject: true
 
 # Check Your Drawings — Master Plan
 
-Canonical plan for the repo. AEC coordination tool for comparing two architectural drawing PDFs. Upload Drawing A and Drawing B (plotted or exported from your design software), auto-align them, and download a coordination overlay PNG.
+Canonical plan for the repo. AEC coordination tool for comparing two architectural drawing PDFs. Upload Drawing A and Drawing B, auto-align them, and download a coordination overlay as **PDF** (deliverable) or **PNG** (preview).
 
-**Work one task at a time** (see frontmatter todos). **Pass 2 complete** — production smoke verified 2026-06-20 (`40db813`).
+**Work one task at a time** (see frontmatter todos). **Production:** smoke verified 2026-06-20; PDF export shipped `f854e7f`.
 
 **Current product tiers:**
 
 | Tier | Access |
 |------|--------|
-| Anonymous | Unlimited single-pair `/compare` + full PNG download |
+| Anonymous | Unlimited single-pair `/compare` + Download PDF + Download PNG |
 | Signed in, not paid | Same as anonymous; batch tab shows upgrade prompt |
-| Paid kvshvl | Batch queue + ZIP export |
+| Paid kvshvl | Batch queue + ZIP export (PDFs) |
 
 ---
 
@@ -118,32 +118,32 @@ The coordination overlay paints every ink pixel:
 | Item | File | Status |
 |------|------|--------|
 | `gunicorn` + Pass 3 deps | [backend/requirements.txt](backend/requirements.txt) | **Done** |
-| Dual `Settings` + bypass flags | [backend/app/config.py](backend/app/config.py) | **Done** — defaults: `auth_required=false`, `storage_bypass=true` |
+| Dual `Settings` (app + platform) | [backend/app/config.py](backend/app/config.py) | **Done** — default `auth_required=false` |
 | Production env docs | [`.env.example`](.env.example), [frontend/.env.example](frontend/.env.example) | **Done** |
 | `/health` + `/health/ready` | [backend/app/main.py](backend/app/main.py) | **Done** |
 | `VITE_API_BASE_URL` production build path | [frontend/src/services/api.ts](frontend/src/services/api.ts) | **Done** |
 
-### Optional auth/storage code (landed, **not enabled** — Pass 3)
+### Optional auth code (landed — Pass 3 batch billing)
 
-Code exists but is **off by default**. Pass 2 deploy does **not** need platform DB or Supabase env vars.
+Auth + subscription gate for **batch only**. Compare outputs stay on **Render disk** (`/outputs/`, 24h prune). No Supabase output storage.
 
 | Area | Files |
 |------|-------|
 | JWT + deps + subscription utils | `backend/app/auth/`, `backend/app/subscription/` |
-| Platform DB + models | `backend/app/database.py`, `backend/app/models/` |
-| Supabase storage + compare metadata | `backend/app/services/storage.py`, wired in [compare.py](backend/app/routes/compare.py) |
-| Supabase migration | [supabase/migrations/20260617015123_create_cyd_outputs_bucket.sql](supabase/migrations/20260617015123_create_cyd_outputs_bucket.sql) |
-| Frontend auth (only shows if `VITE_SUPABASE_*` set) | `frontend/src/lib/auth-provider.tsx`, `frontend/src/pages/AuthCallback.tsx`, `@supabase/supabase-js` |
+| Platform DB + `User` model | `backend/app/database.py`, `backend/app/models/user.py` |
+| PDF + PNG pipeline | `backend/app/services/pdf_exporter.py`, [compare.py](backend/app/routes/compare.py) |
+| Frontend auth (when `VITE_SUPABASE_*` set) | `frontend/src/lib/auth-provider.tsx`, `frontend/src/pages/AuthCallback.tsx` |
 
-**Production defaults for free hosted MVP** (set on Render / leave unset on Vercel):
+**Production defaults** (Render / Vercel):
 
 ```
 CYD_AUTH_REQUIRED=false
-CYD_STORAGE_BYPASS=true
 CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in
 ```
 
-Do **not** set `PLATFORM_DATABASE_URL`, `SUPABASE_*`, or `VITE_SUPABASE_*` until Pass 3.
+Optional for batch sign-in: `PLATFORM_DATABASE_URL`, `SUPABASE_*` on Render; `VITE_SUPABASE_*` on Vercel. See [docs/deploy.md](docs/deploy.md).
+
+**Removed (do not restore):** `CYD_STORAGE_BYPASS`, `storage.py`, Supabase compare upload, comparison history UI.
 
 ---
 
@@ -234,7 +234,7 @@ flowchart LR
 |---------|------|------|
 | Frontend | Vercel → `checkyourdrawings.kvshvl.in` | Static Vite build |
 | API | Render → `checkyourdrawings.onrender.com` | FastAPI + OpenCV + PyMuPDF |
-| Storage | Render ephemeral disk | `backend/outputs/` — pruned after 24h |
+| Storage | Render ephemeral disk | `backend/outputs/` — PNG + PDF, pruned after 24h |
 
 **Reference:** [`sketch2bim/render.yaml`](../sketch2bim/render.yaml) for gunicorn pattern only.
 
@@ -254,7 +254,6 @@ flowchart LR
 - Render env vars:
   - `CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in`
   - `CYD_AUTH_REQUIRED=false`
-  - `CYD_STORAGE_BYPASS=true`
 - Connect repo on Render; deploy API
 
 #### 2. Frontend on Vercel (`vercel-frontend`)
@@ -276,36 +275,33 @@ Add section to [docs/smoke-test.md](docs/smoke-test.md):
 
 1. Open [kvshvl.in](https://www.kvshvl.in) → **Check Your Drawings** side tab
 2. Upload `0A` / `0B` → Compare → overlay renders
-3. Download PNG works
+3. Download PDF + Download PNG works
 4. `curl https://api.../health` → `{"status":"ok"}`
 
 **Estimated effort:** ~1 day (deploy files + dashboard setup + smoke).
 
 ---
 
-## Pass 3 — Auth, batch, and cloud storage (shipped for freemium + paid batch)
+## Pass 3 — Auth and batch (shipped)
 
-Most code is **already in the repo** and **live** for freemium single compare. Paid batch uses sign-in + kvshvl subscription gate.
+Freemium single compare is live. Paid batch uses sign-in + kvshvl subscription gate. Outputs are **not** stored in Supabase — users download PDF/PNG to their own systems.
 
-**Production (freemium):**
+**Production:**
 
 ```
 CYD_AUTH_REQUIRED=false
-CYD_STORAGE_BYPASS=true
+CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in
 ```
 
-**When enabling full cloud persistence for paid users:**
-
-- Set `CYD_STORAGE_BYPASS=false` on Render
-- Set `PLATFORM_DATABASE_URL`, `SUPABASE_*` on Render; `VITE_SUPABASE_*` on Vercel
-- Run Supabase migration; configure OAuth redirect URLs
-- Ensure `.env.pass3.local` has `CYD_AUTH_REQUIRED=false` before `scripts/deploy_pass3_env.py`
+**Optional (batch sign-in only):** `PLATFORM_DATABASE_URL`, `SUPABASE_*` on Render; `VITE_SUPABASE_*` on Vercel. Run `scripts/deploy_pass3_env.py` from `.env.pass3.local` when updating secrets.
 
 kvshvl subscription gate (402 for batch) — reads platform `users` table; **no Razorpay in CYD**.
 
 **Deferred:** unified kvshvl.in sign-in (requires kvshvl.in repo) — see [docs/deploy.md](docs/deploy.md).
 
-**Removed:** server-side watermark on free PNGs (`40db813`) — paid differentiation is batch + ZIP only.
+**Removed:** server-side watermark (`40db813`); Supabase output storage + `CYD_STORAGE_BYPASS` (`f854e7f`).
+
+**Shipped:** union bbox crop, PDF export, batch ZIP of PDFs (`f854e7f`).
 
 ---
 
@@ -317,7 +313,9 @@ kvshvl subscription gate (402 for batch) — reads platform `users` table; **no 
 | Red → orange / magenta → red clash | Shipped |
 | kvshvl.in side tab CTA | Done |
 | Config + gunicorn + `.env.example` | Done |
-| Auth/storage code scaffold | Done (disabled by default) |
+| Auth + batch scaffold | Done (Supabase auth for batch; no output cloud) |
+| PDF export + union bbox | Shipped (`f854e7f`) |
+| Supabase compare output storage | Declined — download-first |
 | kvshvl brand shell | Done |
 | Full Sketch2BIM SaaS port | Declined |
 | CLI install + login | Done |
