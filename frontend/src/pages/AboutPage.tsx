@@ -1,7 +1,7 @@
 import aboutMarkdown from "../../../index.md?raw";
 
 import { renderAboutMarkdown } from "../lib/about-markdown";
-import { KVSHVL_PRIVACY_URL, KVSHVL_TERMS_URL } from "../lib/legal-urls";
+import { CHECKYOURDRAWINGS_SITE_URL, KVSHVL_PRIVACY_URL, KVSHVL_TERMS_URL } from "../lib/legal-urls";
 
 export function AboutPage() {
   return (
@@ -11,7 +11,7 @@ export function AboutPage() {
 
         <footer className="app-footer">
           <p>
-            <a href="/" target="_blank" rel="noreferrer">
+            <a href={`${CHECKYOURDRAWINGS_SITE_URL}/`} target="_blank" rel="noreferrer">
               Back to app
             </a>
             {" · "}

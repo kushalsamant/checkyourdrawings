@@ -7,7 +7,7 @@ import { UploadPanel } from "./components/UploadPanel";
 import { trackEvent } from "./lib/analytics";
 import { isAuthConfigured, useAuth } from "./lib/auth-provider";
 import type { AccountStatus, CompareMetadata } from "./services/api";
-import { KVSHVL_PRIVACY_URL, KVSHVL_TERMS_URL } from "./lib/legal-urls";
+import { CHECKYOURDRAWINGS_SITE_URL, KVSHVL_PRIVACY_URL, KVSHVL_TERMS_URL } from "./lib/legal-urls";
 import { fetchAccountStatus, getUpgradeUrl, uploadAndCompare } from "./services/api";
 
 type AppMode = "single" | "batch";
@@ -113,7 +113,12 @@ export default function App() {
             </div>
 
             <div className="auth-actions">
-              <a href="/about" className="header-link" target="_blank" rel="noreferrer">
+              <a
+                href={`${CHECKYOURDRAWINGS_SITE_URL}/about`}
+                className="header-link"
+                target="_blank"
+                rel="noreferrer"
+              >
                 About
               </a>
               {authConfigured &&

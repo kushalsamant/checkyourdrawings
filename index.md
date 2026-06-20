@@ -30,11 +30,11 @@ No manual overlay. No CAD license. No hunting for changes with a red pen.
 
 Compare single drawing pairs for free as often as you need.
 
-Need to run a full revision stack? Sign in and subscribe at [kvshvl.in](https://kvshvl.in) for batch compare and ZIP export of PDF overlays.
+Need to run a full revision stack? Sign in and subscribe at [kvshvl.in](https://www.kvshvl.in) for batch compare and ZIP export of PDF overlays.
 
 ---
 
-[Upload Your Drawings](/)
+[Upload Your Drawings](https://checkyourdrawings.kvshvl.in/)
 
 ---
 

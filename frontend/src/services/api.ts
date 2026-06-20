@@ -2,7 +2,7 @@ import { getAuthAccessToken } from "../lib/auth-provider";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 const UPGRADE_URL =
-  (import.meta.env.VITE_KVSHVL_UPGRADE_URL ?? "https://kvshvl.in").replace(/\/$/, "");
+  (import.meta.env.VITE_KVSHVL_UPGRADE_URL ?? "https://www.kvshvl.in").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 const COMPARE_BUSY_DETAIL = "Another comparison is in progress. Try again in a moment.";
 

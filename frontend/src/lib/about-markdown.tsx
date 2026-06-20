@@ -1,5 +1,31 @@
 import { Fragment, type ReactNode } from "react";
 
+import { CHECKYOURDRAWINGS_SITE_URL } from "./legal-urls";
+
+function normalizeHref(href: string): string {
+  if (href.startsWith("mailto:") || href.startsWith("tel:")) {
+    return href;
+  }
+
+  if (href.startsWith("//")) {
+    return `https:${href}`;
+  }
+
+  if (href.startsWith("http://")) {
+    return `https://${href.slice("http://".length)}`;
+  }
+
+  if (href.startsWith("https://")) {
+    return href;
+  }
+
+  if (href.startsWith("/")) {
+    return `${CHECKYOURDRAWINGS_SITE_URL}${href}`;
+  }
+
+  return `https://${href}`;
+}
+
 const OVERLAY_LABELS = ["Blue", "Orange", "Green", "Red"] as const;
 type OverlayLabel = (typeof OVERLAY_LABELS)[number];
 
@@ -54,7 +80,7 @@ function renderInline(text: string): ReactNode[] {
       parts.push(
         <a
           key={`${match.index}-${match[3]}`}
-          href={match[4]}
+          href={normalizeHref(match[4])}
           className="landing-inline-link"
           target="_blank"
           rel="noreferrer"
@@ -140,7 +166,7 @@ export function renderAboutMarkdown(markdown: string): ReactNode[] {
       nodes.push(
         <a
           key={index}
-          href={linkMatch[2] ?? "/"}
+          href={normalizeHref(linkMatch[2] ?? "/")}
           className="landing-cta"
           target="_blank"
           rel="noreferrer"
