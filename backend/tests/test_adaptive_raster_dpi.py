@@ -4,7 +4,7 @@ from backend.app.services.image_limits import ImageTooLargeError, choose_raster_
 
 
 class TestChooseRasterDpi:
-    def test_a4_page_at_300_dpi_downscales_for_render_budget(self) -> None:
+    def test_a4_page_at_8m_budget_uses_200_dpi(self) -> None:
         dpi = choose_raster_dpi(
             842,
             1191,
@@ -12,6 +12,15 @@ class TestChooseRasterDpi:
             max_pixels=8_000_000,
         )
         assert dpi == 200
+
+    def test_a4_page_at_4m_budget_uses_125_dpi(self) -> None:
+        dpi = choose_raster_dpi(
+            842,
+            1191,
+            preferred_dpi=300,
+            max_pixels=4_000_000,
+        )
+        assert dpi == 125
 
     def test_small_page_keeps_preferred_dpi(self) -> None:
         dpi = choose_raster_dpi(

@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     max_image_dimension: int = 12_000
     output_max_age_hours: int = 24
     compare_timeout_seconds: int = 300
-    compare_max_raster_pixels: int = 8_000_000
+    compare_max_raster_pixels: int = 4_000_000
     content_bbox_padding_ratio: float = 0.02
     min_overlap_area_ratio: float = 0.05
     alignment_marginal_inlier_ratio: float = 0.55

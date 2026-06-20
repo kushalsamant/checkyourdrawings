@@ -13,7 +13,7 @@ services:
       - key: CYD_AUTH_REQUIRED
         value: "false"
       - key: CYD_COMPARE_MAX_RASTER_PIXELS
-        value: "8000000"
+        value: "4000000"
       - key: CYD_STORAGE_BYPASS
         value: "true"
       - key: CYD_CORS_ORIGINS
