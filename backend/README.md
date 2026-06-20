@@ -1,6 +1,6 @@
 # Backend API
 
-Full project docs: [`../checkyourdrawings.plan.md`](../checkyourdrawings.plan.md)
+Remaining work: [`../../.cursor/plans/plan.md`](../../.cursor/plans/plan.md)
 
 ## Endpoints
 

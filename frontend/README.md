@@ -2,7 +2,7 @@
 
 React + TypeScript UI for Check Your Drawings.
 
-Full project docs: [`../checkyourdrawings.plan.md`](../checkyourdrawings.plan.md)
+Remaining work: [`../../.cursor/plans/plan.md`](../../.cursor/plans/plan.md)
 
 ## Development
 
