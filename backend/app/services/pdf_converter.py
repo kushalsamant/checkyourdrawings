@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 import fitz
@@ -26,6 +27,13 @@ class CorruptedFileError(FileConversionError):
     """Raised when a supported file cannot be read because it is invalid or corrupted."""
 
 
+@dataclass(frozen=True)
+class PdfPageInfo:
+    page_width_pt: float
+    page_height_pt: float
+    raster_dpi: int
+
+
 def validate_file_type(file_path: Path) -> None:
     """Validate that the file extension is supported."""
     extension: str = file_path.suffix.lower()
@@ -39,6 +47,17 @@ def validate_file_type(file_path: Path) -> None:
 
 def load_image(file_path: Path, *, page_number: int = 0, dpi: int = PDF_DPI) -> Image.Image:
     """Load a PDF page as a Pillow image."""
+    image, _page_info = load_image_with_page_info(file_path, page_number=page_number, dpi=dpi)
+    return image
+
+
+def load_image_with_page_info(
+    file_path: Path,
+    *,
+    page_number: int = 0,
+    dpi: int = PDF_DPI,
+) -> tuple[Image.Image, PdfPageInfo]:
+    """Load a PDF page and return the raster plus source page geometry."""
     validate_file_type(file_path)
 
     if not file_path.is_file():
@@ -52,7 +71,7 @@ def convert_pdf_page_to_image(
     *,
     page_number: int = 0,
     dpi: int = PDF_DPI,
-) -> Image.Image:
+) -> tuple[Image.Image, PdfPageInfo]:
     """Convert one PDF page to an RGB Pillow image."""
     if page_number < 0:
         raise ValueError("page_number must be zero or greater.")
@@ -96,7 +115,12 @@ def convert_pdf_page_to_image(
                 data=pixmap.samples,
             )
             validate_image_dimensions(image)
-            return image
+            page_info = PdfPageInfo(
+                page_width_pt=float(rect.width),
+                page_height_pt=float(rect.height),
+                raster_dpi=raster_dpi,
+            )
+            return image, page_info
     except FileConversionError:
         raise
     except fitz.FileDataError as exc:

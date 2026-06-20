@@ -16,7 +16,5 @@ services:
         value: "4000000"
       - key: CYD_COMPARE_MAX_WORKERS
         value: "1"
-      - key: CYD_STORAGE_BYPASS
-        value: "true"
       - key: CYD_CORS_ORIGINS
         value: "https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in"

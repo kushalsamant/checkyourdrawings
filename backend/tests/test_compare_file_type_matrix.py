@@ -32,8 +32,11 @@ def test_compare_identical_pdf(client: TestClient) -> None:
 
     payload = response.json()
     assert payload["image_path"].startswith("/outputs/comparison-")
+    assert payload["pdf_path"].startswith("/outputs/comparison-")
+    assert payload["pdf_path"].endswith(".pdf")
     assert payload["metadata"]["overlay"]["green_pixels"] > 0
     assert payload["metadata"]["content"]["overlap_bbox"]["width"] > 0
+    assert payload["metadata"]["content"]["comparison_bbox"]["width"] > 0
 
 
 @pytest.mark.integration

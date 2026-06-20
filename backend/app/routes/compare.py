@@ -12,7 +12,6 @@ import cv2
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from PIL import Image
-from sqlalchemy.orm import Session
 
 from backend.app.auth.access import user_has_paid_access
 from backend.app.auth.deps import get_current_user
@@ -23,11 +22,8 @@ from backend.app.config import (
     MAX_FILE_SIZE_MB,
     OUTPUT_DIR,
     OUTPUT_MAX_AGE_HOURS,
-    STORAGE_BYPASS,
     UPLOAD_DIR,
 )
-from backend.app.database import get_db
-from backend.app.models.comparison import Comparison
 from backend.app.models.user import User
 from backend.app.schemas.compare import AccountStatusResponse, CompareResponse
 from backend.app.services.alignment import (
@@ -41,6 +37,7 @@ from backend.app.services.content_detection import (
     compute_overlap_bbox,
     crop_image,
     detect_content_bbox,
+    union_bbox,
 )
 from backend.app.services.image_limits import ImageTooLargeError
 from backend.app.services.output_cleanup import prune_old_outputs
@@ -49,7 +46,9 @@ from backend.app.services.pdf_converter import (
     FileConversionError,
     UnsupportedFileTypeError,
     load_image,
+    load_image_with_page_info,
 )
+from backend.app.services.pdf_exporter import save_overlay_pdf
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["comparison"])
@@ -76,8 +75,7 @@ def account_status(user: User | None = Depends(get_current_user)) -> AccountStat
 async def compare_drawings(
     drawing_a: UploadFile | None = None,
     drawing_b: UploadFile | None = None,
-    user: User | None = Depends(get_current_user),
-    db: Session | None = Depends(get_db),
+    _user: User | None = Depends(get_current_user),
 ) -> CompareResponse:
     if drawing_a is None or drawing_b is None:
         raise HTTPException(
@@ -123,20 +121,6 @@ async def compare_drawings(
 
         elapsed = time.perf_counter() - started_at
         logger.info("Comparison completed in %.2fs", elapsed)
-
-        drawing_a_name = drawing_a.filename or saved_drawing_a.name
-        drawing_b_name = drawing_b.filename or saved_drawing_b.name
-        paid = user_has_paid_access(user)
-
-        if paid and not STORAGE_BYPASS:
-            result = _store_comparison_in_cloud(
-                result,
-                user,
-                db,
-                drawing_a_name=drawing_a_name,
-                drawing_b_name=drawing_b_name,
-            )
-
         return result
     except UnsupportedFileTypeError as exc:
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(exc)) from exc
@@ -150,53 +134,6 @@ async def compare_drawings(
         _remove_file(saved_drawing_b)
 
 
-def _store_comparison_in_cloud(
-    result: CompareResponse,
-    user: User | None,
-    db: Session | None,
-    *,
-    drawing_a_name: str,
-    drawing_b_name: str,
-) -> CompareResponse:
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Sign in to compare drawings.",
-        )
-
-    local_filename = Path(result.image_path).name
-    local_path = OUTPUT_DIR / local_filename
-    if not local_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Comparison output file was not found for cloud upload.",
-        )
-
-    from backend.app.services.storage import upload_png_bytes
-
-    comparison_id = uuid4()
-    remote_path = f"{user.id}/{comparison_id}.png"
-    png_bytes = local_path.read_bytes()
-    image_url = upload_png_bytes(png_bytes, remote_path)
-
-    if db is not None:
-        metadata_payload = result.metadata.model_dump()
-        metadata_payload["drawing_a_name"] = drawing_a_name
-        metadata_payload["drawing_b_name"] = drawing_b_name
-        db.add(
-            Comparison(
-                id=comparison_id,
-                user_id=user.id,
-                storage_path=remote_path,
-                metadata_json=metadata_payload,
-            )
-        )
-        db.commit()
-
-    _remove_file(local_path)
-    return CompareResponse(image_path=image_url, metadata=result.metadata)
-
-
 def _run_comparison_pipeline(
     drawing_a_path: Path,
     drawing_b_path: Path,
@@ -205,7 +142,8 @@ def _run_comparison_pipeline(
 ) -> CompareResponse:
     prune_old_outputs(OUTPUT_DIR, max_age_hours=OUTPUT_MAX_AGE_HOURS)
 
-    drawing_a_image = _pillow_to_bgr_array(load_image(drawing_a_path))
+    drawing_a_image_pil, drawing_a_page = load_image_with_page_info(drawing_a_path)
+    drawing_a_image = _pillow_to_bgr_array(drawing_a_image_pil)
     drawing_b_image = _pillow_to_bgr_array(load_image(drawing_b_path))
 
     try:
@@ -229,7 +167,7 @@ def _run_comparison_pipeline(
                 "They may show different views or have incompatible framing."
             )
 
-        comparison_bbox = drawing_a_bbox
+        comparison_bbox = union_bbox(drawing_a_bbox, drawing_b_bbox)
         drawing_a_crop = crop_image(drawing_a_image, comparison_bbox)
         aligned_drawing_b_crop = crop_image(aligned_drawing_b, comparison_bbox)
 
@@ -241,10 +179,23 @@ def _run_comparison_pipeline(
             low_confidence=alignment_confidence.status == "marginal",
         )
 
-        output_filename: str = f"comparison-{uuid4().hex}.png"
-        output_path: Path = OUTPUT_DIR / output_filename
+        output_id = uuid4().hex
+        output_filename = f"comparison-{output_id}.png"
+        pdf_filename = f"comparison-{output_id}.pdf"
+        output_path = OUTPUT_DIR / output_filename
+        pdf_path = OUTPUT_DIR / pdf_filename
+
         if not cv2.imwrite(str(output_path), rendered_image):
             raise ValueError("Failed to save comparison image.")
+
+        save_overlay_pdf(
+            pdf_path,
+            rendered_image,
+            page_width_pt=drawing_a_page.page_width_pt,
+            page_height_pt=drawing_a_page.page_height_pt,
+            raster_dpi=drawing_a_page.raster_dpi,
+            comparison_bbox=comparison_bbox,
+        )
 
         changed_pixels = (
             overlay_stats.orange_pixels
@@ -261,6 +212,7 @@ def _run_comparison_pipeline(
 
         return CompareResponse.from_pipeline_result(
             image_path=f"/outputs/{output_filename}",
+            pdf_path=f"/outputs/{pdf_filename}",
             metadata={
                 "alignment": asdict(alignment_metadata),
                 "alignment_confidence": asdict(alignment_confidence),
@@ -268,6 +220,7 @@ def _run_comparison_pipeline(
                     "drawing_a_bbox": asdict(drawing_a_bbox),
                     "drawing_b_bbox": asdict(drawing_b_bbox),
                     "overlap_bbox": asdict(overlap_bbox),
+                    "comparison_bbox": asdict(comparison_bbox),
                 },
                 "overlay": asdict(overlay_stats),
                 "differences": {
@@ -275,6 +228,12 @@ def _run_comparison_pipeline(
                     "height": int(comparison_bbox.height),
                     "changed_pixel_count": changed_pixels,
                     "changed_pixel_ratio": changed_pixels / total_pixels,
+                },
+                "output_page": {
+                    "mode": "source_a",
+                    "width_pt": drawing_a_page.page_width_pt,
+                    "height_pt": drawing_a_page.page_height_pt,
+                    "raster_dpi": drawing_a_page.raster_dpi,
                 },
             },
         )

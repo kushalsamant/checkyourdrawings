@@ -29,6 +29,7 @@ describe("parseCompareResponse", () => {
   it("accepts a valid comparison payload", () => {
     const payload = {
       image_path: "/outputs/comparison-abc.png",
+      pdf_path: "/outputs/comparison-abc.pdf",
       metadata: {
         alignment: { inlier_matches: 10, inlier_ratio: 0.9 },
         alignment_confidence: { status: "high", message: null },
@@ -36,6 +37,7 @@ describe("parseCompareResponse", () => {
           drawing_a_bbox: { x: 0, y: 0, width: 100, height: 100 },
           drawing_b_bbox: { x: 0, y: 0, width: 100, height: 100 },
           overlap_bbox: { x: 10, y: 10, width: 80, height: 80 },
+          comparison_bbox: { x: 0, y: 0, width: 100, height: 100 },
         },
         overlay: {
           orange_pixels: 1,
@@ -49,16 +51,25 @@ describe("parseCompareResponse", () => {
           changed_pixel_count: 3,
           changed_pixel_ratio: 0.5,
         },
+        output_page: {
+          mode: "source_a",
+          width_pt: 842,
+          height_pt: 595,
+          raster_dpi: 150,
+        },
       },
     };
 
-    expect(parseCompareResponse(payload).image_path).toBe("/outputs/comparison-abc.png");
+    const parsed = parseCompareResponse(payload);
+    expect(parsed.image_path).toBe("/outputs/comparison-abc.png");
+    expect(parsed.pdf_path).toBe("/outputs/comparison-abc.pdf");
   });
 
   it("rejects missing alignment confidence", () => {
     expect(() =>
       parseCompareResponse({
         image_path: "/outputs/x.png",
+        pdf_path: "/outputs/x.pdf",
         metadata: {
           alignment: { inlier_ratio: 0.9 },
           content: {
@@ -87,6 +98,7 @@ describe("parseCompareResponse", () => {
     expect(() =>
       parseCompareResponse({
         image_path: "/outputs/x.png",
+        pdf_path: "/outputs/x.pdf",
         metadata: {
           alignment: {},
           alignment_confidence: { status: "high", message: null },

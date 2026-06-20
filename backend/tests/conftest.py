@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 os.environ.setdefault("CYD_AUTH_REQUIRED", "false")
-os.environ.setdefault("CYD_STORAGE_BYPASS", "true")
 
 # Tests import `backend.app...`; ensure the repository root is importable in CI.
 REPO_ROOT = Path(__file__).resolve().parents[2]

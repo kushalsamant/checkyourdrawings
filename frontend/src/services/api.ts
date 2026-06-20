@@ -65,11 +65,13 @@ export interface CompareMetadata {
 
 export interface CompareResponse {
   image_path: string;
+  pdf_path: string;
   metadata: CompareMetadata;
 }
 
 export interface UploadAndCompareResult {
   comparisonImageUrl: string;
+  comparisonPdfUrl: string;
   metadata: CompareMetadata;
 }
 
@@ -109,9 +111,9 @@ export async function uploadAndCompare(
     }
 
     const data = parseCompareResponse(await response.json());
-    const comparisonImageUrl = buildImageUrl(data.image_path);
     return {
-      comparisonImageUrl,
+      comparisonImageUrl: buildOutputUrl(data.image_path),
+      comparisonPdfUrl: buildOutputUrl(data.pdf_path),
       metadata: data.metadata,
     };
   } catch (error) {
@@ -136,6 +138,10 @@ export function parseCompareResponse(data: unknown): CompareResponse {
 
   if (typeof data.image_path !== "string" || data.image_path.length === 0) {
     throw new Error("Comparison response is missing image_path.");
+  }
+
+  if (typeof data.pdf_path !== "string" || data.pdf_path.length === 0) {
+    throw new Error("Comparison response is missing pdf_path.");
   }
 
   if (!isRecord(data.metadata)) {
@@ -168,8 +174,13 @@ export function parseCompareResponse(data: unknown): CompareResponse {
 
   return {
     image_path: data.image_path,
+    pdf_path: data.pdf_path,
     metadata: data.metadata,
   } as unknown as CompareResponse;
+}
+
+export function buildOutputUrl(outputPath: string): string {
+  return buildImageUrl(outputPath);
 }
 
 export async function getErrorMessage(response: Response): Promise<string> {
@@ -210,7 +221,7 @@ export function buildImageUrl(imagePath: string): string {
       allowedOrigins.add(new URL(supabaseUrl).origin);
     }
 
-    if (allowedOrigins.size > 0 && !allowedOrigins.has(parsed.origin)) {
+    if (allowedOrigins.size === 0 || !allowedOrigins.has(parsed.origin)) {
       throw new Error("Comparison image URL is not from an allowed origin.");
     }
 
@@ -221,12 +232,16 @@ export function buildImageUrl(imagePath: string): string {
   return API_BASE_URL ? `${API_BASE_URL}/${path}` : `/${path}`;
 }
 
-export async function downloadImageAsBlob(imageUrl: string): Promise<Blob> {
-  const response = await fetch(imageUrl);
+export async function downloadFileAsBlob(fileUrl: string): Promise<Blob> {
+  const response = await fetch(fileUrl);
   if (!response.ok) {
-    throw new Error("Failed to download comparison image.");
+    throw new Error("Failed to download comparison file.");
   }
   return response.blob();
+}
+
+export async function downloadImageAsBlob(imageUrl: string): Promise<Blob> {
+  return downloadFileAsBlob(imageUrl);
 }
 
 function formatFastApiDetail(detail: unknown): string | null {

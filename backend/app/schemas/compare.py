@@ -33,6 +33,14 @@ class ContentMetadataResponse(BaseModel):
     drawing_a_bbox: BoundingBoxResponse
     drawing_b_bbox: BoundingBoxResponse
     overlap_bbox: BoundingBoxResponse
+    comparison_bbox: BoundingBoxResponse
+
+
+class OutputPageMetadataResponse(BaseModel):
+    mode: str
+    width_pt: float
+    height_pt: float
+    raster_dpi: int
 
 
 class AlignmentConfidenceResponse(BaseModel):
@@ -53,15 +61,24 @@ class CompareMetadataResponse(BaseModel):
     content: ContentMetadataResponse
     overlay: OverlayMetadataResponse
     differences: DifferenceMetadataResponse
+    output_page: OutputPageMetadataResponse
 
 
 class CompareResponse(BaseModel):
     image_path: str
+    pdf_path: str
     metadata: CompareMetadataResponse
 
     @classmethod
-    def from_pipeline_result(cls, image_path: str, metadata: dict[str, Any]) -> "CompareResponse":
-        return cls.model_validate({"image_path": image_path, "metadata": metadata})
+    def from_pipeline_result(
+        cls,
+        image_path: str,
+        pdf_path: str,
+        metadata: dict[str, Any],
+    ) -> "CompareResponse":
+        return cls.model_validate(
+            {"image_path": image_path, "pdf_path": pdf_path, "metadata": metadata}
+        )
 
 
 class AccountStatusResponse(BaseModel):

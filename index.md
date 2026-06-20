@@ -23,14 +23,14 @@ No manual overlay. No CAD license. No hunting for changes with a red pen.
 
 - Compare two revision PDFs in seconds instead of stacking them by hand  
 - Catch consultant mismatches before they become RFIs  
-- Download PNG proof for coordination reports  
+- Download overlay as PDF (uploaded sheet size) or PNG for coordination reports  
 - Works with PDF plots and exports from your design software (scanned sheets are fine if saved as PDF)
 
 ## Free vs paid
 
 Compare single drawing pairs for free as often as you need.
 
-Need to run a full revision stack? Sign in and subscribe at [kvshvl.in](https://kvshvl.in) for batch compare and ZIP export.
+Need to run a full revision stack? Sign in and subscribe at [kvshvl.in](https://kvshvl.in) for batch compare and ZIP export of PDF overlays.
 
 Part of the [kvshvl](https://kvshvl.in) platform.
 

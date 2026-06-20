@@ -2,7 +2,7 @@ import { useId, useRef, useState, type ChangeEvent } from "react";
 
 import { trackEvent } from "../lib/analytics";
 import type { CompareMetadata } from "../services/api";
-import { downloadImageAsBlob, getUpgradeUrl, uploadAndCompare } from "../services/api";
+import { downloadFileAsBlob, getUpgradeUrl, uploadAndCompare } from "../services/api";
 import { ResultViewer } from "./ResultViewer";
 
 export const MAX_BATCH_PAIRS = 20;
@@ -21,6 +21,7 @@ export interface BatchPairResult {
   pair: BatchPair;
   status: BatchPairStatus;
   imageUrl: string | null;
+  pdfUrl: string | null;
   metadata: CompareMetadata | null;
   error: string | null;
 }
@@ -100,6 +101,7 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
         pair,
         status: "queued",
         imageUrl: null,
+        pdfUrl: null,
         metadata: null,
         error: null,
       })),
@@ -114,6 +116,7 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
           pair,
           status: "cancelled" as const,
           imageUrl: null,
+          pdfUrl: null,
           metadata: null,
           error: "Cancelled.",
         }));
@@ -135,6 +138,7 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
           pair,
           status: "done",
           imageUrl: result.comparisonImageUrl,
+          pdfUrl: result.comparisonPdfUrl,
           metadata: result.metadata,
           error: null,
         };
@@ -147,6 +151,7 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
           pair,
           status: "error",
           imageUrl: null,
+          pdfUrl: null,
           metadata: null,
           error: error instanceof Error ? error.message : "Comparison failed.",
         };
@@ -167,7 +172,9 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
   }
 
   async function downloadZip(): Promise<void> {
-    const doneResults = results.filter((result) => result.status === "done" && result.imageUrl);
+    const doneResults = results.filter(
+      (result) => result.status === "done" && result.pdfUrl !== null,
+    );
     if (doneResults.length === 0) {
       return;
     }
@@ -176,12 +183,12 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
     const zip = new JSZip();
 
     for (const result of doneResults) {
-      if (result.imageUrl === null) {
+      if (result.pdfUrl === null) {
         continue;
       }
-      const blob = await downloadImageAsBlob(result.imageUrl);
+      const blob = await downloadFileAsBlob(result.pdfUrl);
       const safeName = `${result.pair.labelA}__${result.pair.labelB}`.replace(/[^\w.-]+/g, "_");
-      zip.file(`${safeName}.png`, blob);
+      zip.file(`${safeName}.pdf`, blob);
     }
 
     const zipBlob = await zip.generateAsync({ type: "blob" });
@@ -191,7 +198,7 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
     link.download = "checkyourdrawings-batch.zip";
     link.click();
     URL.revokeObjectURL(objectUrl);
-    trackEvent("batch_zip_download", { file_count: doneResults.length });
+    trackEvent("batch_pdf_zip_download", { file_count: doneResults.length });
   }
 
   if (!isSignedIn) {
@@ -316,10 +323,12 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
                 </span>
               </header>
               {result.error && <p className="alert">{result.error}</p>}
-              {result.imageUrl && (
+              {result.imageUrl && result.pdfUrl && (
                 <ResultViewer
                   imageUrl={result.imageUrl}
-                  filename={`${result.pair.labelA}__${result.pair.labelB}.png`}
+                  pdfUrl={result.pdfUrl}
+                  pngFilename={`${result.pair.labelA}__${result.pair.labelB}.png`}
+                  pdfFilename={`${result.pair.labelA}__${result.pair.labelB}.pdf`}
                   altText={`Batch result for ${result.pair.labelA} and ${result.pair.labelB}`}
                 />
               )}

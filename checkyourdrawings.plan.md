@@ -1,6 +1,6 @@
 ---
 name: Check Your Drawings — Master Plan
-overview: "Pass 1 + optional auth code shipped in repo (disabled by default). Pass 2 = deploy free hosted MVP at checkyourdrawings.kvshvl.in. Pass 3 = turn on auth/storage/billing if needed."
+overview: "Pass 1 + optional auth code shipped in repo. Pass 2 = hosted MVP at checkyourdrawings.kvshvl.in. Pass 3 = freemium compare + paid batch (commit 40db813 on main)."
 todos:
   - id: kvshvl-brand-colors
     content: "kvshvl brand shell in React (styles.css, App.tsx, AboutPage from index.md, GA in index.html)"
@@ -21,7 +21,15 @@ isProject: true
 
 Canonical plan for the repo. AEC coordination tool for comparing two architectural drawing PDFs. Upload Drawing A and Drawing B (plotted or exported from your design software), auto-align them, and download a coordination overlay PNG.
 
-**Work one task at a time** (see frontmatter todos). **Pass 2 complete** — production smoke verified 2026-06-20.
+**Work one task at a time** (see frontmatter todos). **Pass 2 complete** — production smoke verified 2026-06-20 (`40db813`).
+
+**Current product tiers:**
+
+| Tier | Access |
+|------|--------|
+| Anonymous | Unlimited single-pair `/compare` + full PNG download |
+| Signed in, not paid | Same as anonymous; batch tab shows upgrade prompt |
+| Paid kvshvl | Batch queue + ZIP export |
 
 ---
 
@@ -37,7 +45,7 @@ Check Your Drawings should look like **kvshvl.in** — same colors, typography, 
 | About page (`/about`) | `index.md` → build-time import → `frontend/src/pages/AboutPage.tsx` |
 | Site chrome | `frontend/index.html` (meta, GA `G-JTHJJMRHT7`) |
 
-**Vercel deploys `frontend/` only.** No Jekyll at repo root. Pinterest verify HTML (`pinterest-bdc46.html`) is a static utility, not the live product shell.
+**Vercel deploys from repo root** via [`vercel.json`](vercel.json) (`npm ci --prefix frontend`, output `frontend/dist`). No Jekyll at repo root. Pinterest verify HTML (`pinterest-bdc46.html`) is a static utility, not the live product shell.
 
 **Brand shell mapping:**
 
@@ -185,7 +193,7 @@ Open **http://127.0.0.1:5173**. Leave `VITE_API_BASE_URL` unset (Vite proxies `/
 
 | Variable | Pass 2 production value |
 |----------|-------------------------|
-| `VITE_API_BASE_URL` | `https://api.checkyourdrawings.kvshvl.in` (or Render URL until custom domain) |
+| `VITE_API_BASE_URL` | `https://checkyourdrawings.onrender.com` (`api.checkyourdrawings.kvshvl.in` optional — DNS not live) |
 
 ---
 
@@ -193,15 +201,16 @@ Open **http://127.0.0.1:5173**. Leave `VITE_API_BASE_URL` unset (Vite proxies `/
 
 **Goal:** Ship the free compare tool to `checkyourdrawings.kvshvl.in`. No login, no billing.
 
-**Pass 2 status:** live at `checkyourdrawings.kvshvl.in`; production smoke verified 2026-06-20 (`/`, `/about`, nav links, OAuth redirect → `/auth/callback` → `/`).
+**Pass 2 status:** live at `checkyourdrawings.kvshvl.in`; production smoke verified 2026-06-20 (`40db813`).
 
 | Item | Status |
 |------|--------|
 | kvshvl.in brand shell in React | **Done** |
 | [Dockerfile](Dockerfile) + [render.yaml](render.yaml) | **Done** |
-| [frontend/vercel.json](frontend/vercel.json) | **Done** |
+| Root [`vercel.json`](vercel.json) | **Done** |
 | Live deploy + DNS | **Done** |
 | Hosted smoke (production) | **Done** — [docs/smoke-test.md](docs/smoke-test.md) |
+| Freemium compare + batch UI | **Done** — `CYD_AUTH_REQUIRED=false` on Render |
 
 ### Production architecture
 
@@ -224,7 +233,7 @@ flowchart LR
 | Service | Host | Role |
 |---------|------|------|
 | Frontend | Vercel → `checkyourdrawings.kvshvl.in` | Static Vite build |
-| API | Render → `api.checkyourdrawings.kvshvl.in` | FastAPI + OpenCV + PyMuPDF |
+| API | Render → `checkyourdrawings.onrender.com` | FastAPI + OpenCV + PyMuPDF |
 | Storage | Render ephemeral disk | `backend/outputs/` — pruned after 24h |
 
 **Reference:** [`sketch2bim/render.yaml`](../sketch2bim/render.yaml) for gunicorn pattern only.
@@ -250,8 +259,8 @@ flowchart LR
 
 #### 2. Frontend on Vercel (`vercel-frontend`)
 
-- Add `vercel.json` (or configure in dashboard): root `frontend`, build `npm run build`, output `dist/`
-- Env at build time: `VITE_API_BASE_URL=<Render API URL>`
+- Root [`vercel.json`](vercel.json): `npm ci --prefix frontend`, build `frontend/dist`
+- Env at build time: `VITE_API_BASE_URL=https://checkyourdrawings.onrender.com`
 - Connect repo on Vercel; add custom domain `checkyourdrawings.kvshvl.in`
 
 **DNS:**
@@ -259,9 +268,7 @@ flowchart LR
 | Record | Points to |
 |--------|-----------|
 | `checkyourdrawings.kvshvl.in` | Vercel |
-| `api.checkyourdrawings.kvshvl.in` | Render |
-
-Can ship with `*.onrender.com` API URL first, then add API custom domain.
+| `api.checkyourdrawings.kvshvl.in` | Render (optional — not configured; use `*.onrender.com`) |
 
 #### 3. Hosted smoke test (`hosted-smoke`)
 
@@ -276,18 +283,29 @@ Add section to [docs/smoke-test.md](docs/smoke-test.md):
 
 ---
 
-## Pass 3 — Enable auth and cloud storage (later, only if needed)
+## Pass 3 — Auth, batch, and cloud storage (shipped for freemium + paid batch)
 
-Most code is **already in the repo**. Pass 3 is about **turning it on**, not building from scratch. **Do not delete** auth, subscription, or storage code when shipping Pass 2.
+Most code is **already in the repo** and **live** for freemium single compare. Paid batch uses sign-in + kvshvl subscription gate.
 
-- Set `CYD_AUTH_REQUIRED=true`, `CYD_STORAGE_BYPASS=false` on Render
+**Production (freemium):**
+
+```
+CYD_AUTH_REQUIRED=false
+CYD_STORAGE_BYPASS=true
+```
+
+**When enabling full cloud persistence for paid users:**
+
+- Set `CYD_STORAGE_BYPASS=false` on Render
 - Set `PLATFORM_DATABASE_URL`, `SUPABASE_*` on Render; `VITE_SUPABASE_*` on Vercel
 - Run Supabase migration; configure OAuth redirect URLs
-- kvshvl subscription gate (402) — reads platform `users` table; **no Razorpay in CYD** (checkout stays on kvshvl.in or can change provider on platform without rewriting compare pipeline)
+- Ensure `.env.pass3.local` has `CYD_AUTH_REQUIRED=false` before `scripts/deploy_pass3_env.py`
 
-**Payment flexibility:** CYD only checks `subscription_status` + `subscription_expires_at`. Swapping checkout provider or per-app pricing is a **platform** change; the 402 gate stays as-is.
+kvshvl subscription gate (402 for batch) — reads platform `users` table; **no Razorpay in CYD**.
 
-Other growth: team features, analytics, DWG/raster inputs.
+**Deferred:** unified kvshvl.in sign-in (requires kvshvl.in repo) — see [docs/deploy.md](docs/deploy.md).
+
+**Removed:** server-side watermark on free PNGs (`40db813`) — paid differentiation is batch + ZIP only.
 
 ---
 

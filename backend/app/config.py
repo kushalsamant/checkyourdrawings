@@ -47,7 +47,6 @@ class Settings(BaseSettings):
     alignment_marginal_inlier_ratio: float = 0.55
     alignment_ecc_refinement: bool = True
     auth_required: bool = False
-    storage_bypass: bool = True
     cors_origins: str = Field(default=_DEFAULT_CORS_ORIGINS)
 
     @property
@@ -80,7 +79,6 @@ MIN_OVERLAP_AREA_RATIO: float = _settings.min_overlap_area_ratio
 ALIGNMENT_MARGINAL_INLIER_RATIO: float = _settings.alignment_marginal_inlier_ratio
 ALIGNMENT_ECC_REFINEMENT: bool = _settings.alignment_ecc_refinement
 AUTH_REQUIRED: bool = _settings.auth_required
-STORAGE_BYPASS: bool = _settings.storage_bypass
 CORS_ORIGINS: list[str] = _settings.cors_origins_list
 ALLOWED_EXTENSIONS: frozenset[str] = frozenset({".pdf"})
 

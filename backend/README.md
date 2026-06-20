@@ -18,6 +18,7 @@ Multipart form fields:
 ```json
 {
   "image_path": "/outputs/comparison-<uuid>.png",
+  "pdf_path": "/outputs/comparison-<uuid>.pdf",
   "metadata": {
     "alignment": {
       "keypoints_drawing_a": 0,
@@ -28,7 +29,8 @@ Multipart form fields:
     "content": {
       "drawing_a_bbox": { "x": 0, "y": 0, "width": 0, "height": 0 },
       "drawing_b_bbox": { "x": 0, "y": 0, "width": 0, "height": 0 },
-      "overlap_bbox": { "x": 0, "y": 0, "width": 0, "height": 0 }
+      "overlap_bbox": { "x": 0, "y": 0, "width": 0, "height": 0 },
+      "comparison_bbox": { "x": 0, "y": 0, "width": 0, "height": 0 }
     },
     "overlay": {
       "orange_pixels": 0,

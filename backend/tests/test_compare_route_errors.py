@@ -81,6 +81,8 @@ class TestCompareRouteErrors:
         assert response.status_code == 200
         payload = response.json()
         assert "image_path" in payload
+        assert "pdf_path" in payload
+        assert payload["pdf_path"].endswith(".pdf")
         assert "metadata" in payload
         assert "alignment" in payload["metadata"]
         assert "alignment_confidence" in payload["metadata"]
@@ -93,24 +95,30 @@ class TestCompareRouteErrors:
             "failed",
         }
         assert "overlap_bbox" in payload["metadata"]["content"]
+        assert "comparison_bbox" in payload["metadata"]["content"]
+        assert "output_page" in payload["metadata"]
 
 
 class TestOutputCleanup:
     def test_prune_old_outputs(self, tmp_path: Path) -> None:
-        old_file = tmp_path / "comparison-old.png"
-        new_file = tmp_path / "comparison-new.png"
-        old_file.write_bytes(b"old")
-        new_file.write_bytes(b"new")
+        old_png = tmp_path / "comparison-old.png"
+        new_png = tmp_path / "comparison-new.png"
+        old_pdf = tmp_path / "comparison-old.pdf"
+        old_png.write_bytes(b"old")
+        new_png.write_bytes(b"new")
+        old_pdf.write_bytes(b"old-pdf")
 
         old_timestamp = time.time() - (48 * 3600)
         import os
 
-        os.utime(old_file, (old_timestamp, old_timestamp))
+        os.utime(old_png, (old_timestamp, old_timestamp))
+        os.utime(old_pdf, (old_timestamp, old_timestamp))
 
         removed = prune_old_outputs(tmp_path, max_age_hours=24)
-        assert removed == 1
-        assert not old_file.exists()
-        assert new_file.exists()
+        assert removed == 2
+        assert not old_png.exists()
+        assert not old_pdf.exists()
+        assert new_png.exists()
 
     def test_prune_disabled_when_zero_hours(self, tmp_path: Path) -> None:
         file_path = tmp_path / "comparison-old.png"

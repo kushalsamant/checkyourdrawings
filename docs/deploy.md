@@ -18,10 +18,9 @@ Blueprint: [`render.yaml`](../render.yaml)
 | Key | Value |
 |-----|-------|
 | `CYD_AUTH_REQUIRED` | `false` |
-| `CYD_STORAGE_BYPASS` | `true` |
 | `CYD_CORS_ORIGINS` | `https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in` |
 
-Paid cloud storage (`CYD_STORAGE_BYPASS=false`) is only needed when persisting comparisons for subscribed users.
+Outputs are served from Render disk at `/outputs/` (PNG preview + PDF deliverable). Users download to keep copies; Supabase is auth + batch billing only.
 
 Apply env from local secrets (if configured). For freemium, `CYD_AUTH_REQUIRED` must be `false` in `.env.pass3.local` before running:
 
@@ -67,10 +66,31 @@ vercel --prod --yes
 
 ## 4. Manual tasks (not in repo)
 
-- **Google OAuth consent screen:** App name `KVSHVL`, logo, homepage `https://kvshvl.in`
-- **Unified kvshvl.in sign-in:** requires kvshvl.in app changes to return platform JWT to child apps (Check Your Drawings still uses Supabase OAuth until then)
-- **Friend share:** send https://checkyourdrawings.kvshvl.in to coordination contacts for feedback
-- **API custom domain (optional):** CNAME `api.checkyourdrawings.kvshvl.in` → Render
+See **[manual-ops.md](manual-ops.md)** for step-by-step checklists:
+
+- **Google OAuth consent screen** — App name `KVSHVL`, logo, homepage `https://kvshvl.in`
+- **Friend share** — outreach template and feedback tracker
+- **API custom domain (optional)** — CNAME `api.checkyourdrawings.kvshvl.in` → Render
+
+### Unified kvshvl.in sign-in (deferred)
+
+**Status:** Not implemented. CYD uses per-app Supabase OAuth (`ytcnzhap`) today.
+
+**Target (requires kvshvl.in repo):**
+
+1. CYD **Sign in** redirects to `https://kvshvl.in/sign-in?return_to=...`
+2. kvshvl completes Google OAuth once (callback `https://kvshvl.in/api/auth/callback/google`)
+3. Return to CYD with a platform JWT CYD already validates (`backend/app/auth/jwt.py`)
+4. Remove CYD frontend `signInWithOAuth` via per-app Supabase
+
+**Interim:** Google OAuth consent branding (manual-ops.md §1) reduces gibberish hostname concern.
+
+### Optional infrastructure
+
+| Item | Status |
+|------|--------|
+| `api.checkyourdrawings.kvshvl.in` DNS | Not live — `checkyourdrawings.onrender.com` is canonical |
+| kvshvl.in portfolio link | **Live** — side tab in `kushalsamant.github.io/_includes/side-tabs.html` |
 
 ## 5. Smoke test
 

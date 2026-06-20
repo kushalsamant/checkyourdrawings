@@ -262,7 +262,13 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.retention-notice {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0 0 0.8rem;
 }
 
 .image-stage {

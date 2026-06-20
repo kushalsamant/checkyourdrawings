@@ -92,6 +92,15 @@ def _intersect_bboxes(bbox_a: BoundingBox, bbox_b: BoundingBox) -> BoundingBox |
     )
 
 
+def union_bbox(bbox_a: BoundingBox, bbox_b: BoundingBox) -> BoundingBox:
+    """Return the smallest axis-aligned box containing both inputs."""
+    left = min(bbox_a.x, bbox_b.x)
+    top = min(bbox_a.y, bbox_b.y)
+    right = max(bbox_a.x + bbox_a.width, bbox_b.x + bbox_b.width)
+    bottom = max(bbox_a.y + bbox_a.height, bbox_b.y + bbox_b.height)
+    return BoundingBox(x=left, y=top, width=right - left, height=bottom - top)
+
+
 def _union_area(bbox_a: BoundingBox, bbox_b: BoundingBox) -> int:
     intersection = _intersect_bboxes(bbox_a, bbox_b)
     area_a = bbox_a.width * bbox_a.height

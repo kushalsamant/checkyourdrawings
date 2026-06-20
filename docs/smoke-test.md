@@ -75,7 +75,7 @@ Sign-off after deploy to Vercel + Render. Production URLs:
 
 ### Prerequisites
 
-- Render service live with `CYD_AUTH_REQUIRED=false`, `CYD_STORAGE_BYPASS=true`
+- Render service live with `CYD_AUTH_REQUIRED=false`
 - Vercel build has `VITE_API_BASE_URL` pointing at the Render API URL
 - DNS: `checkyourdrawings.kvshvl.in` → Vercel, `api.checkyourdrawings.kvshvl.in` → Render (optional at first deploy)
 
@@ -86,7 +86,7 @@ Sign-off after deploy to Vercel + Render. Production URLs:
 | H1 | Open [kvshvl.in](https://www.kvshvl.in) → **Check Your Drawings** side tab | Lands on `checkyourdrawings.kvshvl.in` | |
 | H2 | Page styling | kvshvl palette: red accent `#f12345`, gray text, white background | |
 | H3 | Upload `0A` / `0B` smoke PDFs → **Compare** | Completes; overlay renders | |
-| H4 | **Download** PNG | File saves and opens | |
+| H4 | **Download PDF** and **Download PNG** | Files save and open | |
 | H5 | API health | `curl https://<api-url>/health` returns `"status":"ok"` | |
 | H6 | CORS | Compare works from production frontend (no browser CORS error) | |
 
@@ -96,7 +96,6 @@ Sign-off after deploy to Vercel + Render. Production URLs:
 
 ```
 CYD_AUTH_REQUIRED=false
-CYD_STORAGE_BYPASS=true
 CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in
 ```
 
@@ -106,3 +105,26 @@ CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawin
 VITE_API_BASE_URL=https://checkyourdrawings.onrender.com
 ```
 
+---
+
+## Production sign-off log
+
+| Date | Commit | Result |
+|------|--------|--------|
+| 2026-06-20 | `40db813` (watermark removed) | **Pass** — automated checks below |
+
+### Automated checks (2026-06-20, commit `40db813`)
+
+| # | Check | Result |
+|---|-------|--------|
+| P1 | `GET /health` | `{"status":"ok"}` |
+| P2 | `GET /health/ready` | `auth_required: false` |
+| P3 | `GET /account` (no auth) | `signed_in: false`, `paid: false` |
+| P4 | `POST /compare` (synthetic PDFs, no auth) | **200** ~14s |
+| P5 | CORS preflight from `checkyourdrawings.kvshvl.in` | **200**, `Access-Control-Allow-Origin` matches |
+| P6 | Frontend `https://checkyourdrawings.kvshvl.in` | **200** |
+| P7 | `/about` | **200** |
+
+**Manual still recommended:** upload real `0A`/`0B` smoke PDFs in browser, confirm overlay + PDF/PNG download, batch tab upsell for unsigned user.
+
+**Note:** `scripts/smoke_pass3.py` authed compare expects `/outputs/` PNG + PDF paths on Render. Anonymous compare is the production freemium path.

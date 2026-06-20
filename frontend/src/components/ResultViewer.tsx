@@ -1,10 +1,12 @@
 import { useState } from "react";
 
-import { downloadImageAsBlob } from "../services/api";
+import { downloadFileAsBlob } from "../services/api";
 
 interface ResultViewerProps {
   imageUrl: string;
-  filename?: string;
+  pdfUrl: string;
+  pngFilename?: string;
+  pdfFilename?: string;
   altText?: string;
 }
 
@@ -14,12 +16,14 @@ const ZOOM_STEP = 0.25;
 
 export function ResultViewer({
   imageUrl,
-  filename = "comparison-result.png",
+  pdfUrl,
+  pngFilename = "comparison-result.png",
+  pdfFilename = "comparison-result.pdf",
   altText = "Rendered drawing comparison result",
 }: ResultViewerProps) {
   const [zoom, setZoom] = useState<number>(1);
   const [imageError, setImageError] = useState<string | null>(null);
-  const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [downloading, setDownloading] = useState<"pdf" | "png" | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   function zoomOut(): void {
@@ -34,12 +38,15 @@ export function ResultViewer({
     setZoom(1);
   }
 
-  async function handleDownload(): Promise<void> {
-    setIsDownloading(true);
+  async function handleDownload(kind: "pdf" | "png"): Promise<void> {
+    setDownloading(kind);
     setDownloadError(null);
 
+    const url = kind === "pdf" ? pdfUrl : imageUrl;
+    const filename = kind === "pdf" ? pdfFilename : pngFilename;
+
     try {
-      const blob = await downloadImageAsBlob(imageUrl);
+      const blob = await downloadFileAsBlob(url);
       const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = objectUrl;
@@ -47,9 +54,9 @@ export function ResultViewer({
       link.click();
       URL.revokeObjectURL(objectUrl);
     } catch {
-      setDownloadError("Download failed. Open the image in a new tab and save it manually.");
+      setDownloadError("Download failed. Open the file in a new tab and save it manually.");
     } finally {
-      setIsDownloading(false);
+      setDownloading(null);
     }
   }
 
@@ -83,13 +90,26 @@ export function ResultViewer({
         <button
           type="button"
           className="download-link"
-          onClick={handleDownload}
-          disabled={isDownloading}
-          aria-label="Download comparison image"
+          onClick={() => void handleDownload("pdf")}
+          disabled={downloading !== null}
+          aria-label="Download comparison PDF"
         >
-          {isDownloading ? "Downloading..." : "Download"}
+          {downloading === "pdf" ? "Downloading..." : "Download PDF"}
+        </button>
+        <button
+          type="button"
+          className="download-link"
+          onClick={() => void handleDownload("png")}
+          disabled={downloading !== null}
+          aria-label="Download comparison PNG"
+        >
+          {downloading === "png" ? "Downloading..." : "Download PNG"}
         </button>
       </div>
+
+      <p className="retention-notice" role="note">
+        Download to keep a copy — results aren&apos;t stored permanently.
+      </p>
 
       {downloadError && (
         <p className="alert" role="alert">

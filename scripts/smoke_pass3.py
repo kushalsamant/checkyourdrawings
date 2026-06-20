@@ -78,9 +78,15 @@ def main() -> int:
         )
         print("authed_compare_synthetic", authed.status_code)
         if authed.status_code == 200:
-            image_path = authed.json().get("image_path", "")
+            payload = authed.json()
+            image_path = payload.get("image_path", "")
+            pdf_path = payload.get("pdf_path", "")
             print("image_path", image_path[:100])
-            assert "supabase.co/storage" in image_path, "expected Supabase storage URL"
+            print("pdf_path", pdf_path[:100])
+            assert image_path.startswith("/outputs/comparison-"), "expected Render output PNG path"
+            assert pdf_path.startswith("/outputs/comparison-") and pdf_path.endswith(".pdf"), (
+                "expected Render output PDF path"
+            )
         else:
             print(authed.text[:300])
             return 1
@@ -117,7 +123,11 @@ def main() -> int:
                 return 1
 
             image_path = response.json().get("image_path", "")
-            assert "supabase.co/storage" in image_path, f"{label} expected Supabase storage URL"
+            pdf_path = response.json().get("pdf_path", "")
+            assert image_path.startswith("/outputs/comparison-"), f"{label} expected Render PNG path"
+            assert pdf_path.startswith("/outputs/comparison-") and pdf_path.endswith(".pdf"), (
+                f"{label} expected Render PDF path"
+            )
 
     return 0
 

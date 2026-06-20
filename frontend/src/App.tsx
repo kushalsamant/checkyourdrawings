@@ -19,6 +19,7 @@ export default function App() {
   const [drawingA, setDrawingA] = useState<File | null>(null);
   const [drawingB, setDrawingB] = useState<File | null>(null);
   const [comparisonImageUrl, setComparisonImageUrl] = useState<string | null>(null);
+  const [comparisonPdfUrl, setComparisonPdfUrl] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<CompareMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isComparing, setIsComparing] = useState<boolean>(false);
@@ -26,6 +27,7 @@ export default function App() {
 
   useEffect(() => {
     setComparisonImageUrl(null);
+    setComparisonPdfUrl(null);
     setMetadata(null);
     setError(null);
   }, [drawingA, drawingB]);
@@ -75,6 +77,7 @@ export default function App() {
     try {
       const result = await uploadAndCompare(drawingA, drawingB, abortController.signal);
       setComparisonImageUrl(result.comparisonImageUrl);
+      setComparisonPdfUrl(result.comparisonPdfUrl);
       setMetadata(result.metadata);
       trackEvent("compare_success");
     } catch (requestError) {
@@ -83,6 +86,7 @@ export default function App() {
       }
 
       setComparisonImageUrl(null);
+      setComparisonPdfUrl(null);
       setMetadata(null);
       trackEvent("compare_fail");
       setError(
@@ -201,8 +205,8 @@ export default function App() {
             <section className="result-section" aria-label="Result" aria-live="polite">
               <h2>Result</h2>
 
-              {comparisonImageUrl ? (
-                <ResultViewer imageUrl={comparisonImageUrl} />
+              {comparisonImageUrl && comparisonPdfUrl ? (
+                <ResultViewer imageUrl={comparisonImageUrl} pdfUrl={comparisonPdfUrl} />
               ) : (
                 <p>No comparison result yet.</p>
               )}
