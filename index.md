@@ -46,5 +46,5 @@ Now the computer does it.
 
 ## Legal
 
-[Terms of Service](kvshvl.in/_includes/termsofservice)  
-[Privacy Policy](kvshvl.in/_includes/privacypolicy)
+[Terms of Service](https://www.kvshvl.in/termsofservice)  
+[Privacy Policy](https://www.kvshvl.in/privacypolicy)
