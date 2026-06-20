@@ -193,20 +193,15 @@ export default function App() {
               </p>
             )}
 
-            {comparisonImageUrl && !account?.paid && (
-              <p className="upsell-banner" role="status">
-                Comparing a full revision set?{" "}
-                <a href={getUpgradeUrl()} target="_blank" rel="noreferrer">
-                  Subscribe on kvshvl.in for batch compare
-                </a>
-              </p>
-            )}
-
             <section className="result-section" aria-label="Result" aria-live="polite">
               <h2>Result</h2>
 
               {comparisonImageUrl && comparisonPdfUrl ? (
-                <ResultViewer imageUrl={comparisonImageUrl} pdfUrl={comparisonPdfUrl} />
+                <ResultViewer
+                  imageUrl={comparisonImageUrl}
+                  pdfUrl={comparisonPdfUrl}
+                  showUpsell={!account?.paid}
+                />
               ) : (
                 <p>No comparison result yet.</p>
               )}
