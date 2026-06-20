@@ -50,7 +50,6 @@ from backend.app.services.pdf_converter import (
     UnsupportedFileTypeError,
     load_image,
 )
-from backend.app.services.watermark import apply_watermark
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["comparison"])
@@ -137,8 +136,6 @@ async def compare_drawings(
                 drawing_a_name=drawing_a_name,
                 drawing_b_name=drawing_b_name,
             )
-        elif not paid:
-            result = _apply_watermark_to_result(result)
 
         return result
     except UnsupportedFileTypeError as exc:
@@ -198,32 +195,6 @@ def _store_comparison_in_cloud(
 
     _remove_file(local_path)
     return CompareResponse(image_path=image_url, metadata=result.metadata)
-
-
-def _apply_watermark_to_result(result: CompareResponse) -> CompareResponse:
-    local_filename = Path(result.image_path).name
-    local_path = OUTPUT_DIR / local_filename
-    if not local_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Comparison output file was not found for watermarking.",
-        )
-
-    image = cv2.imread(str(local_path), cv2.IMREAD_COLOR)
-    if image is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to read comparison output for watermarking.",
-        )
-
-    watermarked = apply_watermark(image)
-    if not cv2.imwrite(str(local_path), watermarked):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to save watermarked comparison image.",
-        )
-
-    return result
 
 
 def _run_comparison_pipeline(

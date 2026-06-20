@@ -197,7 +197,7 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
   if (!isSignedIn) {
     return (
       <section className="batch-panel" aria-label="Batch compare">
-        <p>Batch compare and clean PNG downloads require a paid kvshvl subscription.</p>
+        <p>Batch compare requires a paid kvshvl subscription.</p>
         <button type="button" onClick={onSignIn}>
           Sign in
         </button>
@@ -214,7 +214,7 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
   if (!canRunBatch) {
     return (
       <section className="batch-panel" aria-label="Batch compare">
-        <p>Batch compare and clean PNG downloads are included with a paid kvshvl subscription.</p>
+        <p>Batch compare is included with a paid kvshvl subscription.</p>
         <a href={getUpgradeUrl()} target="_blank" rel="noreferrer">
           Upgrade on kvshvl.in
         </a>

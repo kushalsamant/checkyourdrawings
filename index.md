@@ -23,14 +23,14 @@ No manual overlay. No CAD license. No hunting for changes with a red pen.
 
 - Compare two revision PDFs in seconds instead of stacking them by hand  
 - Catch consultant mismatches before they become RFIs  
-- See the overlay on screen and download a watermarked PNG to check the result  
+- Download PNG proof for coordination reports  
 - Works with PDF plots and exports from your design software (scanned sheets are fine if saved as PDF)
 
 ## Free vs paid
 
-Compare single drawing pairs for free as often as you need. Downloads include a watermark.
+Compare single drawing pairs for free as often as you need.
 
-Need to run a full revision stack or send clean overlays to your team? Sign in and subscribe at [kvshvl.in](https://kvshvl.in) for batch compare and unwatermarked PNGs.
+Need to run a full revision stack? Sign in and subscribe at [kvshvl.in](https://kvshvl.in) for batch compare and ZIP export.
 
 Part of the [kvshvl](https://kvshvl.in) platform.
 

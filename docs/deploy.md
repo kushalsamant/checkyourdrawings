@@ -61,9 +61,9 @@ vercel --prod --yes
 
 | Tier | Access |
 |------|--------|
-| Anonymous | Unlimited single-pair `/compare`, watermarked PNG |
+| Anonymous | Unlimited single-pair `/compare` + PNG download |
 | Signed in, not paid | Same as anonymous |
-| Paid kvshvl (`weekly`/`monthly`/`yearly`) | Batch UI + unwatermarked PNGs + ZIP export |
+| Paid kvshvl (`weekly`/`monthly`/`yearly`) | Batch UI + ZIP export |
 
 ## 4. Manual tasks (not in repo)
 

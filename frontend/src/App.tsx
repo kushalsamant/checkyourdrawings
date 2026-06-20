@@ -191,9 +191,9 @@ export default function App() {
 
             {comparisonImageUrl && !account?.paid && (
               <p className="upsell-banner" role="status">
-                Free downloads are watermarked. Need batch compare or clean PNGs?{" "}
+                Comparing a full revision set?{" "}
                 <a href={getUpgradeUrl()} target="_blank" rel="noreferrer">
-                  Subscribe on kvshvl.in
+                  Subscribe on kvshvl.in for batch compare
                 </a>
               </p>
             )}
