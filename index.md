@@ -30,7 +30,7 @@ No manual overlay. No CAD license. No hunting for changes with a red pen.
 
 Compare single drawing pairs for free as often as you need.
 
-Need to run a full revision stack? Sign in and subscribe at [kvshvl.in](https://www.kvshvl.in) for batch compare and ZIP export of PDF overlays.
+Need to run a full revision stack? Sign in from the app and subscribe for batch compare and ZIP export of PDF overlays.
 
 ---
 
@@ -41,10 +41,3 @@ Need to run a full revision stack? Sign in and subscribe at [kvshvl.in](https://
 Built by a coordination architect who sat in your seat.  
 I used to do this at my previous job.  
 Now the computer does it.
-
----
-
-## Legal
-
-[Terms of Service](https://www.kvshvl.in/termsofservice)  
-[Privacy Policy](https://www.kvshvl.in/privacypolicy)

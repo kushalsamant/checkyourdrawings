@@ -1,7 +1,7 @@
 import aboutMarkdown from "../../../index.md?raw";
 
 import { renderAboutMarkdown } from "../lib/about-markdown";
-import { CHECKYOURDRAWINGS_SITE_URL, KVSHVL_PRIVACY_URL, KVSHVL_TERMS_URL } from "../lib/legal-urls";
+import { CHECKYOURDRAWINGS_SITE_URL } from "../lib/legal-urls";
 
 export function AboutPage() {
   return (
@@ -11,17 +11,7 @@ export function AboutPage() {
 
         <footer className="app-footer">
           <p>
-            <a href={`${CHECKYOURDRAWINGS_SITE_URL}/`} target="_blank" rel="noreferrer">
-              Back to app
-            </a>
-            {" · "}
-            <a href={KVSHVL_PRIVACY_URL} target="_blank" rel="noreferrer">
-              Privacy Policy
-            </a>
-            {" · "}
-            <a href={KVSHVL_TERMS_URL} target="_blank" rel="noreferrer">
-              Terms of Service
-            </a>
+            <a href={`${CHECKYOURDRAWINGS_SITE_URL}/`}>Back to app</a>
           </p>
           <p>&copy; {new Date().getFullYear()} Check Your Drawings</p>
         </footer>

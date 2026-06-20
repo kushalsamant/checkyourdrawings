@@ -13,6 +13,7 @@
 
 html {
   font-size: clamp(15px, 1.2vw, 18px);
+  color-scheme: light;
 }
 
 body {
@@ -23,6 +24,7 @@ body {
   background: var(--background);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: clip;
 }
 
 button,
@@ -100,12 +102,23 @@ button:focus-visible,
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .auth-email {
   font-size: 0.9rem;
   color: var(--text-muted);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-callback {
+  min-height: 40vh;
+  justify-content: center;
 }
 
 .header-link {
@@ -597,6 +610,26 @@ h2 {
 @media (max-width: 760px) {
   .page-body {
     padding: 1rem;
+  }
+
+  .app-header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .auth-actions {
+    width: 100%;
+  }
+
+  .auth-email {
+    flex: 1 1 100%;
+    white-space: normal;
+    word-break: break-all;
+  }
+
+  .auth-actions button {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .upload-panel,

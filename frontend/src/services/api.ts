@@ -1,8 +1,6 @@
 import { getAuthAccessToken } from "../lib/auth-provider";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-const UPGRADE_URL =
-  (import.meta.env.VITE_KVSHVL_UPGRADE_URL ?? "https://www.kvshvl.in").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 const COMPARE_BUSY_DETAIL = "Another comparison is in progress. Try again in a moment.";
 
@@ -189,7 +187,7 @@ export async function getErrorMessage(response: Response): Promise<string> {
     return "Sign in to compare drawings.";
   }
   if (response.status === 402) {
-    return `Active subscription required. Upgrade at ${UPGRADE_URL}.`;
+    return "Active subscription required.";
   }
   try {
     const data = (await response.json()) as { detail?: unknown };
@@ -276,10 +274,6 @@ function formatFastApiDetail(detail: unknown): string | null {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
-}
-
-export function getUpgradeUrl(): string {
-  return UPGRADE_URL;
 }
 
 export async function fetchAccountStatus(): Promise<AccountStatus> {

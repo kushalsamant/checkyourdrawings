@@ -7,8 +7,8 @@ import { UploadPanel } from "./components/UploadPanel";
 import { trackEvent } from "./lib/analytics";
 import { isAuthConfigured, useAuth } from "./lib/auth-provider";
 import type { AccountStatus, CompareMetadata } from "./services/api";
-import { CHECKYOURDRAWINGS_SITE_URL, KVSHVL_PRIVACY_URL, KVSHVL_TERMS_URL } from "./lib/legal-urls";
-import { fetchAccountStatus, getUpgradeUrl, uploadAndCompare } from "./services/api";
+import { CHECKYOURDRAWINGS_SITE_URL } from "./lib/legal-urls";
+import { fetchAccountStatus, uploadAndCompare } from "./services/api";
 
 type AppMode = "single" | "batch";
 
@@ -116,8 +116,6 @@ export default function App() {
               <a
                 href={`${CHECKYOURDRAWINGS_SITE_URL}/about`}
                 className="header-link"
-                target="_blank"
-                rel="noreferrer"
               >
                 About
               </a>
@@ -181,14 +179,7 @@ export default function App() {
             {error && (
               <p className="alert" role="alert">
                 {error}
-                {error.includes("subscription required") && (
-                  <>
-                    {" "}
-                    <a href={getUpgradeUrl()} target="_blank" rel="noreferrer">
-                      Upgrade on kvshvl.in
-                    </a>
-                  </>
-                )}
+                {error.includes("subscription required") && " A paid subscription is required for this feature."}
               </p>
             )}
 
@@ -271,15 +262,6 @@ export default function App() {
         )}
 
         <footer className="app-footer">
-          <p>
-            <a href={KVSHVL_PRIVACY_URL} target="_blank" rel="noreferrer">
-              Privacy Policy
-            </a>
-            {" · "}
-            <a href={KVSHVL_TERMS_URL} target="_blank" rel="noreferrer">
-              Terms of Service
-            </a>
-          </p>
           <p>&copy; {new Date().getFullYear()} Check Your Drawings</p>
         </footer>
       </main>

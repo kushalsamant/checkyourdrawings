@@ -26,6 +26,28 @@ function normalizeHref(href: string): string {
   return `https://${href}`;
 }
 
+function isCheckYourDrawingsHref(href: string): boolean {
+  const normalized = normalizeHref(href);
+
+  if (normalized.startsWith("/")) {
+    return true;
+  }
+
+  try {
+    return new URL(normalized).hostname === "checkyourdrawings.kvshvl.in";
+  } catch {
+    return false;
+  }
+}
+
+function externalLinkProps(href: string): { target?: "_blank"; rel?: string } {
+  if (isCheckYourDrawingsHref(href)) {
+    return {};
+  }
+
+  return { target: "_blank", rel: "noreferrer" };
+}
+
 const OVERLAY_LABELS = ["Blue", "Orange", "Green", "Red"] as const;
 type OverlayLabel = (typeof OVERLAY_LABELS)[number];
 
@@ -77,13 +99,13 @@ function renderInline(text: string): ReactNode[] {
     if (match[2] !== undefined) {
       parts.push(<strong key={`${match.index}-${match[2]}`}>{match[2]}</strong>);
     } else if (match[3] !== undefined && match[4] !== undefined) {
+      const href = normalizeHref(match[4]);
       parts.push(
         <a
           key={`${match.index}-${match[3]}`}
-          href={normalizeHref(match[4])}
+          href={href}
           className="landing-inline-link"
-          target="_blank"
-          rel="noreferrer"
+          {...externalLinkProps(href)}
         >
           {match[3]}
         </a>,
@@ -163,13 +185,13 @@ export function renderAboutMarkdown(markdown: string): ReactNode[] {
 
     const linkMatch = trimmed.match(/^\[([^\]]+)\](?:\(([^)]+)\))?$/);
     if (linkMatch) {
+      const href = normalizeHref(linkMatch[2] ?? "/");
       nodes.push(
         <a
           key={index}
-          href={normalizeHref(linkMatch[2] ?? "/")}
+          href={href}
           className="landing-cta"
-          target="_blank"
-          rel="noreferrer"
+          {...externalLinkProps(href)}
         >
           {linkMatch[1]}
         </a>,

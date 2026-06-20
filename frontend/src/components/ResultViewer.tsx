@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { downloadFileAsBlob, getUpgradeUrl } from "../services/api";
+import { downloadFileAsBlob } from "../services/api";
 
 interface ResultViewerProps {
   imageUrl: string;
@@ -115,10 +115,7 @@ export function ResultViewer({
 
       {showUpsell && (
         <p className="upsell-banner" role="status">
-          Comparing a full revision set?{" "}
-          <a href={getUpgradeUrl()} target="_blank" rel="noreferrer">
-            Subscribe on kvshvl.in for batch compare
-          </a>
+          Comparing a full revision set? Sign in and subscribe for batch compare.
         </p>
       )}
 

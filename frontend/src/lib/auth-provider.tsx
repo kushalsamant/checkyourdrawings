@@ -6,13 +6,14 @@ import {
   type ReactNode,
 } from "react";
 
+import { TOKEN_STORAGE_KEY } from "./auth-callback";
+
 export type AuthUser = {
   email: string;
   name?: string | null;
 };
 
 const AUTH_URL = (import.meta.env.VITE_KVSHVL_AUTH_URL ?? "").replace(/\/$/, "");
-const TOKEN_STORAGE_KEY = "kvshvl_platform_jwt";
 
 interface AuthContextValue {
   user: AuthUser | null;

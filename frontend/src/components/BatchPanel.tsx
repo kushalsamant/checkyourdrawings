@@ -2,7 +2,7 @@ import { useId, useRef, useState, type ChangeEvent } from "react";
 
 import { trackEvent } from "../lib/analytics";
 import type { CompareMetadata } from "../services/api";
-import { downloadFileAsBlob, getUpgradeUrl, uploadAndCompare } from "../services/api";
+import { downloadFileAsBlob, uploadAndCompare } from "../services/api";
 import { ResultViewer } from "./ResultViewer";
 
 export const MAX_BATCH_PAIRS = 20;
@@ -204,16 +204,10 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
   if (!isSignedIn) {
     return (
       <section className="batch-panel" aria-label="Batch compare">
-        <p>Batch compare requires a paid kvshvl subscription.</p>
+        <p>Batch compare requires a paid subscription.</p>
         <button type="button" onClick={onSignIn}>
           Sign in
         </button>
-        <p>
-          Plans on{" "}
-          <a href={getUpgradeUrl()} target="_blank" rel="noreferrer">
-            kvshvl.in
-          </a>
-        </p>
       </section>
     );
   }
@@ -221,10 +215,7 @@ export function BatchPanel({ canRunBatch, isSignedIn, onSignIn }: BatchPanelProp
   if (!canRunBatch) {
     return (
       <section className="batch-panel" aria-label="Batch compare">
-        <p>Batch compare is included with a paid kvshvl subscription.</p>
-        <a href={getUpgradeUrl()} target="_blank" rel="noreferrer">
-          Upgrade on kvshvl.in
-        </a>
+        <p>Batch compare is included with a paid subscription.</p>
       </section>
     );
   }
