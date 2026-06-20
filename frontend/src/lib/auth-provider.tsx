@@ -5,13 +5,17 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Session, User } from "@supabase/supabase-js";
 
-import { getSupabaseClient, isSupabaseConfigured } from "./supabase";
+export type AuthUser = {
+  email: string;
+  name?: string | null;
+};
+
+const AUTH_URL = (import.meta.env.VITE_KVSHVL_AUTH_URL ?? "").replace(/\/$/, "");
+const TOKEN_STORAGE_KEY = "kvshvl_platform_jwt";
 
 interface AuthContextValue {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
   loading: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -26,85 +30,94 @@ export function getAuthAccessToken(): string | null {
   return accessTokenGetter?.() ?? null;
 }
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  const base64Url = parts[1] ?? "";
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  try {
+    const json = atob(base64);
+    const payload = JSON.parse(json) as unknown;
+    if (typeof payload === "object" && payload !== null) {
+      return payload as Record<string, unknown>;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function readTokenFromStorage(): string | null {
+  try {
+    return sessionStorage.getItem(TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeTokenToStorage(token: string | null): void {
+  try {
+    if (token) {
+      sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } else {
+      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const supabase = getSupabaseClient();
-
   useEffect(() => {
-    if (supabase === null) {
+    const token = readTokenFromStorage();
+    if (!token) {
+      setUser(null);
       setLoading(false);
       return;
     }
 
-    let isMounted = true;
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!isMounted) {
-        return;
-      }
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
+    const payload = decodeJwtPayload(token);
+    const email = payload?.email;
+    const name = payload?.name;
+    if (typeof email === "string" && email) {
+      setUser({ email, name: typeof name === "string" ? name : null });
+    } else {
+      setUser(null);
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    accessTokenGetter = () => session?.access_token ?? null;
+    accessTokenGetter = () => readTokenFromStorage();
     return () => {
       accessTokenGetter = null;
     };
-  }, [session]);
+  }, []);
 
   async function signIn(): Promise<void> {
-    if (supabase === null) {
-      throw new Error("Supabase is not configured for this environment.");
+    if (!AUTH_URL) {
+      throw new Error("VITE_KVSHVL_AUTH_URL is not configured for this environment.");
     }
-
-    const redirectTo = `${window.location.origin}/auth/callback`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
-    if (error) {
-      throw error;
-    }
+    const returnTo = `${window.location.origin}/auth/callback`;
+    window.location.assign(
+      `${AUTH_URL}/sign-in?return_to=${encodeURIComponent(returnTo)}`,
+    );
   }
 
   async function signOut(): Promise<void> {
-    if (supabase === null) {
-      setSession(null);
-      setUser(null);
-      return;
-    }
-
-    await supabase.auth.signOut();
-    setSession(null);
+    writeTokenToStorage(null);
     setUser(null);
   }
 
   const value: AuthContextValue = {
     user,
-    session,
     loading,
     signIn,
     signOut,
-    getAccessToken: () => session?.access_token ?? null,
+    getAccessToken: () => readTokenFromStorage(),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -119,5 +132,5 @@ export function useAuth(): AuthContextValue {
 }
 
 export function isAuthConfigured(): boolean {
-  return isSupabaseConfigured();
+  return Boolean(AUTH_URL);
 }

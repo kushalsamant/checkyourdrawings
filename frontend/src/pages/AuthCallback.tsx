@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { getSupabaseClient } from "../lib/supabase";
+const TOKEN_STORAGE_KEY = "kvshvl_platform_jwt";
 
 function readOAuthError(): string | null {
   const url = new URL(window.location.href);
@@ -21,6 +21,17 @@ function readOAuthError(): string | null {
 
 let callbackStarted = false;
 
+function readAccessTokenFromHash(): string | null {
+  const hash = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  if (!hash) {
+    return null;
+  }
+  const params = new URLSearchParams(hash);
+  return params.get("access_token");
+}
+
 export function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
@@ -30,13 +41,6 @@ export function AuthCallback() {
     }
     callbackStarted = true;
 
-    const supabase = getSupabaseClient();
-    if (supabase === null) {
-      setError("Supabase is not configured.");
-      return;
-    }
-
-    const authClient = supabase;
     let cancelled = false;
 
     async function completeSignIn(): Promise<void> {
@@ -48,16 +52,13 @@ export function AuthCallback() {
         return;
       }
 
-      // detectSessionInUrl exchanges ?code= during getSession().
-      const { data, error: sessionError } = await authClient.auth.getSession();
-      if (sessionError) {
-        if (!cancelled) {
-          setError(sessionError.message);
+      const accessToken = readAccessTokenFromHash();
+      if (accessToken) {
+        try {
+          sessionStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
+        } catch {
+          // ignore
         }
-        return;
-      }
-
-      if (data.session) {
         window.location.replace("/");
         return;
       }

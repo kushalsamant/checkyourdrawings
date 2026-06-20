@@ -41,5 +41,3 @@ Need to run a full revision stack? Sign in and subscribe at [kvshvl.in](https://
 Built by a coordination architect who sat in your seat.  
 I used to do this at my previous job.  
 Now the computer does it.
-
-Part of the [kvshvl](https://kvshvl.in) platform.

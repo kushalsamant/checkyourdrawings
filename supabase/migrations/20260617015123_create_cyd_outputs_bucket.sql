@@ -1,4 +1,4 @@
--- Pass 2: cyd_outputs bucket, RLS, and comparisons metadata table.
+-- cyd_outputs bucket, RLS, and comparisons metadata table (legacy — outputs not used in app).
 
 insert into storage.buckets (id, name, public)
 values ('cyd_outputs', 'cyd_outputs', true)

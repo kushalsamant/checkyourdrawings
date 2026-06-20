@@ -1,5 +1,7 @@
 # Backend API
 
+Full project docs: [`../checkyourdrawings.plan.md`](../checkyourdrawings.plan.md)
+
 ## Endpoints
 
 - `GET /` — service info

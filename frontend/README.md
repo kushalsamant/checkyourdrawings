@@ -2,6 +2,8 @@
 
 React + TypeScript UI for Check Your Drawings.
 
+Full project docs: [`../checkyourdrawings.plan.md`](../checkyourdrawings.plan.md)
+
 ## Development
 
 ```powershell

@@ -1,84 +1,82 @@
----
-name: Check Your Drawings — Master Plan
-overview: "Pass 1 + auth/batch shipped. Hosted MVP + PDF export live (f854e7f). Render /outputs/ only; Supabase auth+batch only."
-todos:
-  - id: kvshvl-brand-colors
-    content: "kvshvl brand shell in React (styles.css, App.tsx, AboutPage from index.md, GA in index.html)"
-    status: completed
-  - id: dockerfile-render
-    content: "Production Dockerfile + render.yaml; deploy API on Render (gunicorn timeout 300s, CYD_CORS_ORIGINS, auth bypass env)"
-    status: completed
-  - id: vercel-frontend
-    content: "Vercel config + deploy frontend; VITE_API_BASE_URL → Render API; domain checkyourdrawings.kvshvl.in"
-    status: completed
-  - id: hosted-smoke
-    content: "Smoke-test live site from kvshvl.in side tab; document hosted checklist in docs/smoke-test.md"
-    status: completed
-isProject: true
----
+# Check Your Drawings
 
-# Check Your Drawings — Master Plan
+AEC coordination tool: upload two architectural drawing PDFs (Drawing A and Drawing B), auto-align them, and download a color-coded coordination overlay as **PDF** (deliverable) or **PNG** (preview).
 
-Canonical plan for the repo. AEC coordination tool for comparing two architectural drawing PDFs. Upload Drawing A and Drawing B, auto-align them, and download a coordination overlay as **PDF** (deliverable) or **PNG** (preview).
+**Production:** live at https://checkyourdrawings.kvshvl.in — smoke verified 2026-06-20.
 
-**Work one task at a time** (see frontmatter todos). **Production:** smoke verified 2026-06-20; PDF export shipped `f854e7f`.
-
-**Current product tiers:**
+## Product tiers
 
 | Tier | Access |
 |------|--------|
 | Anonymous | Unlimited single-pair `/compare` + Download PDF + Download PNG |
 | Signed in, not paid | Same as anonymous; batch tab shows upgrade prompt |
-| Paid kvshvl | Batch queue + ZIP export (PDFs) |
+| Paid kvshvl (`weekly` / `monthly` / `yearly`) | Batch UI + ZIP export of PDF overlays |
 
 ---
 
-## kvshvl.in brand shell (Pass 2)
+## Architecture
 
-Check Your Drawings should look like **kvshvl.in** — same colors, typography, and page chrome.
+### Stack
 
-### Layout (React SPA)
+```text
+User laptop → upload → Render (compare, writes outputs/) → preview/download → user laptop
+Vercel = UI only | Supabase = auth + batch billing | No output cloud storage
+```
 
-| Surface | Mechanism |
-|---------|-----------|
-| Compare app (`/`) | `frontend/src/App.tsx` + `styles.css` (`.app-shell`, `.app-footer`) |
-| About page (`/about`) | `index.md` → build-time import → `frontend/src/pages/AboutPage.tsx` |
-| Site chrome | `frontend/index.html` (meta, GA `G-JTHJJMRHT7`) |
+### Components
 
-**Vercel deploys from repo root** via [`vercel.json`](vercel.json) (`npm ci --prefix frontend`, output `frontend/dist`). No Jekyll at repo root. Pinterest verify HTML (`pinterest-bdc46.html`) is a static utility, not the live product shell.
+| Layer | Role |
+|-------|------|
+| `frontend/` | Upload UI, result viewer, metadata panel |
+| `backend/app/routes/compare.py` | `POST /compare` — validate uploads, run pipeline |
+| `backend/app/services/pdf_converter.py` | PyMuPDF rasterize PDF → RGB image |
+| `backend/app/services/pdf_exporter.py` | Embed overlay PNG on Drawing A sheet PDF |
+| `backend/app/services/alignment.py` | ORB features + RANSAC homography + optional ECC refinement |
+| `backend/app/services/content_detection.py` | Ink bounding boxes, union crop, overlap gate |
+| `backend/app/services/overlay_renderer.py` | Orange/blue/green/red ink map + footer band |
+| `backend/outputs/` | Generated comparison PNG + PDF (served at `/outputs/`, pruned after 24h) |
 
-**Brand shell mapping:**
+### Request flow
 
-| Pattern | CYD equivalent |
-|---------|----------------|
-| `:root` CSS variables | `frontend/src/styles.css` |
-| `<main>{{ content }}</main>` | `.app-shell` in `App.tsx`; `.landing-shell` on `/about` |
-| `<footer>© year title</footer>` | `.app-footer` in `App.tsx` and `AboutPage.tsx` |
-| Narrow prose column (`72ch`) | `.landing-shell` on `/about` only |
-| Google Analytics in `<head>` | `frontend/index.html` (`G-JTHJJMRHT7`) |
+```text
+Drawing A PDF + Drawing B PDF
+  → load_image (PyMuPDF)
+  → align_drawing_b_to_a (ORB + RANSAC + optional ECC)
+  → detect_content_bbox + union_bbox + compute_overlap_bbox (gate)
+  → render_coordination_overlay (orange / blue / green / red)
+  → comparison-{uuid}.png + comparison-{uuid}.pdf
+```
 
-**Source of truth for colors:** [`kushalsamant.github.io/assets/css/main.css`](../kushalsamant.github.io/assets/css/main.css) (canonical kvshvl tokens).
+### Alignment behavior
 
-**Layout/structure reference:** `frontend/src/App.tsx`, `frontend/src/pages/AboutPage.tsx`, `frontend/src/styles.css`.
+- **Hard fail (HTTP 400):** cannot compute homography, or insufficient overlapping ink between sheets.
+- **Marginal (HTTP 200 + warning):** low inlier ratio — overlay still returned; footer notes low confidence.
+- **Timeout (HTTP 504):** compare exceeds `CYD_COMPARE_TIMEOUT_SECONDS` (default 300s).
 
-> **Note:** Use **kvshvl.in token meanings** in `styles.css` (`--accent` = red, `--text-muted` = gray).
+### Highest-risk code
 
-| Token (kvshvl.in) | Value |
-|-------------------|--------|
-| `--accent` | `#f12345` |
-| `--text-primary` | `#888888` |
-| `--text-muted` | `#aaaaaa` |
-| `--background` | `#ffffff` |
+- `backend/app/services/alignment.py` — homography quality drives usefulness
+- `backend/app/services/overlay_renderer.py` — pixel classification semantics
+- `backend/app/services/content_detection.py` — overlap gate rejects unrelated sheets
 
-**Keep unchanged:** coordination overlay colors (orange/blue/green/red) — drawing semantics, not UI chrome.
+### Out of scope
 
-**Status:** `kvshvl-brand-colors` — **Done** (includes `/about` from `index.md`).
+- DWG, PNG, JPG, GIF inputs
+- Comparison history / Supabase output storage — users download deliverables to their own systems
+
+### Production topology
+
+| Service | Host | Role |
+|---------|------|------|
+| Frontend | Vercel → `checkyourdrawings.kvshvl.in` | Static Vite build |
+| API | Render → `checkyourdrawings.onrender.com` | FastAPI + OpenCV + PyMuPDF |
+| Storage | Render ephemeral disk | `backend/outputs/` — PNG + PDF, pruned after 24h |
 
 ---
 
 ## Overlay semantics
 
-The coordination overlay paints every ink pixel:
+Every ink pixel is classified:
 
 | Color | Meaning |
 |-------|---------|
@@ -87,63 +85,34 @@ The coordination overlay paints every ink pixel:
 | Green | Ink in both (aligned overlap) |
 | Red | Misaligned overlap (clash) |
 
-**Same file twice → mostly green.** That is correct behavior for identical inputs.
+**Same file twice → mostly green.** That is correct for identical inputs.
+
+**Coordination overlay colors (orange/blue/green/red) are drawing semantics, not UI chrome** — do not swap for kvshvl brand colors.
 
 ---
 
-## Already complete (do not redo)
+## kvshvl brand shell
 
-### Pass 1 — compare product
+Check Your Drawings should look like **kvshvl.in** — same colors, typography, and page chrome.
 
-- PDF pipeline, React UI, FastAPI backend, tests, local smoke on `0A`/`0B`
-- Docs: [architecture.md](docs/architecture.md), [smoke-test.md](docs/smoke-test.md), [testing.md](docs/testing.md)
+| Surface | Mechanism |
+|---------|-----------|
+| Compare app (`/`) | `frontend/src/App.tsx` + `styles.css` (`.app-shell`, `.app-footer`) |
+| About page (`/about`) | `index.md` → build-time import → `frontend/src/pages/AboutPage.tsx` |
+| Site chrome | `frontend/index.html` (meta, GA `G-JTHJJMRHT7`) |
 
-### kvshvl.in marketing
+**Vercel deploys from repo root** via [`vercel.json`](vercel.json) (`npm ci --prefix frontend`, output `frontend/dist`).
 
-| Item | Status |
-|------|--------|
-| Side tab CTA → `https://checkyourdrawings.kvshvl.in` | **Live** in [`kushalsamant.github.io/_includes/side-tabs.html`](../kushalsamant.github.io/_includes/side-tabs.html) |
-| Repo [`CNAME`](CNAME) | `checkyourdrawings.kvshvl.in` |
+| Token (kvshvl.in) | Value |
+|-------------------|--------|
+| `--accent` | `#f12345` |
+| `--text-primary` | `#888888` |
+| `--text-muted` | `#aaaaaa` |
+| `--background` | `#ffffff` |
 
-### Dev machine setup
+**Source of truth for colors:** [`kushalsamant.github.io/assets/css/main.css`](../kushalsamant.github.io/assets/css/main.css)
 
-| Item | Status |
-|------|--------|
-| Vercel CLI (`vercel whoami` → `kushalsamant`) | **Done** |
-| Render CLI + login | **Done** |
-| Render binary | `%LOCALAPPDATA%\Programs\cli-bin\render.exe` (user PATH) |
-
-### Repo config and dependencies (former `production-config` task)
-
-| Item | File | Status |
-|------|------|--------|
-| `gunicorn` + Pass 3 deps | [backend/requirements.txt](backend/requirements.txt) | **Done** |
-| Dual `Settings` (app + platform) | [backend/app/config.py](backend/app/config.py) | **Done** — default `auth_required=false` |
-| Production env docs | [`.env.example`](.env.example), [frontend/.env.example](frontend/.env.example) | **Done** |
-| `/health` + `/health/ready` | [backend/app/main.py](backend/app/main.py) | **Done** |
-| `VITE_API_BASE_URL` production build path | [frontend/src/services/api.ts](frontend/src/services/api.ts) | **Done** |
-
-### Optional auth code (landed — Pass 3 batch billing)
-
-Auth + subscription gate for **batch only**. Compare outputs stay on **Render disk** (`/outputs/`, 24h prune). No Supabase output storage.
-
-| Area | Files |
-|------|-------|
-| JWT + deps + subscription utils | `backend/app/auth/`, `backend/app/subscription/` |
-| Platform DB + `User` model | `backend/app/database.py`, `backend/app/models/user.py` |
-| PDF + PNG pipeline | `backend/app/services/pdf_exporter.py`, [compare.py](backend/app/routes/compare.py) |
-| Frontend auth (when `VITE_SUPABASE_*` set) | `frontend/src/lib/auth-provider.tsx`, `frontend/src/pages/AuthCallback.tsx` |
-
-**Production defaults** (Render / Vercel):
-
-```
-CYD_AUTH_REQUIRED=false
-CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in
-```
-
-Optional for batch sign-in: `PLATFORM_DATABASE_URL`, `SUPABASE_*` on Render; `VITE_SUPABASE_*` on Vercel. See [docs/deploy.md](docs/deploy.md).
-
-**Removed (do not restore):** `CYD_STORAGE_BYPASS`, `storage.py`, Supabase compare upload, comparison history UI.
+**Portfolio link:** side tab CTA → `https://checkyourdrawings.kvshvl.in` in [`kushalsamant.github.io/_includes/side-tabs.html`](../kushalsamant.github.io/_includes/side-tabs.html)
 
 ---
 
@@ -153,14 +122,27 @@ Optional for batch sign-in: `PLATFORM_DATABASE_URL`, `SUPABASE_*` on Render; `VI
 |------|---------|
 | `backend/` | FastAPI app, compare pipeline, tests |
 | `frontend/` | React UI (`/`, `/about`, `/auth/callback`) |
-| `index.md` | About-page copy (bundled at build into `/about`) |
-| `docs/` | Architecture, testing, smoke-test docs |
-| `supabase/` | Pass 3 migrations (not required for Pass 2 deploy) |
-| Root config | `checkyourdrawings.plan.md`, `LICENSE`, `Dockerfile`, `.gitignore`, `.env.example` |
+| `index.md` | About-page marketing copy (bundled at build into `/about`) |
+| `supabase/` | Migrations (platform users; optional outputs bucket) |
+| `scripts/` | See [Scripts](#scripts) below |
+| Root config | `Dockerfile`, `render.yaml`, `vercel.json`, `.env.example`, `LICENSE` |
 
-**Local-only at repo root (gitignored):** smoke PDFs `0A`/`0B`, `.env`
+**Local-only at repo root (gitignored):** smoke PDFs `0A`/`0B`, `.env`, `.env.deploy.local`, comparison outputs
 
-**Root static utilities (not part of Vercel SPA deploy):** `pinterest-bdc46.html` (Pinterest domain verify)
+### Scripts
+
+| File | Purpose |
+|------|---------|
+| `scripts/deploy_render_env.py` | Push production secrets from `.env.deploy.local` to Render |
+| `scripts/smoke_production.py` | Hosted smoke — health, anonymous compare, authed compare |
+| `scripts/enable_google_oauth.py` | Configure Google OAuth on the Supabase project |
+
+**Root static utilities (not part of Vercel SPA deploy):**
+
+| File | Notes |
+|------|-------|
+| `pinterest-bdc46.html` | **Do not delete** — Pinterest domain verification |
+| `CNAME` | `checkyourdrawings.kvshvl.in` (GitHub Pages convention; production DNS is Vercel) |
 
 ---
 
@@ -179,151 +161,260 @@ npm install
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173**. Leave `VITE_API_BASE_URL` unset (Vite proxies `/compare` and `/outputs`).
+Open **http://127.0.0.1:5173**. Leave `VITE_API_BASE_URL` unset (Vite proxies `/compare`, `/outputs`, `/health`).
 
 ### Environment variables
 
-**Backend (`CYD_` prefix)** — see [`.env.example`](.env.example). Key production var:
+**Backend (`CYD_` prefix)** — see [`.env.example`](.env.example)
 
-| Variable | Pass 2 production value |
-|----------|-------------------------|
+**Frontend** — see [frontend/.env.example](frontend/.env.example)
+
+| Variable | Production value |
+|----------|------------------|
 | `CYD_CORS_ORIGINS` | `https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in` |
-
-**Frontend** — see [frontend/.env.example](frontend/.env.example):
-
-| Variable | Pass 2 production value |
-|----------|-------------------------|
-| `VITE_API_BASE_URL` | `https://checkyourdrawings.onrender.com` (`api.checkyourdrawings.kvshvl.in` optional — DNS not live) |
+| `CYD_AUTH_REQUIRED` | `false` |
+| `VITE_API_BASE_URL` | `https://checkyourdrawings.onrender.com` |
+| `VITE_SUPABASE_URL` | `https://ytcnzhapqainbtkoshvh.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | (from Supabase dashboard) |
+| `VITE_KVSHVL_UPGRADE_URL` | `https://kvshvl.in` |
 
 ---
 
-## Pass 2 — Hosted MVP (current work)
+## Deploy
 
-**Goal:** Ship the free compare tool to `checkyourdrawings.kvshvl.in`. No login, no billing.
+| Surface | Value |
+|---------|-------|
+| Vercel project | `kvshvl/checkyourdrawings` |
+| Frontend URL | https://checkyourdrawings.kvshvl.in |
+| API URL (live) | https://checkyourdrawings.onrender.com |
+| API custom domain | `api.checkyourdrawings.kvshvl.in` — **optional, DNS not configured** |
 
-**Pass 2 status:** live at `checkyourdrawings.kvshvl.in`; production smoke verified 2026-06-20 (`40db813`).
+### Render (API)
 
-| Item | Status |
-|------|--------|
-| kvshvl.in brand shell in React | **Done** |
-| [Dockerfile](Dockerfile) + [render.yaml](render.yaml) | **Done** |
-| Root [`vercel.json`](vercel.json) | **Done** |
-| Live deploy + DNS | **Done** |
-| Hosted smoke (production) | **Done** — [docs/smoke-test.md](docs/smoke-test.md) |
-| Freemium compare + batch UI | **Done** — `CYD_AUTH_REQUIRED=false` on Render |
+Blueprint: [`render.yaml`](render.yaml)
 
-### Production architecture
+**Required production env:**
 
-```mermaid
-flowchart LR
-  subgraph kvshvl [kvshvl.in]
-    SideTab[Side tab CTA]
-  end
-  subgraph prod [Production]
-    Vercel[Vercel frontend]
-    Render[Render API]
-    Disk[Ephemeral outputs disk]
-  end
-  User[Visitor] --> SideTab
-  SideTab -->|checkyourdrawings.kvshvl.in| Vercel
-  Vercel -->|POST /compare and GET /outputs| Render
-  Render -->|POST /compare| Disk
+| Key | Value |
+|-----|-------|
+| `CYD_AUTH_REQUIRED` | `false` |
+| `CYD_CORS_ORIGINS` | `https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in` |
+
+Outputs are served from Render disk at `/outputs/` (PNG preview + PDF deliverable). Supabase is auth + batch billing only.
+
+Apply env from local secrets. For freemium, `CYD_AUTH_REQUIRED` must be `false` in `.env.deploy.local` before running:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\deploy_render_env.py
 ```
 
-| Service | Host | Role |
-|---------|------|------|
-| Frontend | Vercel → `checkyourdrawings.kvshvl.in` | Static Vite build |
-| API | Render → `checkyourdrawings.onrender.com` | FastAPI + OpenCV + PyMuPDF |
-| Storage | Render ephemeral disk | `backend/outputs/` — PNG + PDF, pruned after 24h |
+Or set keys manually in Render → **checkyourdrawings-api** → **Environment**.
 
-**Reference:** [`sketch2bim/render.yaml`](../sketch2bim/render.yaml) for gunicorn pattern only.
+Validate blueprint:
 
-### Pass 2 tasks (remaining)
+```powershell
+render blueprints validate ./render.yaml
+```
 
-#### 0. kvshvl brand shell (`kvshvl-brand-colors`) — **Done**
+### Vercel (frontend)
 
-- [frontend/src/styles.css](frontend/src/styles.css) — kvshvl `:root` tokens; `.landing-shell` for `/about`
-- [frontend/src/App.tsx](frontend/src/App.tsx) — `.app-shell` + `.app-footer`; footer link to `/about`
-- [frontend/src/pages/AboutPage.tsx](frontend/src/pages/AboutPage.tsx) — renders [index.md](index.md) at `/about`
-- [frontend/index.html](frontend/index.html) — meta description, GA `G-JTHJJMRHT7`
+Root [`vercel.json`](vercel.json) runs `npm ci --prefix frontend` and builds `frontend/dist`.
 
-#### 1. API on Render (`dockerfile-render`)
+`AboutPage` imports root [`index.md`](index.md), so git-connected deploys must include the full repo.
 
-- Replace placeholder [Dockerfile](Dockerfile): `python:3.12-slim`, OpenCV system libs, `gunicorn` + uvicorn worker, `--timeout 300`
-- Create `render.yaml` with `healthCheckPath: /health`
-- Render env vars:
-  - `CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in`
-  - `CYD_AUTH_REQUIRED=false`
-- Connect repo on Render; deploy API
+```powershell
+cd C:\Users\ADMIN\Documents\GitHub\checkyourdrawings
+vercel --prod --yes
+```
 
-#### 2. Frontend on Vercel (`vercel-frontend`)
-
-- Root [`vercel.json`](vercel.json): `npm ci --prefix frontend`, build `frontend/dist`
-- Env at build time: `VITE_API_BASE_URL=https://checkyourdrawings.onrender.com`
-- Connect repo on Vercel; add custom domain `checkyourdrawings.kvshvl.in`
-
-**DNS:**
+### DNS
 
 | Record | Points to |
 |--------|-----------|
 | `checkyourdrawings.kvshvl.in` | Vercel |
-| `api.checkyourdrawings.kvshvl.in` | Render (optional — not configured; use `*.onrender.com`) |
+| `api.checkyourdrawings.kvshvl.in` | Render (optional — not configured) |
 
-#### 3. Hosted smoke test (`hosted-smoke`)
+Quick checks:
 
-Add section to [docs/smoke-test.md](docs/smoke-test.md):
-
-1. Open [kvshvl.in](https://www.kvshvl.in) → **Check Your Drawings** side tab
-2. Upload `0A` / `0B` → Compare → overlay renders
-3. Download PDF + Download PNG works
-4. `curl https://api.../health` → `{"status":"ok"}`
-
-**Estimated effort:** ~1 day (deploy files + dashboard setup + smoke).
+```powershell
+curl.exe https://checkyourdrawings.onrender.com/health
+curl.exe https://checkyourdrawings.kvshvl.in
+```
 
 ---
 
-## Pass 3 — Auth and batch (shipped)
+## Testing
 
-Freemium single compare is live. Paid batch uses sign-in + kvshvl subscription gate. Outputs are **not** stored in Supabase — users download PDF/PNG to their own systems.
+### Backend
 
-**Production:**
-
-```
-CYD_AUTH_REQUIRED=false
-CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in
+```powershell
+pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+pytest backend/tests -v
 ```
 
-**Optional (batch sign-in only):** `PLATFORM_DATABASE_URL`, `SUPABASE_*` on Render; `VITE_SUPABASE_*` on Vercel. Run `scripts/deploy_pass3_env.py` from `.env.pass3.local` when updating secrets.
+| Area | Coverage |
+|------|----------|
+| `/compare` integration | PDF-only uploads, content scenarios, margin shift |
+| Route errors | 415 for non-PDF, 400 empty/corrupt, 413 oversize |
+| Pipeline units | alignment, overlay renderer, content detection, image limits, output cleanup |
 
-kvshvl subscription gate (402 for batch) — reads platform `users` table; **no Razorpay in CYD**.
+Tests marked `@pytest.mark.integration` use synthetic PDF fixtures from `backend/tests/fixtures/factory.py`.
 
-**Deferred:** unified kvshvl.in sign-in (requires kvshvl.in repo) — see [docs/deploy.md](docs/deploy.md).
+### Frontend
 
-**Removed:** server-side watermark (`40db813`); Supabase output storage + `CYD_STORAGE_BYPASS` (`f854e7f`).
+```powershell
+cd frontend
+npm test
+```
 
-**Shipped:** union bbox crop, PDF export, batch ZIP of PDFs (`f854e7f`).
+Covers PDF-only file validation and API response parsing.
 
 ---
 
-## Dropped / complete (do not resurrect)
+## Smoke tests
 
-| Former plan | Status |
-|-------------|--------|
-| Pass 1 smoke test | Done |
-| Red → orange / magenta → red clash | Shipped |
-| kvshvl.in side tab CTA | Done |
-| Config + gunicorn + `.env.example` | Done |
-| Auth + batch scaffold | Done (Supabase auth for batch; no output cloud) |
-| PDF export + union bbox | Shipped (`f854e7f`) |
-| Supabase compare output storage | Declined — download-first |
-| kvshvl brand shell | Done |
+### Local smoke
+
+Keep smoke PDFs at **repo root** (gitignored):
+
+| File | Role |
+|------|------|
+| `0A 02-Saurabh mishraR2-Model.pdf` | Drawing A |
+| `0B 02-Saurabh mishraR2-Model.pdf` | Drawing B |
+
+| # | Step | Expected |
+|---|------|----------|
+| 1 | Upload `0A` / `0B` | Both accepted (PDF only) |
+| 2 | **Compare** | Completes in under ~30s |
+| 3 | Result image | Green where sheets match; orange/blue at changes; red at misaligned edges |
+| 4 | Footer | Drawing A/B filenames, timestamp, color legend |
+| 5 | Metadata | Orange/blue/green/red counts; alignment confidence `high` or `marginal` |
+| 6 | **Download PDF** and **Download PNG** | Files save and open |
+| 7 | Same file trap | Same PDF twice → mostly green |
+| 8 | Invalid file | `.png` or `.dwg` → client-side or 415 error |
+
+**Common mistakes:**
+
+- Opening `:8000` in the browser — JSON API only; use `:5173`
+- Comparing unrelated PDFs — alignment fails with HTTP 400 (by design)
+
+**Cross-floor compares:** pairs like `1A` vs `2A` show high change ratios (~60%+) with high alignment confidence — expected when comparing different floors, not a pipeline bug. Use same letter pairs (`0A`/`0B`, `1A`/`1B`) for smoke sign-off.
+
+Optional API curl:
+
+```powershell
+curl -X POST http://127.0.0.1:8000/compare `
+  -F "drawing_a=@C:\path\to\drawing-a.pdf" `
+  -F "drawing_b=@C:\path\to\drawing-b.pdf"
+```
+
+### Hosted smoke
+
+| # | Step | Expected |
+|---|------|----------|
+| H1 | [kvshvl.in](https://www.kvshvl.in) → **Check Your Drawings** side tab | Lands on `checkyourdrawings.kvshvl.in` |
+| H2 | Page styling | kvshvl palette: red accent `#f12345`, gray text, white background |
+| H3 | Upload `0A` / `0B` → **Compare** | Overlay renders |
+| H4 | **Download PDF** and **Download PNG** | Files save and open |
+| H5 | `curl https://checkyourdrawings.onrender.com/health` | `"status":"ok"` |
+| H6 | Compare from production frontend | No CORS error |
+
+Anonymous compare returns **200** without `Authorization`. Paid batch tab unlocks after `/account` reports `paid: true`.
+
+`scripts/smoke_production.py` authed compare expects `/outputs/` PNG + PDF paths on Render.
+
+### Production sign-off log
+
+| Date | Commit | Result |
+|------|--------|--------|
+| 2026-06-20 | `f854e7f` + `22c3c2a` | **Pass** — anonymous browser smoke: compare, Download PDF/PNG |
+| 2026-06-20 | `40db813` | **Pass** — automated checks below |
+
+| # | Check | Result |
+|---|-------|--------|
+| P1 | `GET /health` | `{"status":"ok"}` |
+| P2 | `GET /health/ready` | `auth_required: false` |
+| P3 | `GET /account` (no auth) | `signed_in: false`, `paid: false` |
+| P4 | `POST /compare` (synthetic PDFs, no auth) | **200** ~14s |
+| P5 | CORS preflight from `checkyourdrawings.kvshvl.in` | **200** |
+| P6 | Frontend `https://checkyourdrawings.kvshvl.in` | **200** |
+| P7 | `/about` | **200** |
+
+**Manual still recommended:** upload real `0A`/`0B` in browser, confirm overlay + downloads, batch tab upsell for unsigned user.
+
+---
+
+## Manual operations
+
+Tasks outside repo code — Google Cloud, contacts, or DNS.
+
+### Google OAuth consent screen branding
+
+Google may show `ytcnzhapqainbtkoshvh.supabase.co` on sign-in. Branding improves trust until unified kvshvl.in sign-in ships.
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → project with **KVSHVL (Production)** OAuth client
+2. **APIs & Services** → **OAuth consent screen**
+3. Set app name `KVSHVL`, logo, homepage `https://kvshvl.in`, authorized domains `kvshvl.in`, `checkyourdrawings.kvshvl.in`
+4. Test sign-in from https://checkyourdrawings.kvshvl.in
+
+The Supabase callback host may still appear on one line of the Google prompt while CYD uses per-app Supabase OAuth.
+
+### Friend share outreach
+
+**URL:** https://checkyourdrawings.kvshvl.in
+
+> I built a small tool for coordination — upload two drawing PDFs (revision A vs B) and get a color overlay in ~30 seconds. Free for single pairs, no sign-in.
+>
+> https://checkyourdrawings.kvshvl.in
+>
+> If you ever run a full revision stack (10+ pairs), there is a batch mode behind kvshvl subscription — I'd love to know if that would save you time and what you'd pay from project budget.
+
+### Optional API custom domain
+
+Skip (onrender.com is fine), **or** CNAME `api.checkyourdrawings.kvshvl.in` → Render, then update `VITE_API_BASE_URL` and `CYD_CORS_ORIGINS`.
+
+---
+
+## Auth and batch
+
+Freemium single compare is live (`CYD_AUTH_REQUIRED=false`). Paid batch uses sign-in + kvshvl subscription gate (402 for batch) — reads platform `users` table; **no Razorpay in CYD**.
+
+**Optional env (batch sign-in only):** `PLATFORM_DATABASE_URL`, `SUPABASE_*` on Render; `VITE_SUPABASE_*` on Vercel. Run `scripts/deploy_render_env.py` from `.env.deploy.local` when updating secrets. Enable Google OAuth via `scripts/enable_google_oauth.py`.
+
+**Auth code (batch only):**
+
+| Area | Files |
+|------|-------|
+| JWT + deps + subscription | `backend/app/auth/`, `backend/app/subscription/` |
+| Platform DB + User model | `backend/app/database.py`, `backend/app/models/user.py` |
+| Frontend auth | `frontend/src/lib/auth-provider.tsx`, `frontend/src/pages/AuthCallback.tsx` |
+
+### Unified kvshvl.in sign-in (deferred)
+
+**Status:** Not implemented. CYD uses per-app Supabase OAuth today.
+
+**Target (requires kvshvl.in repo):**
+
+1. CYD **Sign in** redirects to `https://kvshvl.in/sign-in?return_to=...`
+2. kvshvl completes Google OAuth once
+3. Return to CYD with platform JWT (`backend/app/auth/jwt.py`)
+4. Remove CYD frontend `signInWithOAuth` via per-app Supabase
+
+---
+
+## Dropped / do not restore
+
+| Item | Status |
+|------|--------|
+| Server-side watermark | Removed (`40db813`) |
+| Supabase compare output storage + `CYD_STORAGE_BYPASS` | Declined — download-first (`f854e7f`) |
+| `storage.py`, comparison history UI | Removed |
 | Full Sketch2BIM SaaS port | Declined |
-| CLI install + login | Done |
+| CLI install + login setup | Done |
 
 ---
 
 ## References
 
-- Architecture: [docs/architecture.md](docs/architecture.md)
 - kvshvl site: [`../kushalsamant.github.io`](../kushalsamant.github.io)
-- Sketch2BIM deploy reference: [`../sketch2bim/render.yaml`](../sketch2bim/render.yaml)
+- Sketch2BIM deploy reference (gunicorn pattern): [`../sketch2bim/render.yaml`](../sketch2bim/render.yaml)

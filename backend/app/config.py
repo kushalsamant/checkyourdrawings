@@ -19,6 +19,8 @@ class PlatformSettings(BaseSettings):
     )
 
     platform_database_url: str | None = None
+    platform_jwt_secret: str | None = None
+    platform_jwt_issuer: str | None = None
     supabase_url: str | None = None
     supabase_service_role_key: str | None = None
     supabase_jwt_secret: str | None = None
@@ -83,6 +85,8 @@ CORS_ORIGINS: list[str] = _settings.cors_origins_list
 ALLOWED_EXTENSIONS: frozenset[str] = frozenset({".pdf"})
 
 PLATFORM_DATABASE_URL: str | None = _platform_settings.platform_database_url
+PLATFORM_JWT_SECRET: str | None = _platform_settings.platform_jwt_secret
+PLATFORM_JWT_ISSUER: str | None = _platform_settings.platform_jwt_issuer
 SUPABASE_URL: str | None = _platform_settings.supabase_url
 SUPABASE_SERVICE_ROLE_KEY: str | None = _platform_settings.supabase_service_role_key
 SUPABASE_JWT_SECRET: str | None = _platform_settings.supabase_jwt_secret

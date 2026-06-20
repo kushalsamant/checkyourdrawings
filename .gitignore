@@ -20,8 +20,8 @@ frontend/vite.config.d.ts
 *.env
 .env.*
 !.env.example
-.env.pass3.tmp
-.env.pass3.local
+.env.deploy.tmp
+.env.deploy.local
 
 # Local test assets / logs
 Demo_WhatsApp*.mp4

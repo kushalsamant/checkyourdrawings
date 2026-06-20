@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply Pass 3 environment variables to Render from .env.pass3.local."""
+"""Apply production environment variables to Render from .env.deploy.local."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import httpx
 REPO_ROOT = Path(__file__).resolve().parent.parent
 RENDER_KEY_PATH = Path.home() / ".render" / "cli.yaml"
 SERVICE_ID = "srv-d8qmgpr7uimc73e5bp9g"
-SECRETS_FILE = REPO_ROOT / ".env.pass3.local"
+SECRETS_FILE = REPO_ROOT / ".env.deploy.local"
 
 RENDER_KEYS = (
     "CYD_AUTH_REQUIRED",

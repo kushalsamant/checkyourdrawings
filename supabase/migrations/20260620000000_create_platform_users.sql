@@ -1,4 +1,4 @@
--- Platform users table for Pass 3 auth and subscription gating.
+-- Platform users table for auth and subscription gating.
 
 create table if not exists public.users (
     id serial primary key,

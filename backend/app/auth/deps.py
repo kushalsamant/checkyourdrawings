@@ -3,8 +3,18 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from backend.app.auth.jwt import decode_supabase_jwt, extract_email_from_payload
-from backend.app.config import AUTH_REQUIRED, SUPABASE_JWT_SECRET, SUPABASE_URL
+from backend.app.auth.jwt import (
+    decode_platform_jwt,
+    decode_supabase_jwt,
+    extract_email_from_payload,
+)
+from backend.app.config import (
+    AUTH_REQUIRED,
+    PLATFORM_JWT_ISSUER,
+    PLATFORM_JWT_SECRET,
+    SUPABASE_JWT_SECRET,
+    SUPABASE_URL,
+)
 from backend.app.database import get_db
 from backend.app.models.user import User
 from backend.app.subscription.utils import (
@@ -36,19 +46,32 @@ def get_current_user(
             )
         return None
 
-    if not SUPABASE_JWT_SECRET and not SUPABASE_URL:
+    if not PLATFORM_JWT_SECRET and not SUPABASE_JWT_SECRET and not SUPABASE_URL:
         if AUTH_REQUIRED:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="SUPABASE_JWT_SECRET or SUPABASE_URL is required for authentication.",
+                detail="Authentication token verification is not configured.",
             )
         return None
 
-    payload = decode_supabase_jwt(
-        credentials.credentials,
-        secret=SUPABASE_JWT_SECRET,
-        supabase_url=SUPABASE_URL,
-    )
+    payload = None
+    if PLATFORM_JWT_SECRET:
+        try:
+            payload = decode_platform_jwt(
+                credentials.credentials,
+                secret=PLATFORM_JWT_SECRET,
+                issuer=PLATFORM_JWT_ISSUER or "https://auth.kvshvl.in",
+                audience="kvshvl-platform",
+            )
+        except HTTPException:
+            payload = None
+
+    if payload is None:
+        payload = decode_supabase_jwt(
+            credentials.credentials,
+            secret=SUPABASE_JWT_SECRET,
+            supabase_url=SUPABASE_URL,
+        )
     email = extract_email_from_payload(payload)
     if email is None:
         raise HTTPException(

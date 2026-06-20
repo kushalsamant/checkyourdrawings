@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pass 3 production smoke checks using Supabase admin + compare API."""
+"""Production smoke checks using Supabase admin + compare API."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import httpx
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
-SECRETS_FILE = REPO_ROOT / ".env.pass3.local"
+SECRETS_FILE = REPO_ROOT / ".env.deploy.local"
 API_URL = "https://checkyourdrawings.onrender.com"
 TEST_EMAIL = "cyd-smoke@kvshvl.in"
 TEST_PASSWORD = "CYD-Smoke-Test-2026!"
