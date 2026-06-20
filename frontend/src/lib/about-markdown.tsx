@@ -52,7 +52,13 @@ function renderInline(text: string): ReactNode[] {
       parts.push(<strong key={`${match.index}-${match[2]}`}>{match[2]}</strong>);
     } else if (match[3] !== undefined && match[4] !== undefined) {
       parts.push(
-        <a key={`${match.index}-${match[3]}`} href={match[4]} className="landing-inline-link">
+        <a
+          key={`${match.index}-${match[3]}`}
+          href={match[4]}
+          className="landing-inline-link"
+          target="_blank"
+          rel="noreferrer"
+        >
           {match[3]}
         </a>,
       );
@@ -132,7 +138,13 @@ export function renderAboutMarkdown(markdown: string): ReactNode[] {
     const linkMatch = trimmed.match(/^\[([^\]]+)\](?:\(([^)]+)\))?$/);
     if (linkMatch) {
       nodes.push(
-        <a key={index} href={linkMatch[2] ?? "/"} className="landing-cta">
+        <a
+          key={index}
+          href={linkMatch[2] ?? "/"}
+          className="landing-cta"
+          target="_blank"
+          rel="noreferrer"
+        >
           {linkMatch[1]}
         </a>,
       );

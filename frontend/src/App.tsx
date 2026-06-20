@@ -113,7 +113,7 @@ export default function App() {
             </div>
 
             <div className="auth-actions">
-              <a href="/about" className="header-link">
+              <a href="/about" className="header-link" target="_blank" rel="noreferrer">
                 About
               </a>
               {authConfigured &&

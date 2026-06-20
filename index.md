@@ -1,4 +1,4 @@
-# Check Your Drawings
+# [Check Your Drawings](https://checkyourdrawings.kvshvl.in)
 
 If you coordinate drawings daily, you already know the problem.  
 Ten drawings from the architect. Ten from MEP. Ten from structural.  
@@ -41,3 +41,10 @@ Need to run a full revision stack? Sign in and subscribe at [kvshvl.in](https://
 Built by a coordination architect who sat in your seat.  
 I used to do this at my previous job.  
 Now the computer does it.
+
+---
+
+## Legal
+
+[Terms of Service](kvshvl.in/_includes/termsofservice)  
+[Privacy Policy](kvshvl.in/_includes/privacypolicy)

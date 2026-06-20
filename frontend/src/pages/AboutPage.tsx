@@ -11,7 +11,9 @@ export function AboutPage() {
 
         <footer className="app-footer">
           <p>
-            <a href="/">Back to app</a>
+            <a href="/" target="_blank" rel="noreferrer">
+              Back to app
+            </a>
             {" · "}
             <a href={KVSHVL_PRIVACY_URL} target="_blank" rel="noreferrer">
               Privacy Policy
