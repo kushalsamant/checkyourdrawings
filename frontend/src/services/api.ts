@@ -4,6 +4,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, ""
 const UPGRADE_URL =
   (import.meta.env.VITE_KVSHVL_UPGRADE_URL ?? "https://kvshvl.in").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
+const COMPARE_BUSY_DETAIL = "Another comparison is in progress. Try again in a moment.";
 
 export interface AccountStatus {
   signed_in: boolean;
@@ -190,10 +191,6 @@ export async function getErrorMessage(response: Response): Promise<string> {
   if (response.status === 402) {
     return `Active subscription required. Upgrade at ${UPGRADE_URL}.`;
   }
-  if (response.status === 503) {
-    return "Another comparison is in progress. Try again in a moment.";
-  }
-
   try {
     const data = (await response.json()) as { detail?: unknown };
     const message = formatFastApiDetail(data.detail);
@@ -201,7 +198,14 @@ export async function getErrorMessage(response: Response): Promise<string> {
       return message;
     }
   } catch {
+    if (response.status === 503) {
+      return COMPARE_BUSY_DETAIL;
+    }
     return `Request failed with status ${response.status}.`;
+  }
+
+  if (response.status === 503) {
+    return COMPARE_BUSY_DETAIL;
   }
 
   return `Request failed with status ${response.status}.`;

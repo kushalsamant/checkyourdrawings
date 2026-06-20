@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-from backend.app.config import AUTH_REQUIRED, PLATFORM_DATABASE_URL
+from backend.app.config import PLATFORM_DATABASE_URL
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
@@ -39,7 +39,7 @@ def _get_engine() -> "Engine":
 
 
 def get_db() -> Generator[Session | None, None, None]:
-    if not AUTH_REQUIRED:
+    if not PLATFORM_DATABASE_URL:
         yield None
         return
 

@@ -29,16 +29,20 @@ def get_current_user(
         return None
 
     if db is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Authentication database is not configured.",
-        )
+        if AUTH_REQUIRED:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication database is not configured.",
+            )
+        return None
 
     if not SUPABASE_JWT_SECRET and not SUPABASE_URL:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="SUPABASE_JWT_SECRET or SUPABASE_URL is required for authentication.",
-        )
+        if AUTH_REQUIRED:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="SUPABASE_JWT_SECRET or SUPABASE_URL is required for authentication.",
+            )
+        return None
 
     payload = decode_supabase_jwt(
         credentials.credentials,

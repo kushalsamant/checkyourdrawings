@@ -111,6 +111,7 @@ VITE_API_BASE_URL=https://checkyourdrawings.onrender.com
 
 | Date | Commit | Result |
 |------|--------|--------|
+| 2026-06-20 | `f854e7f` + `22c3c2a` (PDF export, union bbox crop, Vercel ignore) | **Pass** — anonymous browser smoke: compare, Download PDF/PNG, retention line |
 | 2026-06-20 | `40db813` (watermark removed) | **Pass** — automated checks below |
 
 ### Automated checks (2026-06-20, commit `40db813`)

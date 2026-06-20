@@ -1,7 +1,28 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { buildImageUrl, parseCompareResponse } from "./api";
+import { buildImageUrl, getErrorMessage, parseCompareResponse } from "./api";
 
+
+describe("getErrorMessage", () => {
+  it("returns API detail for auth misconfiguration instead of compare-busy fallback", async () => {
+    const response = new Response(
+      JSON.stringify({ detail: "Authentication database is not configured." }),
+      { status: 503, headers: { "Content-Type": "application/json" } },
+    );
+
+    await expect(getErrorMessage(response)).resolves.toBe(
+      "Authentication database is not configured.",
+    );
+  });
+
+  it("returns compare-busy message when 503 has no parseable detail", async () => {
+    const response = new Response("", { status: 503 });
+
+    await expect(getErrorMessage(response)).resolves.toBe(
+      "Another comparison is in progress. Try again in a moment.",
+    );
+  });
+});
 
 describe("buildImageUrl", () => {
   it("builds a relative API image path for dev proxy", () => {
