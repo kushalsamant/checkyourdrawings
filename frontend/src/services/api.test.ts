@@ -35,12 +35,12 @@ describe("buildImageUrl", () => {
     expect(() => buildImageUrl("https://evil.example/outputs/x.png")).toThrow();
   });
 
-  it("allows Supabase storage URLs when configured", () => {
-    vi.stubEnv("VITE_SUPABASE_URL", "https://project.supabase.co");
+  it("allows absolute URLs from the configured API base", () => {
+    vi.stubEnv("VITE_API_BASE_URL", "https://api.example.com");
 
     expect(
-      buildImageUrl("https://project.supabase.co/storage/v1/object/public/cyd_outputs/1/x.png"),
-    ).toBe("https://project.supabase.co/storage/v1/object/public/cyd_outputs/1/x.png");
+      buildImageUrl("https://api.example.com/outputs/comparison-abc.png"),
+    ).toBe("https://api.example.com/outputs/comparison-abc.png");
 
     vi.unstubAllEnvs();
   });

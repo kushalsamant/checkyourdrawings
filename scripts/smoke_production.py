@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-"""Production smoke checks using Supabase admin + compare API."""
+"""Production smoke checks for compare API and platform JWT auth."""
 
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
 
 import httpx
+import jwt
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 SECRETS_FILE = REPO_ROOT / ".env.deploy.local"
 API_URL = "https://checkyourdrawings.onrender.com"
-TEST_EMAIL = "cyd-smoke@kvshvl.in"
-TEST_PASSWORD = "CYD-Smoke-Test-2026!"
+SMOKE_EMAIL = "cyd-smoke@kvshvl.in"
 
 
 def _parse_env_file(path: Path) -> dict[str, str]:
@@ -27,19 +28,39 @@ def _parse_env_file(path: Path) -> dict[str, str]:
     return values
 
 
+def _sign_platform_jwt(*, email: str, secret: str, issuer: str) -> str:
+    now = int(time.time())
+    return jwt.encode(
+        {
+            "email": email,
+            "sub": "cyd-smoke-test",
+            "name": "CYD Smoke Test",
+            "iss": issuer,
+            "aud": "kvshvl-platform",
+            "iat": now,
+            "exp": now + 3600,
+        },
+        secret,
+        algorithm="HS256",
+    )
+
+
 def main() -> int:
     if not SECRETS_FILE.is_file():
         print(f"Missing {SECRETS_FILE}", file=sys.stderr)
         return 1
 
     env = _parse_env_file(SECRETS_FILE)
-    supabase_url = env["SUPABASE_URL"].rstrip("/")
-    service_role = env["SUPABASE_SERVICE_ROLE_KEY"]
-    headers = {
-        "Authorization": f"Bearer {service_role}",
-        "apikey": service_role,
-        "Content-Type": "application/json",
-    }
+    for key in ("PLATFORM_JWT_SECRET", "PLATFORM_JWT_ISSUER"):
+        if key not in env or not env[key]:
+            print(f"Missing {key} in {SECRETS_FILE.name}", file=sys.stderr)
+            return 1
+
+    access_token = _sign_platform_jwt(
+        email=SMOKE_EMAIL,
+        secret=env["PLATFORM_JWT_SECRET"],
+        issuer=env["PLATFORM_JWT_ISSUER"],
+    )
 
     with httpx.Client(timeout=180.0) as client:
         ready = client.get(f"{API_URL}/health/ready")
@@ -48,20 +69,13 @@ def main() -> int:
         unsigned = client.post(f"{API_URL}/compare", files={})
         print("unsigned_compare", unsigned.status_code, unsigned.text[:120])
 
-        client.post(
-            f"{supabase_url}/auth/v1/admin/users",
-            headers=headers,
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD, "email_confirm": True},
+        account = client.get(
+            f"{API_URL}/account",
+            headers={"Authorization": f"Bearer {access_token}"},
         )
-
-        token_response = client.post(
-            f"{supabase_url}/auth/v1/token?grant_type=password",
-            headers={"apikey": env["VITE_SUPABASE_ANON_KEY"], "Content-Type": "application/json"},
-            json={"email": TEST_EMAIL, "password": TEST_PASSWORD},
-        )
-        token_response.raise_for_status()
-        access_token = token_response.json()["access_token"]
-        print("auth_token_ok", bool(access_token))
+        print("authed_account", account.status_code, account.text[:160])
+        if account.status_code != 200:
+            return 1
 
         from backend.tests.fixtures.factory import ContentScenario, image_to_bytes, make_drawing_a_image, make_drawing_b_image
 

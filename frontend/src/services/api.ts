@@ -214,13 +214,9 @@ export function buildImageUrl(imagePath: string): string {
     const parsed = new URL(imagePath);
     const allowedOrigins = new Set<string>();
     const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
 
     if (apiBaseUrl) {
       allowedOrigins.add(new URL(apiBaseUrl, window.location.origin).origin);
-    }
-    if (supabaseUrl) {
-      allowedOrigins.add(new URL(supabaseUrl).origin);
     }
 
     if (allowedOrigins.size === 0 || !allowedOrigins.has(parsed.origin)) {

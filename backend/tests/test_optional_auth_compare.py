@@ -33,8 +33,7 @@ class TestOptionalAuthCompare:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.setattr("backend.app.database.PLATFORM_DATABASE_URL", None)
-        monkeypatch.setattr("backend.app.auth.deps.SUPABASE_URL", None)
-        monkeypatch.setattr("backend.app.auth.deps.SUPABASE_JWT_SECRET", None)
+        monkeypatch.setattr("backend.app.auth.deps.PLATFORM_JWT_SECRET", None)
 
         response = client.post(
             "/compare",
@@ -51,8 +50,7 @@ class TestOptionalAuthCompare:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.setattr("backend.app.database.PLATFORM_DATABASE_URL", None)
-        monkeypatch.setattr("backend.app.auth.deps.SUPABASE_URL", None)
-        monkeypatch.setattr("backend.app.auth.deps.SUPABASE_JWT_SECRET", None)
+        monkeypatch.setattr("backend.app.auth.deps.PLATFORM_JWT_SECRET", None)
 
         response = client.get(
             "/account",
@@ -77,8 +75,8 @@ class TestOptionalAuthCompare:
             "name": "Test User",
         }
 
-        with patch("backend.app.auth.deps.SUPABASE_URL", "https://example.supabase.co"):
-            with patch("backend.app.auth.deps.decode_supabase_jwt", return_value=jwt_payload):
+        with patch("backend.app.auth.deps.PLATFORM_JWT_SECRET", "test-secret"):
+            with patch("backend.app.auth.deps.decode_platform_jwt", return_value=jwt_payload):
                 user = get_current_user(credentials=credentials, db=mock_db)
 
         assert user is not None
