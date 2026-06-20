@@ -9,7 +9,7 @@ const OVERLAY_COLOR_CLASS: Record<string, string> = {
 
 function renderInline(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
-  const pattern = /\*\*([^*]+)\*\*/g;
+  const pattern = /(\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null = pattern.exec(text);
 
@@ -18,18 +18,27 @@ function renderInline(text: string): ReactNode[] {
       parts.push(text.slice(lastIndex, match.index));
     }
 
-    const label = match[1];
-    const colorClass = OVERLAY_COLOR_CLASS[label];
+    if (match[2] !== undefined) {
+      const label = match[2];
+      const colorClass = OVERLAY_COLOR_CLASS[label];
 
-    parts.push(
-      colorClass ? (
-        <strong key={`${match.index}-${label}`} className={colorClass}>
-          {label}
-        </strong>
-      ) : (
-        <strong key={`${match.index}-${label}`}>{label}</strong>
-      ),
-    );
+      parts.push(
+        colorClass ? (
+          <strong key={`${match.index}-${label}`} className={colorClass}>
+            {label}
+          </strong>
+        ) : (
+          <strong key={`${match.index}-${label}`}>{label}</strong>
+        ),
+      );
+    } else if (match[3] !== undefined && match[4] !== undefined) {
+      parts.push(
+        <a key={`${match.index}-${match[3]}`} href={match[4]} className="landing-inline-link">
+          {match[3]}
+        </a>,
+      );
+    }
+
     lastIndex = pattern.lastIndex;
     match = pattern.exec(text);
   }

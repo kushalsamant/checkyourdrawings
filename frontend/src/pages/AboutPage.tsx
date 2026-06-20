@@ -1,4 +1,4 @@
-import aboutMarkdown from "../../about.md?raw";
+import aboutMarkdown from "../../../index.md?raw";
 
 import { renderAboutMarkdown } from "../lib/about-markdown";
 

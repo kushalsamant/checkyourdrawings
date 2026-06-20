@@ -10,21 +10,21 @@ Tomorrow, they send new revisions and you start again.
 
 ## A simple coordination routine
 
-Upload two drawing PDFs. Get a color-coded comparison in seconds.
+Sign in with Google. Upload two drawing PDFs. Get a color-coded comparison in seconds.
 
 **Blue** — New additions (only in the second drawing)  
 **Orange** — Removed elements (only in the first drawing)  
 **Green** — Aligned overlap (matching in both)  
-**Red** — Misaligned overlap (clashes, conflicts, errors)
+**Red** — Misaligned overlap (clashes and conflicts — review manually)
 
 No manual overlay. No CAD license. No hunting for changes with a red pen.
 
 ## Why coordination architects use this
 
-- Compare fifty drawings in the time it takes to overlay five manually  
+- Compare two revision PDFs in seconds instead of stacking them by hand  
 - Catch consultant mismatches before they become RFIs  
-- Export visual proof for your coordination reports  
-- Works with any PDF — scans, exports, even phone photos of site drawings
+- Download PNG proof for coordination reports  
+- Works with PDF plots and exports from your design software (scanned sheets are fine if saved as PDF)
 
 ---
 
@@ -40,5 +40,5 @@ Now the computer does it.
 
 **Pricing**
 
-₹1,999 per project — unlimited comparisons for 90 days  
-No user limits. No drawing limits. Just results.
+Sign in to compare. New accounts get a **7-day trial**.  
+When your trial ends, upgrade at [kvshvl.in](https://kvshvl.in).
