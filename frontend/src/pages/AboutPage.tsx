@@ -1,6 +1,7 @@
 import aboutMarkdown from "../../../index.md?raw";
 
 import { renderAboutMarkdown } from "../lib/about-markdown";
+import { KVSHVL_PRIVACY_URL, KVSHVL_TERMS_URL } from "../lib/legal-urls";
 
 export function AboutPage() {
   return (
@@ -12,8 +13,15 @@ export function AboutPage() {
           <p>
             <a href="/">Back to app</a>
             {" · "}
-            &copy; {new Date().getFullYear()} Check Your Drawings
+            <a href={KVSHVL_PRIVACY_URL} target="_blank" rel="noreferrer">
+              Privacy Policy
+            </a>
+            {" · "}
+            <a href={KVSHVL_TERMS_URL} target="_blank" rel="noreferrer">
+              Terms of Service
+            </a>
           </p>
+          <p>&copy; {new Date().getFullYear()} Check Your Drawings</p>
         </footer>
       </main>
     </div>

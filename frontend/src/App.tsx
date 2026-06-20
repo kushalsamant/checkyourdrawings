@@ -7,6 +7,7 @@ import { UploadPanel } from "./components/UploadPanel";
 import { trackEvent } from "./lib/analytics";
 import { isAuthConfigured, useAuth } from "./lib/auth-provider";
 import type { AccountStatus, CompareMetadata } from "./services/api";
+import { KVSHVL_PRIVACY_URL, KVSHVL_TERMS_URL } from "./lib/legal-urls";
 import { fetchAccountStatus, getUpgradeUrl, uploadAndCompare } from "./services/api";
 
 type AppMode = "single" | "batch";
@@ -265,6 +266,15 @@ export default function App() {
         )}
 
         <footer className="app-footer">
+          <p>
+            <a href={KVSHVL_PRIVACY_URL} target="_blank" rel="noreferrer">
+              Privacy Policy
+            </a>
+            {" · "}
+            <a href={KVSHVL_TERMS_URL} target="_blank" rel="noreferrer">
+              Terms of Service
+            </a>
+          </p>
           <p>&copy; {new Date().getFullYear()} Check Your Drawings</p>
         </footer>
       </main>
