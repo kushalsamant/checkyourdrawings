@@ -1,10 +1,17 @@
+import logging
 from pathlib import Path
 
 import fitz
 from PIL import Image
 
-from backend.app.config import ALLOWED_EXTENSIONS, PDF_DPI
-from backend.app.services.image_limits import validate_image_dimensions
+from backend.app.config import ALLOWED_EXTENSIONS, COMPARE_MAX_RASTER_PIXELS, PDF_DPI
+from backend.app.services.image_limits import (
+    ImageTooLargeError,
+    choose_raster_dpi,
+    validate_image_dimensions,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class FileConversionError(Exception):
@@ -65,7 +72,23 @@ def convert_pdf_page_to_image(
                 )
 
             page = document.load_page(page_number)
-            pixmap = page.get_pixmap(dpi=dpi, alpha=False)
+            rect = page.rect
+            raster_dpi = choose_raster_dpi(
+                rect.width,
+                rect.height,
+                preferred_dpi=dpi,
+                max_pixels=COMPARE_MAX_RASTER_PIXELS,
+            )
+            if raster_dpi != dpi:
+                logger.info(
+                    "Reduced PDF raster DPI from %d to %d for page size %.0fx%.0f pt",
+                    dpi,
+                    raster_dpi,
+                    rect.width,
+                    rect.height,
+                )
+
+            pixmap = page.get_pixmap(dpi=raster_dpi, alpha=False)
 
             image = Image.frombytes(
                 mode="RGB",

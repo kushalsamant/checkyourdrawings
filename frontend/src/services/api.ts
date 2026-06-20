@@ -112,6 +112,11 @@ export async function uploadAndCompare(
     if (error instanceof DOMException && error.name === "AbortError") {
       throw new Error("Comparison timed out. Try smaller files or try again.");
     }
+    if (error instanceof TypeError && error.message === "Failed to fetch") {
+      throw new Error(
+        "Could not reach the compare server. If you were comparing large drawings, wait a moment and try again.",
+      );
+    }
     throw error;
   } finally {
     window.clearTimeout(timeoutId);

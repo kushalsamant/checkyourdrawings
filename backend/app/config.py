@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     max_image_dimension: int = 12_000
     output_max_age_hours: int = 24
     compare_timeout_seconds: int = 300
+    compare_max_raster_pixels: int = 8_000_000
     content_bbox_padding_ratio: float = 0.02
     min_overlap_area_ratio: float = 0.05
     alignment_marginal_inlier_ratio: float = 0.55
@@ -65,6 +66,7 @@ MAX_IMAGE_PIXELS: int = _settings.max_image_pixels
 MAX_IMAGE_DIMENSION: int = _settings.max_image_dimension
 OUTPUT_MAX_AGE_HOURS: int = _settings.output_max_age_hours
 COMPARE_TIMEOUT_SECONDS: int = _settings.compare_timeout_seconds
+COMPARE_MAX_RASTER_PIXELS: int = _settings.compare_max_raster_pixels
 CONTENT_BBOX_PADDING_RATIO: float = _settings.content_bbox_padding_ratio
 MIN_OVERLAP_AREA_RATIO: float = _settings.min_overlap_area_ratio
 ALIGNMENT_MARGINAL_INLIER_RATIO: float = _settings.alignment_marginal_inlier_ratio

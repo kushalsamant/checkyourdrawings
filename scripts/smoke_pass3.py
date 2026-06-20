@@ -41,7 +41,7 @@ def main() -> int:
         "Content-Type": "application/json",
     }
 
-    with httpx.Client(timeout=120.0) as client:
+    with httpx.Client(timeout=180.0) as client:
         ready = client.get(f"{API_URL}/health/ready")
         print("health/ready", ready.status_code, ready.text)
 
@@ -76,7 +76,7 @@ def main() -> int:
             files=files,
             headers={"Authorization": f"Bearer {access_token}"},
         )
-        print("authed_compare", authed.status_code)
+        print("authed_compare_synthetic", authed.status_code)
         if authed.status_code == 200:
             image_path = authed.json().get("image_path", "")
             print("image_path", image_path[:100])
@@ -84,6 +84,40 @@ def main() -> int:
         else:
             print(authed.text[:300])
             return 1
+
+        pair_prefixes = ("0A", "1A", "2A", "3A")
+        for prefix in pair_prefixes:
+            drawing_a = next(REPO_ROOT.glob(f"{prefix}*.pdf"), None)
+            drawing_b = next(REPO_ROOT.glob(f"{prefix[0]}B*.pdf"), None)
+            if drawing_a is None or drawing_b is None:
+                print(f"real_pair_{prefix[0]}A/{prefix[0]}B", "SKIP", "missing PDFs")
+                continue
+
+            pair_files = {
+                "drawing_a": (
+                    drawing_a.name,
+                    drawing_a.read_bytes(),
+                    "application/pdf",
+                ),
+                "drawing_b": (
+                    drawing_b.name,
+                    drawing_b.read_bytes(),
+                    "application/pdf",
+                ),
+            }
+            response = client.post(
+                f"{API_URL}/compare",
+                files=pair_files,
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            label = f"{prefix[0]}A/{prefix[0]}B"
+            print(f"real_pair_{label}", response.status_code)
+            if response.status_code != 200:
+                print(response.text[:300])
+                return 1
+
+            image_path = response.json().get("image_path", "")
+            assert "supabase.co/storage" in image_path, f"{label} expected Supabase storage URL"
 
     return 0
 
