@@ -1,4 +1,4 @@
-# [Check Your Drawings](https://checkyourdrawings.kvshvl.in)
+# Check Your Drawings
 
 If you coordinate drawings daily, you already know the problem.  
 Ten drawings from the architect. Ten from MEP. Ten from structural.  
