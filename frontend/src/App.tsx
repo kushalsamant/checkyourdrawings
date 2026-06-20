@@ -261,9 +261,6 @@ export default function App() {
           />
         )}
 
-        <footer className="app-footer">
-          <p>&copy; {new Date().getFullYear()} Check Your Drawings</p>
-        </footer>
       </main>
     </div>
   );

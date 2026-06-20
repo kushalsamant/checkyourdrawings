@@ -1,43 +1,30 @@
 # Check Your Drawings
 
-If you coordinate drawings daily, you already know the problem.  
-Ten drawings from the architect. Ten from MEP. Ten from structural.  
-Then revision A. Then revision B. Then revision C, D, E.
+Check Your Drawings compares two architectural drawing PDFs and returns an auto-aligned coordination overlay. Upload two PDF plots or exports from your design software and review what changed before it becomes an RFI. [Upload your drawings](/) to start.
 
-You line them up. You overlay them. You hunt for what changed.  
-By 3 PM, you have compared six drawings. There are forty-four left.  
-Tomorrow, they send new revisions and you start again.
+## How it works
 
-## A simple coordination routine
-
-Upload two drawing PDFs. Get a color-coded comparison in seconds — no sign-in required.
+Upload Drawing A and Drawing B. The app aligns the sheets and builds a color-coded overlay in seconds. Single-pair compare does not require sign-in.
 
 Blue — New additions (only in the second drawing)  
 Orange — Removed elements (only in the first drawing)  
 Green — Aligned overlap (matching in both)  
 Red — Misaligned overlap (clashes and conflicts — review manually)
 
-No manual overlay. No CAD license. No hunting for changes with a red pen.
+Download the result as a PNG preview or a PDF at the uploaded sheet size. Results are not stored permanently — download a copy if you need to keep one. No CAD license is required to run the comparison. The overlay shows where to look — confirm red areas in CAD and mark them up with revision clouds as you normally would.
 
-## Why coordination architects use this
+## Use
 
-- Compare two revision PDFs in seconds instead of stacking them by hand  
-- Catch consultant mismatches before they become RFIs  
-- Download overlay as PDF (uploaded sheet size) or PNG for coordination reports  
-- Works with PDF plots and exports from your design software (scanned sheets are fine if saved as PDF)
+Compare two revision PDFs without stacking them by hand. Catch consultant mismatches early. Use the overlay in coordination reports. Works with PDF output from your usual design tools.
 
 ## Free vs paid
 
-Compare single drawing pairs for free as often as you need.
+Single-pair compare is available without sign-in, subject to fair-use limits applied to keep the service stable. Batch compare and ZIP export of PDF overlays require sign-in and an active paid subscription.
 
-Need to run a full revision stack? Sign in from the app and subscribe for batch compare and ZIP export of PDF overlays.
+Built by a coordination architect who used to run this workflow by hand. The computer does it now.
 
----
+## Legal
 
-[Upload Your Drawings](https://checkyourdrawings.kvshvl.in/)
+[Privacy Policy](https://www.kvshvl.in/privacypolicy). [Terms of Service](https://www.kvshvl.in/termsofservice).
 
----
-
-Built by a coordination architect who sat in your seat.  
-I used to do this at my previous job.  
-Now the computer does it.
+[Back to app](/)
