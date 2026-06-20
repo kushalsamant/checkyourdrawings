@@ -139,12 +139,12 @@ export function renderAboutMarkdown(markdown: string): ReactNode[] {
     }
 
     if (trimmed.startsWith("# ")) {
-      nodes.push(<h1 key={index}>{trimmed.slice(2)}</h1>);
+      nodes.push(<h1 key={index}>{renderInline(trimmed.slice(2))}</h1>);
       return;
     }
 
     if (trimmed.startsWith("## ")) {
-      nodes.push(<h2 key={index}>{trimmed.slice(3)}</h2>);
+      nodes.push(<h2 key={index}>{renderInline(trimmed.slice(3))}</h2>);
       return;
     }
 
