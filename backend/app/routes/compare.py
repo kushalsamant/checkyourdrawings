@@ -14,7 +14,8 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from PIL import Image
 from sqlalchemy.orm import Session
 
-from backend.app.auth.deps import get_current_user, require_active_subscription
+from backend.app.auth.access import user_has_paid_access
+from backend.app.auth.deps import get_current_user
 from backend.app.config import (
     ALLOWED_EXTENSIONS,
     COMPARE_MAX_WORKERS,
@@ -28,7 +29,7 @@ from backend.app.config import (
 from backend.app.database import get_db
 from backend.app.models.comparison import Comparison
 from backend.app.models.user import User
-from backend.app.schemas.compare import CompareResponse
+from backend.app.schemas.compare import AccountStatusResponse, CompareResponse
 from backend.app.services.alignment import (
     AlignmentError,
     align_drawing_b_to_a,
@@ -49,6 +50,7 @@ from backend.app.services.pdf_converter import (
     UnsupportedFileTypeError,
     load_image,
 )
+from backend.app.services.watermark import apply_watermark
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["comparison"])
@@ -58,11 +60,19 @@ _UPLOAD_CHUNK_SIZE = 1024 * 1024
 _COMPARE_BUSY_MESSAGE = "Another comparison is in progress. Try again in a moment."
 
 
+@router.get("/account", response_model=AccountStatusResponse)
+def account_status(user: User | None = Depends(get_current_user)) -> AccountStatusResponse:
+    return AccountStatusResponse(
+        signed_in=user is not None,
+        paid=user_has_paid_access(user),
+        email=user.email if user is not None else None,
+    )
+
+
 @router.post(
     "/compare",
     status_code=status.HTTP_200_OK,
     response_model=CompareResponse,
-    dependencies=[Depends(require_active_subscription())],
 )
 async def compare_drawings(
     drawing_a: UploadFile | None = None,
@@ -114,8 +124,22 @@ async def compare_drawings(
 
         elapsed = time.perf_counter() - started_at
         logger.info("Comparison completed in %.2fs", elapsed)
-        if not STORAGE_BYPASS:
-            result = _store_comparison_in_cloud(result, user, db)
+
+        drawing_a_name = drawing_a.filename or saved_drawing_a.name
+        drawing_b_name = drawing_b.filename or saved_drawing_b.name
+        paid = user_has_paid_access(user)
+
+        if paid and not STORAGE_BYPASS:
+            result = _store_comparison_in_cloud(
+                result,
+                user,
+                db,
+                drawing_a_name=drawing_a_name,
+                drawing_b_name=drawing_b_name,
+            )
+        elif not paid:
+            result = _apply_watermark_to_result(result)
+
         return result
     except UnsupportedFileTypeError as exc:
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(exc)) from exc
@@ -133,6 +157,9 @@ def _store_comparison_in_cloud(
     result: CompareResponse,
     user: User | None,
     db: Session | None,
+    *,
+    drawing_a_name: str,
+    drawing_b_name: str,
 ) -> CompareResponse:
     if user is None:
         raise HTTPException(
@@ -156,18 +183,47 @@ def _store_comparison_in_cloud(
     image_url = upload_png_bytes(png_bytes, remote_path)
 
     if db is not None:
+        metadata_payload = result.metadata.model_dump()
+        metadata_payload["drawing_a_name"] = drawing_a_name
+        metadata_payload["drawing_b_name"] = drawing_b_name
         db.add(
             Comparison(
                 id=comparison_id,
                 user_id=user.id,
                 storage_path=remote_path,
-                metadata_json=result.metadata.model_dump(),
+                metadata_json=metadata_payload,
             )
         )
         db.commit()
 
     _remove_file(local_path)
     return CompareResponse(image_path=image_url, metadata=result.metadata)
+
+
+def _apply_watermark_to_result(result: CompareResponse) -> CompareResponse:
+    local_filename = Path(result.image_path).name
+    local_path = OUTPUT_DIR / local_filename
+    if not local_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Comparison output file was not found for watermarking.",
+        )
+
+    image = cv2.imread(str(local_path), cv2.IMREAD_COLOR)
+    if image is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to read comparison output for watermarking.",
+        )
+
+    watermarked = apply_watermark(image)
+    if not cv2.imwrite(str(local_path), watermarked):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save watermarked comparison image.",
+        )
+
+    return result
 
 
 def _run_comparison_pipeline(

@@ -13,21 +13,20 @@ from backend.app.subscription.utils import (
     has_active_subscription,
 )
 
-security = HTTPBearer(auto_error=AUTH_REQUIRED)
+security = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session | None = Depends(get_db),
 ) -> User | None:
-    if not AUTH_REQUIRED:
-        return None
-
     if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Sign in to compare drawings.",
-        )
+        if AUTH_REQUIRED:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sign in to compare drawings.",
+            )
+        return None
 
     if db is None:
         raise HTTPException(
@@ -92,9 +91,6 @@ def get_current_user(
 
 def require_active_subscription():
     def check_subscription(user: User | None = Depends(get_current_user)) -> User | None:
-        if not AUTH_REQUIRED:
-            return None
-
         if user is None or not has_active_subscription(user):
             raise HTTPException(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,

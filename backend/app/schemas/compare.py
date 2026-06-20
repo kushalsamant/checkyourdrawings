@@ -62,3 +62,9 @@ class CompareResponse(BaseModel):
     @classmethod
     def from_pipeline_result(cls, image_path: str, metadata: dict[str, Any]) -> "CompareResponse":
         return cls.model_validate({"image_path": image_path, "metadata": metadata})
+
+
+class AccountStatusResponse(BaseModel):
+    signed_in: bool
+    paid: bool
+    email: str | None = None

@@ -5,6 +5,12 @@ const UPGRADE_URL =
   (import.meta.env.VITE_KVSHVL_UPGRADE_URL ?? "https://kvshvl.in").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 
+export interface AccountStatus {
+  signed_in: boolean;
+  paid: boolean;
+  email: string | null;
+}
+
 export interface BoundingBox {
   x: number;
   y: number;
@@ -255,6 +261,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function getUpgradeUrl(): string {
   return UPGRADE_URL;
+}
+
+export async function fetchAccountStatus(): Promise<AccountStatus> {
+  const headers: Record<string, string> = {};
+  const accessToken = getAuthAccessToken();
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/account`, { headers });
+  if (!response.ok) {
+    return { signed_in: false, paid: false, email: null };
+  }
+
+  const data = (await response.json()) as AccountStatus;
+  return data;
 }
 
 function mergeAbortSignals(first: AbortSignal, second: AbortSignal): AbortSignal {

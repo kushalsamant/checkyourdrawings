@@ -1,47 +1,86 @@
 # Deploy checklist
 
-Pass 2 deploy artifacts are in the repo. Finish hosting in the Render and Vercel dashboards.
+Canonical deploy guide for **Check Your Drawings**.
+
+| Surface | Value |
+|---------|-------|
+| Vercel project | `kvshvl/checkyourdrawings` |
+| Frontend URL | https://checkyourdrawings.kvshvl.in |
+| API URL (live) | https://checkyourdrawings.onrender.com |
+| API custom domain | `api.checkyourdrawings.kvshvl.in` — **optional, DNS not configured** |
 
 ## 1. Render (API)
 
-1. Push this repo to GitHub.
-2. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → connect `checkyourdrawings` repo.
-3. Render reads [`render.yaml`](../render.yaml) and creates `checkyourdrawings-api`.
-4. Confirm env vars (set automatically from blueprint):
-   - `CYD_AUTH_REQUIRED=false`
-   - `CYD_STORAGE_BYPASS=true`
-   - `CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in`
-5. After deploy, note the API URL (e.g. `https://checkyourdrawings-api.onrender.com`).
-6. Optional: add custom domain `api.checkyourdrawings.kvshvl.in` in Render → service → **Settings** → **Custom Domains**.
+Blueprint: [`render.yaml`](../render.yaml)
 
-Validate blueprint locally:
+**Freemium production env (required):**
+
+| Key | Value |
+|-----|-------|
+| `CYD_AUTH_REQUIRED` | `false` |
+| `CYD_STORAGE_BYPASS` | `true` |
+| `CYD_CORS_ORIGINS` | `https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in` |
+
+Paid cloud storage (`CYD_STORAGE_BYPASS=false`) is only needed when persisting comparisons for subscribed users.
+
+Apply env from local secrets (if configured). For freemium, `CYD_AUTH_REQUIRED` must be `false` in `.env.pass3.local` before running:
 
 ```powershell
-render workspace set tea-d0c3aph5pdvs73d7acc0 --confirm
+.\.venv\Scripts\python.exe scripts\deploy_pass3_env.py
+```
+
+Or set keys manually in Render → **checkyourdrawings-api** → **Environment**.
+
+Validate blueprint:
+
+```powershell
 render blueprints validate ./render.yaml
 ```
 
 ## 2. Vercel (frontend)
 
-Project created: **kvshvl/frontend** (root directory: `frontend/`).
+**Build config:** root [`vercel.json`](../vercel.json) runs `npm ci --prefix frontend` and builds `frontend/dist`.
 
-1. Vercel → **kvshvl/frontend** → **Settings** → **Environment Variables**:
-   - `VITE_API_BASE_URL` = your Render API URL (step 1 above)
-2. **Redeploy** after setting the env var.
-3. **Settings** → **Domains** → add `checkyourdrawings.kvshvl.in`.
-4. DNS: CNAME `checkyourdrawings.kvshvl.in` → Vercel.
-
-CLI deploy from `frontend/`:
+`AboutPage` imports root [`index.md`](../index.md), so git-connected deploys must include the full repo. CLI deploy from repo root:
 
 ```powershell
-cd frontend
-vercel --prod
+cd C:\Users\ADMIN\Documents\GitHub\checkyourdrawings
+vercel --prod --yes
 ```
 
-## 3. Smoke test
+**Environment variables:**
 
-Follow the **Hosted smoke test** section in [smoke-test.md](smoke-test.md).
+| Key | Example |
+|-----|---------|
+| `VITE_API_BASE_URL` | `https://checkyourdrawings.onrender.com` |
+| `VITE_SUPABASE_URL` | `https://ytcnzhapqainbtkoshvh.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | (from Supabase dashboard) |
+| `VITE_KVSHVL_UPGRADE_URL` | `https://kvshvl.in` |
 
-## 4. kvshvl.in side tab
+## 3. Product tiers (implemented)
 
-Already links to `https://checkyourdrawings.kvshvl.in` — no change needed once DNS is live.
+| Tier | Access |
+|------|--------|
+| Anonymous | Unlimited single-pair `/compare`, watermarked PNG |
+| Signed in, not paid | Same as anonymous |
+| Paid kvshvl (`weekly`/`monthly`/`yearly`) | Batch UI + unwatermarked PNGs + ZIP export |
+
+## 4. Manual tasks (not in repo)
+
+- **Google OAuth consent screen:** App name `KVSHVL`, logo, homepage `https://kvshvl.in`
+- **Unified kvshvl.in sign-in:** requires kvshvl.in app changes to return platform JWT to child apps (Check Your Drawings still uses Supabase OAuth until then)
+- **Friend share:** send https://checkyourdrawings.kvshvl.in to coordination contacts for feedback
+- **API custom domain (optional):** CNAME `api.checkyourdrawings.kvshvl.in` → Render
+
+## 5. Smoke test
+
+Follow [smoke-test.md](smoke-test.md).
+
+Quick checks:
+
+```powershell
+curl.exe https://checkyourdrawings.onrender.com/health
+curl.exe https://checkyourdrawings.kvshvl.in
+```
+
+Anonymous compare should return **200** without `Authorization`. Paid batch tab unlocks after `/account` reports `paid: true`.

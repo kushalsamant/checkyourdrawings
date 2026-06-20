@@ -71,7 +71,7 @@ Sign-off after deploy to Vercel + Render. Production URLs:
 | Service | URL |
 |---------|-----|
 | Frontend | https://checkyourdrawings.kvshvl.in |
-| API | https://api.checkyourdrawings.kvshvl.in (or `*.onrender.com` until custom domain is set) |
+| API | https://checkyourdrawings.onrender.com (`api.checkyourdrawings.kvshvl.in` optional — DNS not live) |
 
 ### Prerequisites
 
@@ -103,6 +103,6 @@ CYD_CORS_ORIGINS=https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawin
 **Vercel (build time):**
 
 ```
-VITE_API_BASE_URL=https://api.checkyourdrawings.kvshvl.in
+VITE_API_BASE_URL=https://checkyourdrawings.onrender.com
 ```
 
