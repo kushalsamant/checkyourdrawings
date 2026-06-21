@@ -1,8 +1,8 @@
+import base64
 import hashlib
 import logging
 import time
 from pathlib import Path
-from urllib.parse import quote
 
 import httpx
 
@@ -71,7 +71,15 @@ def signed_cdn_url(path: str, ttl_seconds: int | None = None) -> str:
     normalized = path.replace("\\", "/").lstrip("/")
     token_path = f"/{normalized}"
     hashable = f"{BUNNY_TOKEN_AUTH_KEY}{token_path}{expires}"
-    token = hashlib.sha256(hashable.encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(hashable.encode("utf-8")).digest()
+    token = (
+        base64.b64encode(digest)
+        .decode("utf-8")
+        .replace("\n", "")
+        .replace("+", "-")
+        .replace("/", "_")
+        .replace("=", "")
+    )
     hostname = BUNNY_CDN_HOSTNAME
     assert hostname is not None
     return f"https://{hostname}{token_path}?token={token}&expires={expires}"

@@ -88,7 +88,7 @@ def _process_one_job() -> bool:
             mark_job_failed(db, job, str(exc))
         except Exception as exc:
             logger.exception("Comparison job %s failed", job.id)
-            mark_job_failed(db, job, "Comparison failed. Please try again.")
+            mark_job_failed(db, job, str(exc) if str(exc) else "Comparison failed. Please try again.")
         finally:
             _remove_file(job.drawing_a_path)
             _remove_file(job.drawing_b_path)
