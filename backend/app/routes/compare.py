@@ -8,7 +8,6 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 
-from backend.app.auth.access import user_has_paid_access
 from backend.app.auth.deps import get_current_user
 from backend.app.config import (
     ALLOWED_EXTENSIONS,
@@ -17,8 +16,7 @@ from backend.app.config import (
     MAX_FILE_SIZE_MB,
     UPLOAD_DIR,
 )
-from backend.app.models.user import User
-from backend.app.schemas.compare import AccountStatusResponse, CompareResponse
+from backend.app.schemas.compare import CompareResponse
 from backend.app.services.alignment import AlignmentError
 from backend.app.services.comparison_pipeline import run_comparison_pipeline
 from backend.app.services.image_limits import ImageTooLargeError
@@ -37,15 +35,6 @@ _COMPARE_BUSY_MESSAGE = "Another comparison is in progress. Try again in a momen
 _PDF_MAGIC = b"%PDF-"
 
 
-@router.get("/account", response_model=AccountStatusResponse)
-def account_status(user: User | None = Depends(get_current_user)) -> AccountStatusResponse:
-    return AccountStatusResponse(
-        signed_in=user is not None,
-        paid=user_has_paid_access(user),
-        email=user.email if user is not None else None,
-    )
-
-
 @router.post(
     "/compare",
     status_code=status.HTTP_200_OK,
@@ -55,7 +44,7 @@ def account_status(user: User | None = Depends(get_current_user)) -> AccountStat
 async def compare_drawings(
     drawing_a: UploadFile | None = None,
     drawing_b: UploadFile | None = None,
-    _user: User | None = Depends(get_current_user),
+    _user: object | None = Depends(get_current_user),
 ) -> CompareResponse:
     if drawing_a is None or drawing_b is None:
         raise HTTPException(

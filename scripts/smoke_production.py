@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Production smoke checks for compare API and platform JWT auth."""
+"""Production smoke checks for compare API and platform-api account."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 SECRETS_FILE = REPO_ROOT / ".env.deploy.local"
 API_URL = "https://checkyourdrawings.onrender.com"
+PLATFORM_API_URL = "https://platform-api-1y5i.onrender.com"
 SMOKE_EMAIL = "checkyourdrawings-smoke@kvshvl.in"
 
 
@@ -36,36 +37,74 @@ def _sign_platform_jwt(*, email: str, secret: str, issuer: str) -> str:
     )
 
 
-def main() -> int:
-    if not SECRETS_FILE.is_file():
-        print(f"Missing {SECRETS_FILE}", file=sys.stderr)
-        return 1
+def _load_jwt_config() -> tuple[str, str]:
+    if SECRETS_FILE.is_file():
+        env = parse_env_file(SECRETS_FILE)
+        secret = env.get("PLATFORM_JWT_SECRET") or env.get("CYD_PLATFORM_JWT_SECRET")
+        issuer = env.get("PLATFORM_JWT_ISSUER") or env.get("CYD_PLATFORM_JWT_ISSUER")
+        if secret and issuer:
+            return secret, issuer
 
-    env = parse_env_file(SECRETS_FILE)
-    for key in ("PLATFORM_JWT_SECRET", "PLATFORM_JWT_ISSUER"):
-        if key not in env or not env[key]:
-            print(f"Missing {key} in {SECRETS_FILE.name}", file=sys.stderr)
-            return 1
+    from pathlib import Path as _Path
 
-    access_token = _sign_platform_jwt(
-        email=SMOKE_EMAIL,
-        secret=env["PLATFORM_JWT_SECRET"],
-        issuer=env["PLATFORM_JWT_ISSUER"],
+    text = _Path.home().joinpath(".render/cli.yaml").read_text(encoding="utf-8")
+    render_key = next(
+        line.split(":", 1)[1].strip()
+        for line in text.splitlines()
+        if line.strip().startswith("key:")
     )
+    headers = {"Authorization": f"Bearer {render_key}"}
+    response = httpx.get(
+        "https://api.render.com/v1/services/srv-d8qmgpr7uimc73e5bp9g/env-vars",
+        headers=headers,
+        timeout=60,
+    )
+    response.raise_for_status()
+    secret = None
+    issuer = None
+    for item in response.json():
+        env_var = item.get("envVar") or item
+        if env_var.get("key") == "PLATFORM_JWT_SECRET":
+            secret = env_var.get("value")
+        if env_var.get("key") == "PLATFORM_JWT_ISSUER":
+            issuer = env_var.get("value")
+    if not secret or not issuer:
+        raise RuntimeError("Could not load PLATFORM_JWT_SECRET / PLATFORM_JWT_ISSUER")
+    return secret, issuer
+
+
+def main() -> int:
+    secret, issuer = _load_jwt_config()
+    access_token = _sign_platform_jwt(email=SMOKE_EMAIL, secret=secret, issuer=issuer)
 
     with httpx.Client(timeout=180.0) as client:
         ready = client.get(f"{API_URL}/health/ready")
         print("health/ready", ready.status_code, ready.text)
+        if ready.status_code != 200:
+            return 1
+        ready_payload = ready.json()
+        if ready_payload.get("status") != "ok":
+            print("health/ready degraded:", ready_payload)
+            return 1
 
         unsigned = client.post(f"{API_URL}/compare", files={})
         print("unsigned_compare", unsigned.status_code, unsigned.text[:120])
 
         account = client.get(
-            f"{API_URL}/account",
+            f"{PLATFORM_API_URL}/account",
             headers={"Authorization": f"Bearer {access_token}"},
         )
-        print("authed_account", account.status_code, account.text[:160])
+        print("platform_account", account.status_code, account.text[:160])
         if account.status_code != 200:
+            return 1
+
+        entitlements = client.get(
+            f"{PLATFORM_API_URL}/entitlements",
+            params={"app": "checkyourdrawings"},
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        print("platform_entitlements", entitlements.status_code, entitlements.text[:160])
+        if entitlements.status_code != 200:
             return 1
 
         from backend.tests.fixtures.factory import ContentScenario, image_to_bytes, make_drawing_a_image, make_drawing_b_image

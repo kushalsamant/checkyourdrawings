@@ -1,6 +1,7 @@
 import { clearAuthAccessToken, getAuthAccessToken } from "../lib/auth-provider";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+const PLATFORM_API_URL = (import.meta.env.VITE_PLATFORM_API_URL ?? "").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 const COMPARE_BUSY_DETAIL = "Another comparison is in progress. Try again in a moment.";
 
@@ -276,13 +277,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export async function fetchAccountStatus(): Promise<AccountStatus> {
+  if (!PLATFORM_API_URL) {
+    return { signed_in: false, paid: false, email: null };
+  }
+
   const headers: Record<string, string> = {};
   const accessToken = getAuthAccessToken();
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}/account`, { headers });
+  const response = await fetch(`${PLATFORM_API_URL}/account`, { headers });
   if (!response.ok) {
     if (response.status === 401) {
       clearAuthAccessToken();
@@ -290,8 +295,15 @@ export async function fetchAccountStatus(): Promise<AccountStatus> {
     return { signed_in: false, paid: false, email: null };
   }
 
-  const data = (await response.json()) as AccountStatus;
-  return data;
+  const data = (await response.json()) as {
+    email?: string;
+    paid?: boolean;
+  };
+  return {
+    signed_in: true,
+    paid: Boolean(data.paid),
+    email: typeof data.email === "string" ? data.email : null,
+  };
 }
 
 function mergeAbortSignals(first: AbortSignal, second: AbortSignal): AbortSignal {

@@ -80,8 +80,3 @@ class CompareResponse(BaseModel):
             {"image_path": image_path, "pdf_path": pdf_path, "metadata": metadata}
         )
 
-
-class AccountStatusResponse(BaseModel):
-    signed_in: bool
-    paid: bool
-    email: str | None = None

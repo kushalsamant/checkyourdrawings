@@ -21,11 +21,15 @@ RENDER_KEYS = (
     "COMPARE_MAX_RASTER_PIXELS",
     "COMPARE_MAX_WORKERS",
     "PYTHONPATH",
-    "SUPABASE_URL",
-    "SUPABASE_SERVICE_ROLE_KEY",
+    "PLATFORM_API_URL",
     "PLATFORM_DATABASE_URL",
     "PLATFORM_JWT_SECRET",
     "PLATFORM_JWT_ISSUER",
+)
+
+DELETE_RENDER_KEYS = (
+    "SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY",
 )
 
 # Removed after new keys are set (legacy CYD_* naming).
@@ -101,6 +105,14 @@ def main() -> int:
                 continue
             response.raise_for_status()
             print(f"render env deleted: {legacy_key}")
+
+        for delete_key in DELETE_RENDER_KEYS:
+            response = client.delete(f"{base}/{delete_key}", headers=headers)
+            if response.status_code == 404:
+                print(f"render env already absent: {delete_key}")
+                continue
+            response.raise_for_status()
+            print(f"render env deleted: {delete_key}")
 
     return 0
 
