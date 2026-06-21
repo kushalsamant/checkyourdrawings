@@ -25,7 +25,7 @@ class PlatformSettings(BaseSettings):
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_prefix="CYD_",
+        env_prefix="",
         env_file=".env",
         extra="ignore",
     )

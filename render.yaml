@@ -3,18 +3,18 @@
 
 services:
   - type: web
-    name: checkyourdrawings-api
+    name: checkyourdrawings
     runtime: docker
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
       - key: PYTHONPATH
         value: /app
-      - key: CYD_AUTH_REQUIRED
+      - key: AUTH_REQUIRED
         value: "false"
-      - key: CYD_COMPARE_MAX_RASTER_PIXELS
+      - key: COMPARE_MAX_RASTER_PIXELS
         value: "4000000"
-      - key: CYD_COMPARE_MAX_WORKERS
+      - key: COMPARE_MAX_WORKERS
         value: "1"
-      - key: CYD_CORS_ORIGINS
+      - key: CORS_ORIGINS
         value: "https://checkyourdrawings.kvshvl.in,https://www.checkyourdrawings.kvshvl.in"

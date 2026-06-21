@@ -16,7 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 SECRETS_FILE = REPO_ROOT / ".env.deploy.local"
 API_URL = "https://checkyourdrawings.onrender.com"
-SMOKE_EMAIL = "cyd-smoke@kvshvl.in"
+SMOKE_EMAIL = "checkyourdrawings-smoke@kvshvl.in"
 
 
 def _sign_platform_jwt(*, email: str, secret: str, issuer: str) -> str:
@@ -24,8 +24,8 @@ def _sign_platform_jwt(*, email: str, secret: str, issuer: str) -> str:
     return jwt.encode(
         {
             "email": email,
-            "sub": "cyd-smoke-test",
-            "name": "CYD Smoke Test",
+            "sub": "checkyourdrawings-smoke-test",
+            "name": "Check Your Drawings Smoke Test",
             "iss": issuer,
             "aud": "kvshvl-platform",
             "iat": now,

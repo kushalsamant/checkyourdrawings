@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-os.environ.setdefault("CYD_AUTH_REQUIRED", "false")
-os.environ.setdefault("CYD_RATE_LIMIT_ENABLED", "false")
+os.environ.setdefault("AUTH_REQUIRED", "false")
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
 # Tests import `backend.app...`; ensure the repository root is importable in CI.
 REPO_ROOT = Path(__file__).resolve().parents[2]

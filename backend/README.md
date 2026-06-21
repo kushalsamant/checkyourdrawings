@@ -17,21 +17,21 @@ All responses include basic security headers (`X-Content-Type-Options`, `X-Frame
 
 ## Auth environment variables
 
-Set in `.env` (see repo root `.env.example` for `CYD_*` settings):
+Set in `.env`:
 
-- `PLATFORM_DATABASE_URL` — Postgres URL for user accounts (required when `CYD_AUTH_REQUIRED=true`)
+- `PLATFORM_DATABASE_URL` — Postgres URL for user accounts (required when `AUTH_REQUIRED=true`)
 - `PLATFORM_JWT_SECRET` — verifies tokens from KVSHVL auth
 - `PLATFORM_JWT_ISSUER` — JWT issuer (default production: `https://auth.kvshvl.in`)
 
-When `CYD_AUTH_REQUIRED=false`, compare works without sign-in; `/account` still accepts an optional token.
+When `AUTH_REQUIRED=false`, compare works without sign-in; `/account` still accepts an optional token.
 
 ## Rate limiting
 
 `POST /compare` is rate limited per client IP (in-memory, per process). Over the limit returns `429` with a `Retry-After` header. Configure via:
 
-- `CYD_RATE_LIMIT_ENABLED` — default `true`
-- `CYD_RATE_LIMIT_MAX_REQUESTS` — default `20`
-- `CYD_RATE_LIMIT_WINDOW_SECONDS` — default `60`
+- `RATE_LIMIT_ENABLED` — default `true`
+- `RATE_LIMIT_MAX_REQUESTS` — default `20`
+- `RATE_LIMIT_WINDOW_SECONDS` — default `60`
 
 ## Compare request
 

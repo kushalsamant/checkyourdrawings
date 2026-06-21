@@ -26,7 +26,7 @@ def _get_engine() -> "Engine":
     if _engine is None:
         if not PLATFORM_DATABASE_URL:
             raise RuntimeError(
-                "PLATFORM_DATABASE_URL is required when CYD_AUTH_REQUIRED=true"
+                "PLATFORM_DATABASE_URL is required when AUTH_REQUIRED=true"
             )
         _engine = create_engine(
             _normalize_database_url(PLATFORM_DATABASE_URL),

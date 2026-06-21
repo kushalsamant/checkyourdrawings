@@ -25,7 +25,7 @@ jobs:
       - name: Backend tests
         working-directory: backend
         env:
-          CYD_AUTH_REQUIRED: "false"
+          AUTH_REQUIRED: "false"
         run: pytest -q
 
       - uses: actions/setup-node@v4
