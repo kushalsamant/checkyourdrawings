@@ -30,14 +30,13 @@ def _run_job_sync(job) -> dict:
     from backend.app.services.bunny_storage import bunny_enabled, publish_comparison_outputs
 
     if bunny_enabled():
-        output_id = Path(payload["image_path"]).stem.removeprefix("comparison-")
-        image_path = Path(payload["image_path"])
-        pdf_path = Path(payload["pdf_path"])
-        if not image_path.is_absolute():
-            from backend.app.config import OUTPUT_DIR
+        from backend.app.config import OUTPUT_DIR
 
-            image_path = OUTPUT_DIR / image_path.name
-            pdf_path = OUTPUT_DIR / pdf_path.name
+        output_id = Path(payload["image_path"]).stem.removeprefix("comparison-")
+        image_name = Path(payload["image_path"]).name
+        pdf_name = Path(payload["pdf_path"]).name
+        image_path = OUTPUT_DIR / image_name
+        pdf_path = OUTPUT_DIR / pdf_name
         image_url, pdf_url = publish_comparison_outputs(output_id, image_path, pdf_path)
         payload["image_path"] = image_url
         payload["pdf_path"] = pdf_url
