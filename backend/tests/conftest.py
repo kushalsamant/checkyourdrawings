@@ -16,17 +16,12 @@ if repo_root not in sys.path:
 
 
 @pytest.fixture(autouse=True)
-def reset_compare_lock() -> None:
-    from backend.app.routes import compare as compare_route
+def reset_rate_limiter() -> None:
     from backend.app.services import rate_limiter
 
     rate_limiter.reset()
-    if compare_route._compare_lock.locked():
-        compare_route._compare_lock.release()
     yield
     rate_limiter.reset()
-    if compare_route._compare_lock.locked():
-        compare_route._compare_lock.release()
 
 
 @pytest.fixture

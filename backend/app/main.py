@@ -16,6 +16,8 @@ from backend.app.config import (
     ensure_runtime_directories,
 )
 from backend.app.routes.compare import router as compare_router
+from backend.app.services.bunny_storage import bunny_enabled
+from backend.app.services.job_worker import start_worker, stop_worker
 from backend.app.services.output_cleanup import prune_old_outputs
 
 logging.basicConfig(
@@ -30,7 +32,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     ensure_runtime_directories()
     removed = prune_old_outputs(OUTPUT_DIR, max_age_hours=OUTPUT_MAX_AGE_HOURS)
     logger.info("Application startup complete. Pruned %d expired output file(s).", removed)
-    yield
+    await start_worker()
+    try:
+        yield
+    finally:
+        await stop_worker()
 
 
 app = FastAPI(
@@ -65,7 +71,8 @@ async def add_security_headers(request: Request, call_next) -> Response:
 
 
 app.include_router(compare_router)
-app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
+if not bunny_enabled():
+    app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
 
 
 @app.get("/", tags=["health"])

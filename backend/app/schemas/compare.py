@@ -80,3 +80,14 @@ class CompareResponse(BaseModel):
             {"image_path": image_path, "pdf_path": pdf_path, "metadata": metadata}
         )
 
+
+class CompareJobCreatedResponse(BaseModel):
+    job_id: str
+
+
+class CompareJobStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    result: CompareResponse | None = None
+    error_message: str | None = None
+

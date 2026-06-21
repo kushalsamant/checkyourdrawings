@@ -18,6 +18,7 @@ SECRETS_FILE = REPO_ROOT / ".env.deploy.local"
 API_URL = "https://checkyourdrawings.onrender.com"
 PLATFORM_API_URL = "https://platform-api-1y5i.onrender.com"
 SMOKE_EMAIL = "checkyourdrawings-smoke@kvshvl.in"
+JOB_POLL_SECONDS = 180
 
 
 def _sign_platform_jwt(*, email: str, secret: str, issuer: str) -> str:
@@ -73,9 +74,41 @@ def _load_jwt_config() -> tuple[str, str]:
     return secret, issuer
 
 
+def _poll_compare_job(
+    client: httpx.Client,
+    job_id: str,
+    headers: dict[str, str],
+) -> dict:
+    deadline = time.time() + JOB_POLL_SECONDS
+    while time.time() < deadline:
+        response = client.get(f"{API_URL}/jobs/{job_id}", headers=headers, timeout=60)
+        response.raise_for_status()
+        payload = response.json()
+        status = payload.get("status")
+        if status == "completed" and payload.get("result"):
+            return payload["result"]
+        if status == "failed":
+            raise RuntimeError(payload.get("error_message") or "Comparison job failed")
+        time.sleep(2)
+    raise RuntimeError(f"Comparison job {job_id} did not complete within {JOB_POLL_SECONDS}s")
+
+
+def _assert_output_paths(image_path: str, pdf_path: str) -> None:
+    if image_path.startswith("http://") or image_path.startswith("https://"):
+        assert "comparison-" in image_path, "expected comparison image URL"
+        assert pdf_path.startswith("http://") or pdf_path.startswith("https://"), "expected PDF URL"
+        assert pdf_path.endswith(".pdf"), "expected PDF URL"
+        return
+    assert image_path.startswith("/outputs/comparison-"), "expected output PNG path"
+    assert pdf_path.startswith("/outputs/comparison-") and pdf_path.endswith(".pdf"), (
+        "expected output PDF path"
+    )
+
+
 def main() -> int:
     secret, issuer = _load_jwt_config()
     access_token = _sign_platform_jwt(email=SMOKE_EMAIL, secret=secret, issuer=issuer)
+    auth_headers = {"Authorization": f"Bearer {access_token}"}
 
     with httpx.Client(timeout=180.0) as client:
         ready = client.get(f"{API_URL}/health/ready")
@@ -90,10 +123,7 @@ def main() -> int:
         unsigned = client.post(f"{API_URL}/compare", files={})
         print("unsigned_compare", unsigned.status_code, unsigned.text[:120])
 
-        account = client.get(
-            f"{PLATFORM_API_URL}/account",
-            headers={"Authorization": f"Bearer {access_token}"},
-        )
+        account = client.get(f"{PLATFORM_API_URL}/account", headers=auth_headers)
         print("platform_account", account.status_code, account.text[:160])
         if account.status_code != 200:
             return 1
@@ -101,7 +131,7 @@ def main() -> int:
         entitlements = client.get(
             f"{PLATFORM_API_URL}/entitlements",
             params={"app": "checkyourdrawings"},
-            headers={"Authorization": f"Bearer {access_token}"},
+            headers=auth_headers,
         )
         print("platform_entitlements", entitlements.status_code, entitlements.text[:160])
         if entitlements.status_code != 200:
@@ -115,25 +145,23 @@ def main() -> int:
             "drawing_a": ("a.pdf", image_to_bytes(a_img, ".pdf"), "application/pdf"),
             "drawing_b": ("b.pdf", image_to_bytes(b_img, ".pdf"), "application/pdf"),
         }
-        authed = client.post(
-            f"{API_URL}/compare",
-            files=files,
-            headers={"Authorization": f"Bearer {access_token}"},
-        )
-        print("authed_compare_synthetic", authed.status_code)
-        if authed.status_code == 200:
-            payload = authed.json()
-            image_path = payload.get("image_path", "")
-            pdf_path = payload.get("pdf_path", "")
-            print("image_path", image_path[:100])
-            print("pdf_path", pdf_path[:100])
-            assert image_path.startswith("/outputs/comparison-"), "expected Render output PNG path"
-            assert pdf_path.startswith("/outputs/comparison-") and pdf_path.endswith(".pdf"), (
-                "expected Render output PDF path"
-            )
-        else:
-            print(authed.text[:300])
+        queued = client.post(f"{API_URL}/compare", files=files, headers=auth_headers)
+        print("authed_compare_synthetic", queued.status_code)
+        if queued.status_code != 202:
+            print(queued.text[:300])
             return 1
+
+        job_id = queued.json().get("job_id")
+        if not job_id:
+            print("missing job_id")
+            return 1
+
+        payload = _poll_compare_job(client, job_id, auth_headers)
+        image_path = payload.get("image_path", "")
+        pdf_path = payload.get("pdf_path", "")
+        print("image_path", image_path[:100])
+        print("pdf_path", pdf_path[:100])
+        _assert_output_paths(image_path, pdf_path)
 
         pair_prefixes = ("0A", "1A", "2A", "3A")
         for prefix in pair_prefixes:
@@ -144,34 +172,18 @@ def main() -> int:
                 continue
 
             pair_files = {
-                "drawing_a": (
-                    drawing_a.name,
-                    drawing_a.read_bytes(),
-                    "application/pdf",
-                ),
-                "drawing_b": (
-                    drawing_b.name,
-                    drawing_b.read_bytes(),
-                    "application/pdf",
-                ),
+                "drawing_a": (drawing_a.name, drawing_a.read_bytes(), "application/pdf"),
+                "drawing_b": (drawing_b.name, drawing_b.read_bytes(), "application/pdf"),
             }
-            response = client.post(
-                f"{API_URL}/compare",
-                files=pair_files,
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
+            response = client.post(f"{API_URL}/compare", files=pair_files, headers=auth_headers)
             label = f"{prefix[0]}A/{prefix[0]}B"
             print(f"real_pair_{label}", response.status_code)
-            if response.status_code != 200:
+            if response.status_code != 202:
                 print(response.text[:300])
                 return 1
 
-            image_path = response.json().get("image_path", "")
-            pdf_path = response.json().get("pdf_path", "")
-            assert image_path.startswith("/outputs/comparison-"), f"{label} expected Render PNG path"
-            assert pdf_path.startswith("/outputs/comparison-") and pdf_path.endswith(".pdf"), (
-                f"{label} expected Render PDF path"
-            )
+            result = _poll_compare_job(client, response.json()["job_id"], auth_headers)
+            _assert_output_paths(result.get("image_path", ""), result.get("pdf_path", ""))
 
     return 0
 

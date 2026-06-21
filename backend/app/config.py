@@ -24,6 +24,22 @@ class PlatformSettings(BaseSettings):
     platform_jwt_issuer: str | None = None
 
 
+class BunnySettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="BUNNY_",
+        env_file=".env",
+        extra="ignore",
+    )
+
+    storage_zone: str | None = None
+    storage_access_key: str | None = None
+    storage_region: str = "ny"
+    storage_prefix: str = "checkyourdrawings"
+    cdn_hostname: str | None = None
+    token_auth_key: str | None = None
+    signed_url_ttl_seconds: int = 86_400
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="",
@@ -59,6 +75,7 @@ class Settings(BaseSettings):
 
 _settings = Settings()
 _platform_settings = PlatformSettings()
+_bunny_settings = BunnySettings()
 
 BASE_DIR: Path = Path(__file__).resolve().parent
 PROJECT_DIR: Path = BASE_DIR.parent
@@ -93,6 +110,14 @@ PLATFORM_API_URL: str | None = _platform_settings.platform_api_url
 PLATFORM_JWT_SECRET: str | None = _platform_settings.platform_jwt_secret
 PLATFORM_JWT_ISSUER: str | None = _platform_settings.platform_jwt_issuer
 
+BUNNY_STORAGE_ZONE: str | None = _bunny_settings.storage_zone
+BUNNY_STORAGE_ACCESS_KEY: str | None = _bunny_settings.storage_access_key
+BUNNY_STORAGE_REGION: str = _bunny_settings.storage_region
+BUNNY_STORAGE_PREFIX: str = _bunny_settings.storage_prefix
+BUNNY_CDN_HOSTNAME: str | None = _bunny_settings.cdn_hostname
+BUNNY_TOKEN_AUTH_KEY: str | None = _bunny_settings.token_auth_key
+BUNNY_SIGNED_URL_TTL_SECONDS: int = _bunny_settings.signed_url_ttl_seconds
+
 
 def get_settings() -> Settings:
     return _settings
@@ -100,6 +125,10 @@ def get_settings() -> Settings:
 
 def get_platform_settings() -> PlatformSettings:
     return _platform_settings
+
+
+def get_bunny_settings() -> BunnySettings:
+    return _bunny_settings
 
 
 def ensure_runtime_directories() -> None:

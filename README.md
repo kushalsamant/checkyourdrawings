@@ -9,17 +9,18 @@ Compare two architectural drawing PDFs and get an auto-aligned coordination over
 | Path | Role |
 |------|------|
 | [frontend/](frontend/) | React + Vite UI |
-| [backend/](backend/) | FastAPI compare API |
+| [backend/](backend/) | FastAPI compare API (async jobs + Bunny outputs) |
 | [index.md](index.md) | About page content (rendered at `/about`) |
-| [supabase/migrations/](supabase/migrations/) | Postgres schema for user accounts |
+| [migrations/](migrations/) | Postgres job queue schema |
 | [auth](https://github.com/kushalsamant/auth) (separate repo) | Google sign-in at `auth.kvshvl.in` |
+| [platform-api](https://github.com/kushalsamant/platform-api) | Accounts, entitlements, Razorpay |
 
-## Product (current)
+## Product
 
-- Upload **Drawing A** and **Drawing B** (PDF only); no sign-in required to compare.
-- Fair-use **rate limits** on `/compare` protect the service from abuse.
-- Optional sign-in links your session for account status (paid tier wiring is planned).
-- Results live on the server ~24h; download PNG/PDF to keep a copy.
+- Upload **Drawing A** and **Drawing B** (PDF only).
+- Compare runs as an **async job**; the UI polls until the overlay is ready.
+- Sign-in via `auth.kvshvl.in`; account and billing on **platform-api**.
+- Outputs stored on **Bunny CDN** (~24h signed URLs).
 
 See [index.md](index.md) for user-facing copy on the About page.
 
@@ -31,6 +32,8 @@ See [index.md](index.md) for user-facing copy on the About page.
 python -m venv .venv
 .\.venv\Scripts\pip install -r backend\requirements.txt -r backend\requirements-dev.txt
 $env:PYTHONPATH = (Get-Location).Path
+$env:PLATFORM_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/checkyourdrawings"
+python scripts\migrate.py
 .\.venv\Scripts\uvicorn backend.app.main:app --reload --port 8000
 ```
 
@@ -44,7 +47,7 @@ npm run dev
 
 Open http://127.0.0.1:5173 — Vite proxies API routes to the backend. Details: [frontend/README.md](frontend/README.md).
 
-Copy env from [.env.example](.env.example) (never commit real secrets).
+Copy env from [env.example](env.example) into `.env.deploy.local` (never commit real secrets).
 
 ## Tests
 
@@ -60,8 +63,9 @@ CI runs both on push/PR (see [.github/workflows/ci.yml](.github/workflows/ci.yml
 
 ## Deploy
 
-- **API:** Render (`render.yaml`, Docker) → `checkyourdrawings.onrender.com`
-- **Frontend:** Vercel (`vercel.json`) → `checkyourdrawings.kvshvl.in`
-- **Auth:** separate Vercel project → `auth.kvshvl.in`
+- **API:** Render (Docker) → `checkyourdrawings.onrender.com`
+- **Frontend:** Vercel → `checkyourdrawings.kvshvl.in`
+- **Platform:** `platform-api-1y5i.onrender.com`
+- **Auth:** `auth.kvshvl.in`
 
 More detail: [backend/README.md](backend/README.md).

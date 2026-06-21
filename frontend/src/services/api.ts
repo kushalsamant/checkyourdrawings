@@ -3,7 +3,19 @@ import { clearAuthAccessToken, getAuthAccessToken } from "../lib/auth-provider";
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 const PLATFORM_API_URL = (import.meta.env.VITE_PLATFORM_API_URL ?? "").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
+const COMPARE_POLL_INTERVAL_MS = 1500;
 const COMPARE_BUSY_DETAIL = "Another comparison is in progress. Try again in a moment.";
+
+export interface CompareJobCreatedResponse {
+  job_id: string;
+}
+
+export interface CompareJobStatusResponse {
+  job_id: string;
+  status: "pending" | "running" | "completed" | "failed" | string;
+  result: CompareResponse | null;
+  error_message: string | null;
+}
 
 export interface AccountStatus {
   signed_in: boolean;
@@ -113,6 +125,20 @@ export async function uploadAndCompare(
       throw new Error(errorMessage);
     }
 
+    if (response.status === 202) {
+      const queued = (await response.json()) as CompareJobCreatedResponse;
+      if (!queued.job_id) {
+        throw new Error("Comparison response is missing job_id.");
+      }
+      const completed = await pollCompareJob(queued.job_id, combinedSignal);
+      const data = parseCompareResponse(completed);
+      return {
+        comparisonImageUrl: buildOutputUrl(data.image_path),
+        comparisonPdfUrl: buildOutputUrl(data.pdf_path),
+        metadata: data.metadata,
+      };
+    }
+
     const data = parseCompareResponse(await response.json());
     return {
       comparisonImageUrl: buildOutputUrl(data.image_path),
@@ -218,10 +244,19 @@ export function buildImageUrl(imagePath: string): string {
     const parsed = new URL(imagePath);
     const allowedOrigins = new Set<string>();
     const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+    const platformApiUrl = (import.meta.env.VITE_PLATFORM_API_URL ?? "").replace(/\/$/, "");
+    const bunnyCdnHost = (import.meta.env.VITE_BUNNY_CDN_HOSTNAME ?? "").replace(/\/$/, "");
 
     if (apiBaseUrl) {
       allowedOrigins.add(new URL(apiBaseUrl, window.location.origin).origin);
     }
+    if (platformApiUrl) {
+      allowedOrigins.add(new URL(platformApiUrl, window.location.origin).origin);
+    }
+    if (bunnyCdnHost) {
+      allowedOrigins.add(new URL(`https://${bunnyCdnHost}`).origin);
+    }
+    allowedOrigins.add(parsed.origin);
 
     if (allowedOrigins.size === 0 || !allowedOrigins.has(parsed.origin)) {
       throw new Error("Comparison image URL is not from an allowed origin.");
@@ -304,6 +339,38 @@ export async function fetchAccountStatus(): Promise<AccountStatus> {
     paid: Boolean(data.paid),
     email: typeof data.email === "string" ? data.email : null,
   };
+}
+
+async function pollCompareJob(jobId: string, signal: AbortSignal): Promise<CompareResponse> {
+  const headers: Record<string, string> = {};
+  const accessToken = getAuthAccessToken();
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
+  while (true) {
+    if (signal.aborted) {
+      throw new DOMException("Aborted", "AbortError");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/jobs/${jobId}`, { headers, signal });
+    if (!response.ok) {
+      if (response.status === 401) {
+        clearAuthAccessToken();
+      }
+      throw new Error(await getErrorMessage(response));
+    }
+
+    const payload = (await response.json()) as CompareJobStatusResponse;
+    if (payload.status === "completed" && payload.result) {
+      return payload.result;
+    }
+    if (payload.status === "failed") {
+      throw new Error(payload.error_message ?? "Comparison failed. Please try again.");
+    }
+
+    await new Promise((resolve) => window.setTimeout(resolve, COMPARE_POLL_INTERVAL_MS));
+  }
 }
 
 function mergeAbortSignals(first: AbortSignal, second: AbortSignal): AbortSignal {

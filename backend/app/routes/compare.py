@@ -1,106 +1,129 @@
-import asyncio
 import logging
-import threading
-import time
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
 
 from backend.app.auth.deps import get_current_user
+from backend.app.auth.user import AuthenticatedUser
 from backend.app.config import (
     ALLOWED_EXTENSIONS,
-    COMPARE_MAX_WORKERS,
-    COMPARE_TIMEOUT_SECONDS,
     MAX_FILE_SIZE_MB,
+    PLATFORM_DATABASE_URL,
     UPLOAD_DIR,
 )
-from backend.app.schemas.compare import CompareResponse
-from backend.app.services.alignment import AlignmentError
-from backend.app.services.comparison_pipeline import run_comparison_pipeline
-from backend.app.services.image_limits import ImageTooLargeError
-from backend.app.services.pdf_converter import (
-    FileConversionError,
-    UnsupportedFileTypeError,
+from backend.app.database import get_db
+from backend.app.schemas.compare import (
+    CompareJobCreatedResponse,
+    CompareJobStatusResponse,
+    CompareResponse,
+)
+from backend.app.services.job_queue import (
+    JOB_STATUS_COMPLETED,
+    JOB_STATUS_FAILED,
+    create_job,
+    get_job,
 )
 from backend.app.services.rate_limiter import rate_limit_compare
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["comparison"])
-_compare_lock = threading.Lock()
-_executor = ThreadPoolExecutor(max_workers=COMPARE_MAX_WORKERS)
 _UPLOAD_CHUNK_SIZE = 1024 * 1024
-_COMPARE_BUSY_MESSAGE = "Another comparison is in progress. Try again in a moment."
 _PDF_MAGIC = b"%PDF-"
+
+
+def _require_db(db: Session | None) -> Session:
+    if db is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Comparison job database is not configured.",
+        )
+    return db
 
 
 @router.post(
     "/compare",
-    status_code=status.HTTP_200_OK,
-    response_model=CompareResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=CompareJobCreatedResponse,
     dependencies=[Depends(rate_limit_compare)],
 )
 async def compare_drawings(
     drawing_a: UploadFile | None = None,
     drawing_b: UploadFile | None = None,
-    _user: object | None = Depends(get_current_user),
-) -> CompareResponse:
+    user: AuthenticatedUser | None = Depends(get_current_user),
+    db: Session | None = Depends(get_db),
+) -> CompareJobCreatedResponse:
     if drawing_a is None or drawing_b is None:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Both drawing_a and drawing_b uploads are required.",
         )
 
-    saved_drawing_a: Path | None = None
-    saved_drawing_b: Path | None = None
-    started_at = time.perf_counter()
-
-    if not _compare_lock.acquire(blocking=False):
+    if not PLATFORM_DATABASE_URL:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=_COMPARE_BUSY_MESSAGE,
+            detail="Comparison job database is not configured.",
         )
+
+    db = _require_db(db)
+    saved_drawing_a: Path | None = None
+    saved_drawing_b: Path | None = None
 
     try:
         saved_drawing_a = await _save_validated_upload(drawing_a)
         saved_drawing_b = await _save_validated_upload(drawing_b)
 
-        loop = asyncio.get_running_loop()
-        try:
-            result = await asyncio.wait_for(
-                loop.run_in_executor(
-                    _executor,
-                    run_comparison_pipeline,
-                    saved_drawing_a,
-                    saved_drawing_b,
-                    drawing_a.filename or saved_drawing_a.name,
-                    drawing_b.filename or saved_drawing_b.name,
-                ),
-                timeout=COMPARE_TIMEOUT_SECONDS,
-            )
-        except asyncio.TimeoutError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-                detail=(
-                    f"Comparison timed out after {COMPARE_TIMEOUT_SECONDS} seconds. "
-                    "Try smaller files or try again."
-                ),
-            ) from exc
-
-        elapsed = time.perf_counter() - started_at
-        logger.info("Comparison completed in %.2fs", elapsed)
-        return result
-    except UnsupportedFileTypeError as exc:
-        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail=str(exc)) from exc
-    except ImageTooLargeError as exc:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(exc)) from exc
-    except (FileConversionError, AlignmentError, ValueError) as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-    finally:
-        _compare_lock.release()
+        priority = 1 if user is not None and user.priority else 0
+        job = create_job(
+            db,
+            drawing_a_path=saved_drawing_a,
+            drawing_b_path=saved_drawing_b,
+            drawing_a_name=drawing_a.filename or saved_drawing_a.name,
+            drawing_b_name=drawing_b.filename or saved_drawing_b.name,
+            user_email=user.email if user is not None else None,
+            priority=priority,
+        )
+        return CompareJobCreatedResponse(job_id=str(job.id))
+    except HTTPException:
         _remove_file(saved_drawing_a)
         _remove_file(saved_drawing_b)
+        raise
+    except Exception as exc:
+        _remove_file(saved_drawing_a)
+        _remove_file(saved_drawing_b)
+        logger.exception("Failed to enqueue comparison job")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to enqueue comparison job.",
+        ) from exc
+
+
+@router.get(
+    "/jobs/{job_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=CompareJobStatusResponse,
+)
+def get_compare_job(
+    job_id: UUID,
+    _user: AuthenticatedUser | None = Depends(get_current_user),
+    db: Session | None = Depends(get_db),
+) -> CompareJobStatusResponse:
+    db = _require_db(db)
+    job = get_job(db, job_id)
+    if job is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found.")
+
+    result: CompareResponse | None = None
+    if job.status == JOB_STATUS_COMPLETED and job.result is not None:
+        result = CompareResponse.model_validate(job.result)
+
+    return CompareJobStatusResponse(
+        job_id=str(job.id),
+        status=job.status,
+        result=result,
+        error_message=job.error_message if job.status == JOB_STATUS_FAILED else None,
+    )
 
 
 async def _save_validated_upload(upload: UploadFile) -> Path:

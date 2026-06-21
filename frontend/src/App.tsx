@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { CompareButton } from "./components/CompareButton";
+import { PricingPanel } from "./components/PricingPanel";
 import { ResultViewer } from "./components/ResultViewer";
 import { UploadPanel } from "./components/UploadPanel";
 import { trackEvent } from "./lib/analytics";
@@ -116,6 +117,12 @@ export default function App() {
           onDrawingBChange={setDrawingB}
         />
 
+        {isComparing && (
+          <p className="status" role="status">
+            Comparing drawings… This can take a few minutes for large PDFs.
+          </p>
+        )}
+
         <div className="compare-row">
           <CompareButton
             isLoading={isComparing}
@@ -149,6 +156,8 @@ export default function App() {
             <p>No comparison result yet.</p>
           )}
         </section>
+
+        <PricingPanel />
 
         {metadata && (
           <section className="metadata-section" aria-label="Comparison metadata">
