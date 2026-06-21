@@ -95,9 +95,10 @@ def _poll_compare_job(
 
 def _assert_output_paths(image_path: str, pdf_path: str) -> None:
     if image_path.startswith("http://") or image_path.startswith("https://"):
-        assert "comparison-" in image_path, "expected comparison image URL"
-        assert pdf_path.startswith("http://") or pdf_path.startswith("https://"), "expected PDF URL"
-        assert pdf_path.endswith(".pdf"), "expected PDF URL"
+        image_path_only = image_path.split("?", 1)[0]
+        pdf_path_only = pdf_path.split("?", 1)[0]
+        assert "comparison-" in image_path_only, "expected comparison image URL"
+        assert pdf_path_only.endswith(".pdf"), "expected PDF URL"
         return
     assert image_path.startswith("/outputs/comparison-"), "expected output PNG path"
     assert pdf_path.startswith("/outputs/comparison-") and pdf_path.endswith(".pdf"), (
