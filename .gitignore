@@ -24,6 +24,7 @@ frontend/vite.config.d.ts
 .env.deploy.local
 
 # Local test assets / logs
+assets/
 Demo_WhatsApp*.mp4
 *.pdf
 *.dwg
