@@ -7,11 +7,7 @@ from backend.app.auth.jwt import decode_platform_jwt, extract_email_from_payload
 from backend.app.config import AUTH_REQUIRED, PLATFORM_JWT_ISSUER, PLATFORM_JWT_SECRET
 from backend.app.database import get_db
 from backend.app.models.user import User
-from backend.app.subscription.utils import (
-    calculate_expiry,
-    ensure_subscription_status,
-    has_active_subscription,
-)
+from backend.app.subscription.utils import calculate_expiry, ensure_subscription_status
 
 security = HTTPBearer(auto_error=False)
 
@@ -92,15 +88,3 @@ def get_current_user(
         )
 
     return user
-
-
-def require_active_subscription():
-    def check_subscription(user: User | None = Depends(get_current_user)) -> User | None:
-        if user is None or not has_active_subscription(user):
-            raise HTTPException(
-                status_code=status.HTTP_402_PAYMENT_REQUIRED,
-                detail="Active subscription required. Please upgrade to continue.",
-            )
-        return user
-
-    return check_subscription
