@@ -15,6 +15,8 @@ export type AuthUser = {
 
 const AUTH_URL = (import.meta.env.VITE_KVSHVL_AUTH_URL ?? "").replace(/\/$/, "");
 
+const EXPIRY_LEEWAY_MS = 5_000;
+
 interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
@@ -29,6 +31,15 @@ let accessTokenGetter: (() => string | null) | null = null;
 
 export function getAuthAccessToken(): string | null {
   return accessTokenGetter?.() ?? null;
+}
+
+export function isJwtExpired(token: string, nowMs: number = Date.now()): boolean {
+  const payload = decodeJwtPayload(token);
+  const exp = payload?.exp;
+  if (typeof exp !== "number") {
+    return true;
+  }
+  return exp * 1000 <= nowMs + EXPIRY_LEEWAY_MS;
 }
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
@@ -56,6 +67,22 @@ function readTokenFromStorage(): string | null {
   }
 }
 
+function readValidTokenFromStorage(): string | null {
+  const token = readTokenFromStorage();
+  if (!token) {
+    return null;
+  }
+  if (isJwtExpired(token)) {
+    writeTokenToStorage(null);
+    return null;
+  }
+  return token;
+}
+
+export function clearAuthAccessToken(): void {
+  writeTokenToStorage(null);
+}
+
 function writeTokenToStorage(token: string | null): void {
   try {
     if (token) {
@@ -73,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = readTokenFromStorage();
+    const token = readValidTokenFromStorage();
     if (!token) {
       setUser(null);
       setLoading(false);
@@ -92,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    accessTokenGetter = () => readTokenFromStorage();
+    accessTokenGetter = () => readValidTokenFromStorage();
     return () => {
       accessTokenGetter = null;
     };
@@ -118,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     signIn,
     signOut,
-    getAccessToken: () => readTokenFromStorage(),
+    getAccessToken: () => readValidTokenFromStorage(),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

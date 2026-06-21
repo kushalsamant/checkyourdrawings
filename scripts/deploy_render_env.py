@@ -8,6 +8,8 @@ from pathlib import Path
 
 import httpx
 
+from env_file import parse_env_file
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 RENDER_KEY_PATH = Path.home() / ".render" / "cli.yaml"
 SERVICE_ID = "srv-d8qmgpr7uimc73e5bp9g"
@@ -25,17 +27,6 @@ RENDER_KEYS = (
 )
 
 
-def _parse_env_file(path: Path) -> dict[str, str]:
-    values: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        values[key.strip()] = value.strip()
-    return values
-
-
 def _load_render_key() -> str:
     text = RENDER_KEY_PATH.read_text(encoding="utf-8")
     for line in text.splitlines():
@@ -49,7 +40,7 @@ def main() -> int:
         print(f"Missing secrets file: {SECRETS_FILE}", file=sys.stderr)
         return 1
 
-    env = _parse_env_file(SECRETS_FILE)
+    env = parse_env_file(SECRETS_FILE)
     missing = [key for key in RENDER_KEYS if key not in env]
     if missing:
         print(f"Missing keys in {SECRETS_FILE.name}: {', '.join(missing)}", file=sys.stderr)

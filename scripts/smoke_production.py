@@ -10,22 +10,13 @@ from pathlib import Path
 import httpx
 import jwt
 
+from env_file import parse_env_file
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 SECRETS_FILE = REPO_ROOT / ".env.deploy.local"
 API_URL = "https://checkyourdrawings.onrender.com"
 SMOKE_EMAIL = "cyd-smoke@kvshvl.in"
-
-
-def _parse_env_file(path: Path) -> dict[str, str]:
-    values: dict[str, str] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        values[key.strip()] = value.strip()
-    return values
 
 
 def _sign_platform_jwt(*, email: str, secret: str, issuer: str) -> str:
@@ -50,7 +41,7 @@ def main() -> int:
         print(f"Missing {SECRETS_FILE}", file=sys.stderr)
         return 1
 
-    env = _parse_env_file(SECRETS_FILE)
+    env = parse_env_file(SECRETS_FILE)
     for key in ("PLATFORM_JWT_SECRET", "PLATFORM_JWT_ISSUER"):
         if key not in env or not env[key]:
             print(f"Missing {key} in {SECRETS_FILE.name}", file=sys.stderr)

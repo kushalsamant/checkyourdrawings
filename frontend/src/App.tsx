@@ -1,22 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 
-import { BatchPanel } from "./components/BatchPanel";
 import { CompareButton } from "./components/CompareButton";
 import { ResultViewer } from "./components/ResultViewer";
 import { UploadPanel } from "./components/UploadPanel";
 import { trackEvent } from "./lib/analytics";
 import { isAuthConfigured, useAuth } from "./lib/auth-provider";
-import type { AccountStatus, CompareMetadata } from "./services/api";
+import type { CompareMetadata } from "./services/api";
 import { CHECKYOURDRAWINGS_SITE_URL } from "./lib/legal-urls";
-import { fetchAccountStatus, uploadAndCompare } from "./services/api";
-
-type AppMode = "single" | "batch";
+import { uploadAndCompare } from "./services/api";
 
 export default function App() {
   const authConfigured = isAuthConfigured();
   const { user, loading: authLoading, signIn, signOut } = useAuth();
-  const [mode, setMode] = useState<AppMode>("single");
-  const [account, setAccount] = useState<AccountStatus | null>(null);
   const [drawingA, setDrawingA] = useState<File | null>(null);
   const [drawingB, setDrawingB] = useState<File | null>(null);
   const [comparisonImageUrl, setComparisonImageUrl] = useState<string | null>(null);
@@ -38,28 +33,6 @@ export default function App() {
       abortControllerRef.current?.abort();
     };
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadAccountStatus(): Promise<void> {
-      if (!authConfigured || !user) {
-        setAccount({ signed_in: false, paid: false, email: null });
-        return;
-      }
-
-      const status = await fetchAccountStatus();
-      if (!cancelled) {
-        setAccount(status);
-      }
-    }
-
-    void loadAccountStatus();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [authConfigured, user]);
 
   async function handleCompare(): Promise<void> {
     if (drawingA === null || drawingB === null) {
@@ -100,8 +73,6 @@ export default function App() {
     }
   }
 
-  const canRunBatch = account?.paid === true;
-
   return (
     <div className="page-body">
       <main className="app-shell">
@@ -138,129 +109,95 @@ export default function App() {
           </div>
         </header>
 
-        <div className="mode-toggle" role="tablist" aria-label="Compare mode">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "single"}
-            className={mode === "single" ? "mode-toggle__button is-active" : "mode-toggle__button"}
-            onClick={() => setMode("single")}
-          >
-            Single pair
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={mode === "batch"}
-            className={mode === "batch" ? "mode-toggle__button is-active" : "mode-toggle__button"}
-            onClick={() => setMode("batch")}
-          >
-            Batch
-          </button>
+        <UploadPanel
+          drawingA={drawingA}
+          drawingB={drawingB}
+          onDrawingAChange={setDrawingA}
+          onDrawingBChange={setDrawingB}
+        />
+
+        <div className="compare-row">
+          <CompareButton
+            isLoading={isComparing}
+            disabled={drawingA === null || drawingB === null}
+            onClick={handleCompare}
+          />
         </div>
 
-        {mode === "single" ? (
-          <>
-            <UploadPanel
-              drawingA={drawingA}
-              drawingB={drawingB}
-              onDrawingAChange={setDrawingA}
-              onDrawingBChange={setDrawingB}
-            />
-
-            <div className="compare-row">
-              <CompareButton
-                isLoading={isComparing}
-                disabled={drawingA === null || drawingB === null}
-                onClick={handleCompare}
-              />
-            </div>
-
-            {error && (
-              <p className="alert" role="alert">
-                {error}
-                {error.includes("subscription required") && " A paid subscription is required for this feature."}
-              </p>
-            )}
-
-            {metadata?.alignment_confidence.status === "marginal" && (
-              <p className="warning" role="status">
-                {metadata.alignment_confidence.message ??
-                  "Alignment confidence is low. Review the comparison manually."}
-              </p>
-            )}
-
-            <section className="result-section" aria-label="Result" aria-live="polite">
-              <h2>Result</h2>
-
-              {comparisonImageUrl && comparisonPdfUrl ? (
-                <ResultViewer
-                  imageUrl={comparisonImageUrl}
-                  pdfUrl={comparisonPdfUrl}
-                  showUpsell={!account?.paid}
-                />
-              ) : (
-                <p>No comparison result yet.</p>
-              )}
-            </section>
-
-            {metadata && (
-              <section className="metadata-section" aria-label="Comparison metadata">
-                <h2>Metadata</h2>
-                <dl className="metadata-grid">
-                  <div>
-                    <dt>Orange (only A)</dt>
-                    <dd>{metadata.overlay.orange_pixels}</dd>
-                  </div>
-
-                  <div>
-                    <dt>Blue (only B)</dt>
-                    <dd>{metadata.overlay.blue_pixels}</dd>
-                  </div>
-
-                  <div>
-                    <dt>Green (both)</dt>
-                    <dd>{metadata.overlay.green_pixels}</dd>
-                  </div>
-
-                  <div>
-                    <dt>Red (clash)</dt>
-                    <dd>{metadata.overlay.red_pixels}</dd>
-                  </div>
-
-                  <div>
-                    <dt>Alignment inliers</dt>
-                    <dd>{metadata.alignment.inlier_matches}</dd>
-                  </div>
-
-                  <div>
-                    <dt>Alignment confidence</dt>
-                    <dd>{metadata.alignment_confidence.status}</dd>
-                  </div>
-
-                  <div>
-                    <dt>Overlap area</dt>
-                    <dd>
-                      {metadata.content.overlap_bbox.width} x {metadata.content.overlap_bbox.height}
-                    </dd>
-                  </div>
-
-                  <div>
-                    <dt>Inlier ratio</dt>
-                    <dd>{metadata.alignment.inlier_ratio.toFixed(2)}</dd>
-                  </div>
-                </dl>
-              </section>
-            )}
-          </>
-        ) : (
-          <BatchPanel
-            canRunBatch={canRunBatch}
-            isSignedIn={Boolean(user)}
-            onSignIn={() => void signIn()}
-          />
+        {error && (
+          <p className="alert" role="alert">
+            {error}
+          </p>
         )}
 
+        {metadata?.alignment_confidence.status === "marginal" && (
+          <p className="warning" role="status">
+            {metadata.alignment_confidence.message ??
+              "Alignment confidence is low. Review the comparison manually."}
+          </p>
+        )}
+
+        <section className="result-section" aria-label="Result" aria-live="polite">
+          <h2>Result</h2>
+
+          {comparisonImageUrl && comparisonPdfUrl ? (
+            <ResultViewer
+              imageUrl={comparisonImageUrl}
+              pdfUrl={comparisonPdfUrl}
+            />
+          ) : (
+            <p>No comparison result yet.</p>
+          )}
+        </section>
+
+        {metadata && (
+          <section className="metadata-section" aria-label="Comparison metadata">
+            <h2>Metadata</h2>
+            <dl className="metadata-grid">
+              <div>
+                <dt>Orange (only A)</dt>
+                <dd>{metadata.overlay.orange_pixels}</dd>
+              </div>
+
+              <div>
+                <dt>Blue (only B)</dt>
+                <dd>{metadata.overlay.blue_pixels}</dd>
+              </div>
+
+              <div>
+                <dt>Green (both)</dt>
+                <dd>{metadata.overlay.green_pixels}</dd>
+              </div>
+
+              <div>
+                <dt>Red (clash)</dt>
+                <dd>{metadata.overlay.red_pixels}</dd>
+              </div>
+
+              <div>
+                <dt>Alignment inliers</dt>
+                <dd>{metadata.alignment.inlier_matches}</dd>
+              </div>
+
+              <div>
+                <dt>Alignment confidence</dt>
+                <dd>{metadata.alignment_confidence.status}</dd>
+              </div>
+
+              <div>
+                <dt>Overlap area</dt>
+                <dd>
+                  {metadata.content.overlap_bbox.width} x {metadata.content.overlap_bbox.height}
+                </dd>
+              </div>
+
+              <div>
+                <dt>Inlier ratio</dt>
+                <dd>{metadata.alignment.inlier_ratio.toFixed(2)}</dd>
+              </div>
+            </dl>
+          </section>
+        )}
       </main>
     </div>
   );

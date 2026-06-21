@@ -3,13 +3,7 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from backend.app.config import MAX_IMAGE_DIMENSION
-from backend.app.main import app
 from backend.app.services.image_limits import ImageTooLargeError, validate_image_dimensions
-
-
-@pytest.fixture
-def client() -> TestClient:
-    return TestClient(app)
 
 
 class TestValidateImageDimensions:

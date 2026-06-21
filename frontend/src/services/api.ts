@@ -1,4 +1,4 @@
-import { getAuthAccessToken } from "../lib/auth-provider";
+import { clearAuthAccessToken, getAuthAccessToken } from "../lib/auth-provider";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
@@ -105,6 +105,9 @@ export async function uploadAndCompare(
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        clearAuthAccessToken();
+      }
       const errorMessage = await getErrorMessage(response);
       throw new Error(errorMessage);
     }
@@ -281,6 +284,9 @@ export async function fetchAccountStatus(): Promise<AccountStatus> {
 
   const response = await fetch(`${API_BASE_URL}/account`, { headers });
   if (!response.ok) {
+    if (response.status === 401) {
+      clearAuthAccessToken();
+    }
     return { signed_in: false, paid: false, email: null };
   }
 

@@ -4,13 +4,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app.main import app
 from backend.app.services.output_cleanup import prune_old_outputs
-
-
-@pytest.fixture
-def client() -> TestClient:
-    return TestClient(app)
 
 
 class TestCompareRouteErrors:

@@ -8,7 +8,6 @@ interface ResultViewerProps {
   pngFilename?: string;
   pdfFilename?: string;
   altText?: string;
-  showUpsell?: boolean;
 }
 
 const MIN_ZOOM = 0.25;
@@ -21,7 +20,6 @@ export function ResultViewer({
   pngFilename = "comparison-result.png",
   pdfFilename = "comparison-result.pdf",
   altText = "Rendered drawing comparison result",
-  showUpsell = false,
 }: ResultViewerProps) {
   const [zoom, setZoom] = useState<number>(1);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -112,12 +110,6 @@ export function ResultViewer({
       <p className="retention-notice" role="note">
         Download to keep a copy — results aren&apos;t stored permanently.
       </p>
-
-      {showUpsell && (
-        <p className="upsell-banner" role="status">
-          Comparing a full revision set? Sign in and subscribe for batch compare.
-        </p>
-      )}
 
       {downloadError && (
         <p className="alert" role="alert">

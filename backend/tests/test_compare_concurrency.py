@@ -1,16 +1,9 @@
 from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
 
-from backend.app.main import app
 from backend.app.routes import compare as compare_route
 from backend.tests.fixtures.factory import ContentScenario, image_to_bytes, make_drawing_a_image, make_drawing_b_image
-
-
-@pytest.fixture
-def client() -> TestClient:
-    return TestClient(app)
 
 
 class TestCompareConcurrency:

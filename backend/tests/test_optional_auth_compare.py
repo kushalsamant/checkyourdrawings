@@ -11,11 +11,6 @@ from backend.tests.fixtures.factory import ContentScenario, image_to_bytes, make
 
 
 @pytest.fixture
-def client() -> TestClient:
-    return TestClient(app)
-
-
-@pytest.fixture
 def compare_files() -> dict[str, tuple[str, bytes, str]]:
     drawing_a = make_drawing_a_image()
     drawing_b = make_drawing_b_image(ContentScenario.IDENTICAL, drawing_a)

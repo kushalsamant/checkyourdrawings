@@ -1,7 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.app.main import app
 from backend.tests.fixtures.factory import (
     ContentScenario,
     image_to_bytes,
@@ -9,11 +8,6 @@ from backend.tests.fixtures.factory import (
     make_drawing_b_image,
     make_padded_identical_pair,
 )
-
-
-@pytest.fixture
-def client() -> TestClient:
-    return TestClient(app)
 
 
 @pytest.mark.integration

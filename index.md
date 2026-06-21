@@ -4,7 +4,7 @@ Check Your Drawings compares two architectural drawing PDFs and returns an auto-
 
 ## How it works
 
-Upload Drawing A and Drawing B. The app aligns the sheets and builds a color-coded overlay in seconds. Single-pair compare does not require sign-in.
+Upload Drawing A and Drawing B. The app aligns the sheets and builds a color-coded overlay in seconds. No sign-in required.
 
 Blue — New additions (only in the second drawing)  
 Orange — Removed elements (only in the first drawing)  
@@ -17,9 +17,9 @@ Download the result as a PNG preview or a PDF at the uploaded sheet size. Result
 
 Compare two revision PDFs without stacking them by hand. Catch consultant mismatches early. Use the overlay in coordination reports. Works with PDF output from your usual design tools.
 
-## Free vs paid
+## Pricing
 
-Single-pair compare is available without sign-in, subject to fair-use limits applied to keep the service stable. Batch compare and ZIP export of PDF overlays require sign-in and an active paid subscription.
+Check Your Drawings is free to use. Fair-use limits (such as how often you can compare in a short window) keep the service stable for everyone. Optional sign-in is for account features; a faster priority lane for heavy professional use is planned.
 
 Built by a coordination architect who used to run this workflow by hand. The computer does it now.
 

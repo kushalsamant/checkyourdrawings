@@ -21,9 +21,6 @@ class PlatformSettings(BaseSettings):
     platform_database_url: str | None = None
     platform_jwt_secret: str | None = None
     platform_jwt_issuer: str | None = None
-    supabase_url: str | None = None
-    supabase_service_role_key: str | None = None
-    supabase_jwt_secret: str | None = None
 
 
 class Settings(BaseSettings):
@@ -49,6 +46,9 @@ class Settings(BaseSettings):
     alignment_marginal_inlier_ratio: float = 0.55
     alignment_ecc_refinement: bool = True
     auth_required: bool = False
+    rate_limit_enabled: bool = True
+    rate_limit_max_requests: int = 20
+    rate_limit_window_seconds: int = 60
     cors_origins: str = Field(default=_DEFAULT_CORS_ORIGINS)
 
     @property
@@ -81,15 +81,15 @@ MIN_OVERLAP_AREA_RATIO: float = _settings.min_overlap_area_ratio
 ALIGNMENT_MARGINAL_INLIER_RATIO: float = _settings.alignment_marginal_inlier_ratio
 ALIGNMENT_ECC_REFINEMENT: bool = _settings.alignment_ecc_refinement
 AUTH_REQUIRED: bool = _settings.auth_required
+RATE_LIMIT_ENABLED: bool = _settings.rate_limit_enabled
+RATE_LIMIT_MAX_REQUESTS: int = _settings.rate_limit_max_requests
+RATE_LIMIT_WINDOW_SECONDS: int = _settings.rate_limit_window_seconds
 CORS_ORIGINS: list[str] = _settings.cors_origins_list
 ALLOWED_EXTENSIONS: frozenset[str] = frozenset({".pdf"})
 
 PLATFORM_DATABASE_URL: str | None = _platform_settings.platform_database_url
 PLATFORM_JWT_SECRET: str | None = _platform_settings.platform_jwt_secret
 PLATFORM_JWT_ISSUER: str | None = _platform_settings.platform_jwt_issuer
-SUPABASE_URL: str | None = _platform_settings.supabase_url
-SUPABASE_SERVICE_ROLE_KEY: str | None = _platform_settings.supabase_service_role_key
-SUPABASE_JWT_SECRET: str | None = _platform_settings.supabase_jwt_secret
 
 
 def get_settings() -> Settings:

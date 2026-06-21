@@ -2,13 +2,18 @@
 
 FastAPI service for PDF drawing comparison and account status.
 
+Repo overview: [../README.md](../README.md).
+
 ## Endpoints
 
 - `GET /` — service info
 - `GET /health` — upload/output directory health
 - `GET /health/ready` — readiness probe
 - `GET /account` — signed-in and paid status (optional auth via Bearer token)
-- `POST /compare` — compare two PDF drawings
+- `POST /compare` — compare two PDF drawings (rate limited per IP)
+- `GET /outputs/<file>` — generated comparison PNG/PDF (static; pruned after 24h)
+
+All responses include basic security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Strict-Transport-Security`).
 
 ## Auth environment variables
 
@@ -19,6 +24,14 @@ Set in `.env` (see repo root `.env.example` for `CYD_*` settings):
 - `PLATFORM_JWT_ISSUER` — JWT issuer (default production: `https://auth.kvshvl.in`)
 
 When `CYD_AUTH_REQUIRED=false`, compare works without sign-in; `/account` still accepts an optional token.
+
+## Rate limiting
+
+`POST /compare` is rate limited per client IP (in-memory, per process). Over the limit returns `429` with a `Retry-After` header. Configure via:
+
+- `CYD_RATE_LIMIT_ENABLED` — default `true`
+- `CYD_RATE_LIMIT_MAX_REQUESTS` — default `20`
+- `CYD_RATE_LIMIT_WINDOW_SECONDS` — default `60`
 
 ## Compare request
 
@@ -65,7 +78,7 @@ Multipart form fields:
       "changed_pixel_ratio": 0.0
     },
     "output_page": {
-      "mode": "a4",
+      "mode": "source_a",
       "width_pt": 595.0,
       "height_pt": 842.0,
       "raster_dpi": 300
@@ -74,7 +87,16 @@ Multipart form fields:
 }
 ```
 
-Only **`.pdf`** uploads are accepted.
+Only **`.pdf`** uploads are accepted (validated by extension and `%PDF-` magic bytes).
+
+## Compare error codes
+
+- `400` — empty file, non-PDF/corrupt upload, or drawings that cannot be aligned
+- `413` — file exceeds the size limit
+- `415` — unsupported file type
+- `429` — rate limited (includes `Retry-After`)
+- `503` — another comparison is already in progress
+- `504` — comparison timed out
 
 ## Tests
 
