@@ -34,9 +34,8 @@ describe("validateFile", () => {
   });
 
   it("rejects files over the size limit", () => {
-    const file = new File([new Uint8Array(MAX_FILE_SIZE_BYTES + 1)], "drawing.pdf", {
-      type: "application/pdf",
-    });
+    const file = new File(["content"], "drawing.pdf", { type: "application/pdf" });
+    Object.defineProperty(file, "size", { value: MAX_FILE_SIZE_BYTES + 1 });
     expect(validateFile(file)).toMatch(/100 MB/);
   });
 
