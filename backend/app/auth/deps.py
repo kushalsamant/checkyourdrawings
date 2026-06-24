@@ -63,5 +63,5 @@ def get_current_user(
         google_id=payload.get("sub") if isinstance(payload.get("sub"), str) else None,
         paid=paid,
         priority=priority,
-        tier=tier if isinstance(tier, str) else "trial",
+        tier=tier if isinstance(tier, str) else "free",
     )

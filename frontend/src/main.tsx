@@ -4,7 +4,9 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { AuthProvider } from "./lib/auth-provider";
 import { AboutPage } from "./pages/AboutPage";
+import { AccountPage } from "./pages/AccountPage";
 import { AuthCallback } from "./pages/AuthCallback";
+import { PricingPage } from "./pages/PricingPage";
 import "./styles.css";
 
 const rootElement = document.getElementById("root");
@@ -18,6 +20,12 @@ function AppRoutes() {
 
   if (path === "/about") {
     return <AboutPage />;
+  }
+  if (path === "/pricing") {
+    return <PricingPage />;
+  }
+  if (path === "/account") {
+    return <AccountPage />;
   }
 
   return <App />;

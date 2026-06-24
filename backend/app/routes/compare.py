@@ -23,6 +23,7 @@ from backend.app.schemas.compare import (
     CompareJobStatusResponse,
     CompareResponse,
 )
+from backend.app.services.active_job_limits import active_job_limit_detail, max_active_jobs_for_user
 from backend.app.services.anonymous_allowance import (
     anonymous_allowance_exhausted,
     remaining_anonymous_allowance,
@@ -30,6 +31,7 @@ from backend.app.services.anonymous_allowance import (
 from backend.app.services.job_queue import (
     JOB_STATUS_COMPLETED,
     JOB_STATUS_FAILED,
+    count_active_jobs,
     create_job,
     get_job,
 )
@@ -124,6 +126,17 @@ async def compare_drawings(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Sign in to continue comparing.",
             )
+
+    active_limit = max_active_jobs_for_user(user)
+    if user is not None:
+        active_count = count_active_jobs(db, user_email=user.email)
+    else:
+        active_count = count_active_jobs(db, anon_session_id=anon_session_id)
+    if active_count >= active_limit:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=active_job_limit_detail(active_limit),
+        )
 
     saved_drawing_a: Path | None = None
     saved_drawing_b: Path | None = None

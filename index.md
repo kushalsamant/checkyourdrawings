@@ -25,6 +25,6 @@ Built by a coordination architect who used to run this workflow by hand. The com
 
 ## Legal
 
-[Privacy Policy](https://www.kvshvl.in/privacypolicy). [Terms of Service](https://www.kvshvl.in/termsofservice).
+[Terms and Conditions](https://www.kvshvl.in/termsofservice). [Privacy Policy](https://www.kvshvl.in/privacypolicy). [Cancellation and Refund](https://www.kvshvl.in/refundpolicy). [Shipping and Exchange](https://www.kvshvl.in/shippingpolicy). [Contact Us](https://www.kvshvl.in/contact).
 
 [Back to app](/)

@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
+import { AppHeader } from "./components/AppHeader";
 import { CompareButton } from "./components/CompareButton";
-import { PricingPanel } from "./components/PricingPanel";
 import { ResultViewer } from "./components/ResultViewer";
 import { UploadPanel } from "./components/UploadPanel";
 import { trackEvent } from "./lib/analytics";
-import { isAuthConfigured, useAuth } from "./lib/auth-provider";
+import { useAuth } from "./lib/auth-provider";
 import type { AllowanceStatus, CompareMetadata } from "./services/api";
-import { CHECKYOURDRAWINGS_SITE_URL } from "./lib/legal-urls";
 import {
   fetchAllowance,
   SignInRequiredError,
@@ -15,8 +14,7 @@ import {
 } from "./services/api";
 
 export default function App() {
-  const authConfigured = isAuthConfigured();
-  const { user, loading: authLoading, signIn, signOut } = useAuth();
+  const { user, signIn } = useAuth();
   const [drawingA, setDrawingA] = useState<File | null>(null);
   const [drawingB, setDrawingB] = useState<File | null>(null);
   const [comparisonImageUrl, setComparisonImageUrl] = useState<string | null>(null);
@@ -92,38 +90,7 @@ export default function App() {
   return (
     <div className="page-body">
       <main className="app-shell">
-        <header className="app-header">
-          <div className="app-header-row">
-            <div>
-              <h1>Check Your Drawings</h1>
-              <p>Upload two PDF drawings for an auto-aligned coordination overlay.</p>
-            </div>
-
-            <div className="auth-actions">
-              <a
-                href={`${CHECKYOURDRAWINGS_SITE_URL}/about`}
-                className="header-link"
-              >
-                About
-              </a>
-              {authConfigured &&
-                (authLoading ? (
-                  <span>Checking session...</span>
-                ) : user ? (
-                  <>
-                    <span className="auth-email">{user.email}</span>
-                    <button type="button" onClick={() => void signOut()}>
-                      Sign out
-                    </button>
-                  </>
-                ) : (
-                  <button type="button" onClick={() => void signIn()}>
-                    Sign in
-                  </button>
-                ))}
-            </div>
-          </div>
-        </header>
+        <AppHeader />
 
         {allowance?.tier === "anonymous" &&
           allowance.remaining !== null &&
@@ -179,8 +146,6 @@ export default function App() {
             <p>No comparison result yet.</p>
           )}
         </section>
-
-        <PricingPanel />
 
         {metadata && (
           <section className="metadata-section" aria-label="Comparison metadata">

@@ -11,7 +11,6 @@ export interface CheckoutSession {
   key_id: string;
   payment_type: string;
   tier: string;
-  order_id?: string | null;
   subscription_id?: string | null;
   amount?: number | null;
   currency: string;
@@ -51,7 +50,7 @@ export async function startCheckout(tier: string, accessToken: string): Promise<
     body: JSON.stringify({
       tier,
       app_id: "checkyourdrawings",
-      payment_type: "one_time",
+      payment_type: "subscription",
     }),
   });
 
@@ -67,26 +66,21 @@ export async function startCheckout(tier: string, accessToken: string): Promise<
     throw new Error("Razorpay checkout failed to load.");
   }
 
-  const options: Record<string, unknown> = {
+  if (!session.subscription_id) {
+    throw new Error("Subscription checkout session is incomplete.");
+  }
+
+  const checkout = new window.Razorpay({
     key: session.key_id,
     name: "Check Your Drawings",
     description: session.description,
+    subscription_id: session.subscription_id,
     prefill: session.prefill,
     theme: { color: "#111827" },
     handler: () => {
-      window.location.assign(`${window.location.origin}?checkout=success`);
+      window.location.assign(`${window.location.origin}/pricing?checkout=success`);
     },
-  };
-
-  if (session.payment_type === "subscription" && session.subscription_id) {
-    options.subscription_id = session.subscription_id;
-  } else if (session.order_id) {
-    options.order_id = session.order_id;
-    options.amount = session.amount;
-    options.currency = session.currency;
-  }
-
-  const checkout = new window.Razorpay(options);
+  });
   checkout.open();
 }
 

@@ -16,6 +16,24 @@ JOB_STATUS_COMPLETED = "completed"
 JOB_STATUS_FAILED = "failed"
 
 
+def count_active_jobs(
+    db: Session,
+    *,
+    anon_session_id: str | None = None,
+    user_email: str | None = None,
+) -> int:
+    query = db.query(ComparisonJob).filter(
+        ComparisonJob.status.in_((JOB_STATUS_PENDING, JOB_STATUS_RUNNING))
+    )
+    if user_email is not None:
+        query = query.filter(ComparisonJob.user_email == user_email)
+    elif anon_session_id is not None:
+        query = query.filter(ComparisonJob.anon_session_id == anon_session_id)
+    else:
+        return 0
+    return query.count()
+
+
 def create_job(
     db: Session,
     *,
