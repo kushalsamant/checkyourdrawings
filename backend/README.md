@@ -39,6 +39,16 @@ When `AUTH_REQUIRED=false`, anonymous users get a lifetime allowance of successf
 
 **Queue:** single global ordering `priority DESC, created_at ASC`; one worker (`COMPARE_MAX_WORKERS=1`). Pro does not add dedicated workers — it allows more queued jobs and higher priority.
 
+## Throughput limits (locked)
+
+| Tier | Active jobs | Comparisons |
+|------|-------------|-------------|
+| Anonymous | 1 | 5 lifetime successes → sign-in |
+| Signed-in free | 1 | Unlimited |
+| Pro | 10 | Unlimited + queue priority |
+
+**Paid access policy:** Compare is not paywalled. Pro affects queue priority and active-job limits only (`user.paid` via entitlements). The API does not return `402`.
+
 ## Rate limiting
 
 `POST /compare` is rate limited per client IP. Configure via `RATE_LIMIT_*` env vars.

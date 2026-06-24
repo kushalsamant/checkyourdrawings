@@ -18,7 +18,8 @@ Sign-in is **not** required to compare. When configured:
 
 - Set `VITE_KVSHVL_AUTH_URL=https://auth.kvshvl.in` (production) or your local auth dev URL.
 - Sign-in redirects to auth → Google → handoff with a short-lived `handoff_code` → `/auth/callback` exchanges it for a platform JWT → home.
-- The token is sent as `Authorization: Bearer …` on `/compare` and `/account` when present.
+- The token is sent as `Authorization: Bearer …` on `/compare` and `/jobs/*` when present.
+- `/account` and `/payments/*` call **platform-api** via `VITE_PLATFORM_API_URL`, not the Vite proxy.
 - Expired tokens are dropped client-side; the app falls back to anonymous compare until the anonymous allowance is exhausted.
 - Anonymous visitors receive a persistent `X-Anon-Session` header (stored in `localStorage`).
 

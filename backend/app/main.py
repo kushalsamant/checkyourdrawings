@@ -17,6 +17,7 @@ from backend.app.config import (
 )
 from backend.app.routes.compare import router as compare_router
 from backend.app.services.bunny_storage import bunny_enabled
+from backend.app.services.job_retention import prune_old_jobs
 from backend.app.services.job_worker import start_worker, stop_worker
 from backend.app.services.output_cleanup import prune_old_outputs
 
@@ -32,6 +33,18 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     ensure_runtime_directories()
     removed = prune_old_outputs(OUTPUT_DIR, max_age_hours=OUTPUT_MAX_AGE_HOURS)
     logger.info("Application startup complete. Pruned %d expired output file(s).", removed)
+    if PLATFORM_DATABASE_URL:
+        from backend.app.database import _get_engine, _SessionLocal
+
+        _get_engine()
+        assert _SessionLocal is not None
+        db = _SessionLocal()
+        try:
+            pruned_jobs = prune_old_jobs(db, max_age_hours=OUTPUT_MAX_AGE_HOURS)
+            if pruned_jobs:
+                logger.info("Pruned %d expired comparison job(s).", pruned_jobs)
+        finally:
+            db.close()
     await start_worker()
     try:
         yield

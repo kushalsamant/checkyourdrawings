@@ -2,7 +2,6 @@ import { ANON_SESSION_HEADER, getAnonSessionId } from "../lib/anon-session";
 import { clearAuthAccessToken, getAuthAccessToken } from "../lib/auth-provider";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-const PLATFORM_API_URL = (import.meta.env.VITE_PLATFORM_API_URL ?? "").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 const COMPARE_POLL_INTERVAL_MS = 1500;
 const COMPARE_BUSY_DETAIL = "Another comparison is in progress. Try again in a moment.";
@@ -31,12 +30,6 @@ export interface CompareJobStatusResponse {
   status: "pending" | "running" | "completed" | "failed" | string;
   result: CompareResponse | null;
   error_message: string | null;
-}
-
-export interface AccountStatus {
-  signed_in: boolean;
-  paid: boolean;
-  email: string | null;
 }
 
 export interface BoundingBox {
@@ -256,9 +249,6 @@ export async function getErrorMessage(response: Response): Promise<string> {
   if (response.status === 401) {
     return "Sign in to compare drawings.";
   }
-  if (response.status === 402) {
-    return "Active subscription required.";
-  }
   try {
     const data = (await response.json()) as { detail?: unknown };
     const message = formatFastApiDetail(data.detail);
@@ -348,36 +338,6 @@ function formatFastApiDetail(detail: unknown): string | null {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
-}
-
-export async function fetchAccountStatus(): Promise<AccountStatus> {
-  if (!PLATFORM_API_URL) {
-    return { signed_in: false, paid: false, email: null };
-  }
-
-  const headers: Record<string, string> = {};
-  const accessToken = getAuthAccessToken();
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  const response = await fetch(`${PLATFORM_API_URL}/account`, { headers });
-  if (!response.ok) {
-    if (response.status === 401) {
-      clearAuthAccessToken();
-    }
-    return { signed_in: false, paid: false, email: null };
-  }
-
-  const data = (await response.json()) as {
-    email?: string;
-    paid?: boolean;
-  };
-  return {
-    signed_in: true,
-    paid: Boolean(data.paid),
-    email: typeof data.email === "string" ? data.email : null,
-  };
 }
 
 async function pollCompareJob(jobId: string, signal: AbortSignal): Promise<CompareResponse> {
