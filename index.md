@@ -1,59 +1,101 @@
-Spot drawing revision changes before they reach site. Upload two PDFs and get an auto-aligned coordination overlay.
+Comparing two drawing revisions usually means opening CAD, scaling sheets, aligning viewports, and scanning layer by layer for what moved. On a busy project that work repeats for every consultant return, transmittal, and reissue — and a sheet that is slightly off alignment can hide a change you were looking for.
 
-- **Drawing A** — earlier revision
-- **Drawing B** — later revision
-- Shows additions, removals, overlap, and clashes
-- Any PDF export from your design tools; no CAD license
+Check Your Drawings is a **decision-support tool** for that first pass. Upload two PDF revisions and get an auto-aligned overlay that **highlights** additions, removals, matching geometry, and areas that **may** need a closer look. It **speeds up** manual comparison. It does not replace your QA process, your CAD review, or formal sign-off.
 
-[Upload your drawings](/)
+[Compare two drawings](/)
+
+---
+
+## The problem
+
+Drawing controllers, coordinators, architects, consultants, contractors, and QA reviewers all face the same friction:
+
+- Two PDFs that look almost identical until you align them carefully
+- Repeated manual overlay work across disciplines and revision cycles
+- Time spent hunting for changes before you can judge whether they are acceptable
+- Pressure to turn around submittals and coordination packages while the sheet count keeps growing
+
+That work is slow, repetitive, and easy to underestimate. It also sits on the critical path — before markups, memos, RFIs, and site instructions.
+
+---
+
+## How Check Your Drawings helps
+
+Upload **Drawing A** (earlier revision) and **Drawing B** (later revision). The system aligns the sheets and builds a color-coded overlay you can review on screen or drop into a coordination package.
+
+- **Reduces manual comparison** — no CAD license required; works from PDF plots or exports from AutoCAD, Revit, or other design tools
+- **Surfaces likely changes** — color coding points reviewers toward additions, removals, and overlapping areas that differ
+- **Supports coordination review** — download **PNG** for quick review or **PDF** at sheet size for reports and transmittals
+- **Assists with the search phase** — you still confirm critical items in CAD, apply revision clouds, and follow your project's QA workflow
 
 ---
 
 ## How it works
 
-- Upload two PDFs (**100 MB** max each)
-- App aligns the sheets and builds a color-coded overlay
-- Large sheets can take a few minutes; the page updates when done
-- Download **PNG** preview or **PDF** at sheet size
+1. Upload two PDFs — up to **100 MB** each
+2. Processing aligns the sheets and builds the overlay. Large or dense sheets can take several minutes; this page updates when processing finishes
+3. Download **PNG** or **PDF**. Outputs are kept about **24 hours** — save a copy for your project record
 
 ### Overlay colors
 
-Blue — New additions (only in the second drawing)  
-Orange — Removed elements (only in the first drawing)  
-Green — Aligned overlap (matching in both)  
-Red — Misaligned overlap (clashes and conflicts — review manually)
+Blue — Additions (geometry present in Drawing B, not in Drawing A)  
+Orange — Removals (geometry present in Drawing A, not in Drawing B)  
+Green — Matching geometry (aligned in both revisions)  
+Red — Misaligned overlap (geometry occupies the same area but does not match — **review in CAD**)
 
-### After you compare
-
-- Outputs kept about **24 hours** — download what you need
-- Confirm red areas in CAD; mark up with revision clouds as usual
-
-### Access
-
-- **Without sign-in:** 5 successful comparisons, 1 active job at a time
-- **Signed in (free):** unlimited comparisons, 1 active job at a time
-- Sign in with Google when the allowance runs out
+Red **helps identify** where to look first. It is not a pass/fail result. Confirm whether the difference is intentional, a coordination issue, or an alignment edge case using your normal review process.
 
 ---
 
-## Use
+## What to expect
 
-- Compare revision PDFs without stacking them by hand
-- Catch consultant mismatches before submittal
-- Drop the overlay into coordination reports
+- **Input:** PDF only — standard plots or exports from your design software
+- **Processing:** Comparisons run sequentially; large files may take several minutes
+- **Output:** PNG for screen review; PDF at uploaded sheet size
+- **Retention:** Files are kept about **24 hours** — this is a processing service, not document storage
+- **Your role:** Use the overlay as a first-pass aid. Critical changes should still be checked through your established QA and CAD workflows
 
 ---
 
-## Pricing
+## What this tool does not do
 
-- **Free** — 5 anonymous comparisons, then sign in; unlimited with 1 active job
-- **KVSHVL Pro** ($29/mo · $290/yr) — 10 active jobs, queue priority; same **100 MB** limit; queue work ahead on serial processing
+Check Your Drawings does **not**:
+
+- Replace QA/QC sign-off or professional judgment on drawing content
+- Replace CAD for confirming dimensions, details, or design intent
+- Guarantee that every revision or coordination issue will be identified
+- Perform 3D BIM clash detection
+- Store drawings as a long-term project archive
+
+It **helps you review revisions more efficiently** — it does not remove the need for review.
+
+---
+
+## Who uses it
+
+- **Document controllers** — assist with checking revision packages before issue
+- **BIM coordinators and architects** — compare consultant returns against a previous issue
+- **Project managers** — support review when verifying that a response or instruction changed the sheet
+- **QA/QC reviewers** — reduce manual overlay work across revision cycles
+- **Contractors** — review submittal drawing revisions without opening a CAD seat
+
+---
+
+## Plans
+
+- **Without sign-in:** **5** successful comparisons, **1** active job at a time
+- **Signed in (free):** **Unlimited** comparisons, **1** active job at a time — sign in with Google to continue after the anonymous allowance
+- **KVSHVL Pro** ($29/mo · $290/yr): **10** active jobs at once and **queue priority** when revision volume is high. Same **100 MB** per-PDF limit
 
 [View pricing](/pricing) · [Account](/account)
 
 ---
 
-_Built by a coordination architect who used to run this workflow by hand. The computer does it now._
+Built by a **coordination architect** who previously ran this revision-overlay workflow by hand on live projects. The tool automates alignment and diff highlighting so your team can spend more time on judgment and less time preparing comparisons.
+
+[Compare two drawings](/)
+
+---
 
 ## Legal
 
