@@ -6,8 +6,8 @@ import { renderAboutMarkdown } from "../lib/about-markdown";
 export function AboutPage() {
   return (
     <AppLayout
-      title="Revision compare is repetitive work"
-      subtitle="Check Your Drawings helps you review two drawing PDFs without manually aligning sheets in CAD."
+      title="Finding drawing changes manually is repetitive work"
+      subtitle="Scale, align, overlay, scan — on every consultant return and reissue."
       shellClassName="landing-shell"
     >
       {renderAboutMarkdown(aboutMarkdown)}
