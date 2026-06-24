@@ -1,6 +1,28 @@
 import pytest
 
-from backend.app.services.image_limits import ImageTooLargeError, choose_raster_dpi
+from backend.app.services.image_limits import ImageTooLargeError, choose_output_dpi, choose_raster_dpi
+
+
+class TestChooseOutputDpi:
+    def test_upscales_crop_to_preferred_dpi_when_budget_allows(self) -> None:
+        dpi = choose_output_dpi(
+            837,
+            1096,
+            alignment_dpi=125,
+            preferred_dpi=300,
+            max_pixels=50_000_000,
+        )
+        assert dpi == 300
+
+    def test_keeps_alignment_dpi_when_crop_already_exceeds_budget(self) -> None:
+        dpi = choose_output_dpi(
+            10_000,
+            10_000,
+            alignment_dpi=125,
+            preferred_dpi=300,
+            max_pixels=1_000_000,
+        )
+        assert dpi == 125
 
 
 class TestChooseRasterDpi:

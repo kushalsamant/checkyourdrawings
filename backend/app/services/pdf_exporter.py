@@ -18,6 +18,7 @@ def save_overlay_pdf(
     page_height_pt: float,
     raster_dpi: int,
     comparison_bbox: BoundingBox,
+    alignment_dpi: int | None = None,
 ) -> None:
     """Embed a lossless overlay PNG on a one-page PDF sized like Drawing A."""
     if raster_dpi <= 0:
@@ -30,8 +31,12 @@ def save_overlay_pdf(
         raise ValueError("Failed to encode overlay PNG.")
 
     overlay_height, overlay_width = overlay_bgr.shape[:2]
-    x_pt = comparison_bbox.x / raster_dpi * 72.0
-    y_pt = comparison_bbox.y / raster_dpi * 72.0
+    bbox_dpi = alignment_dpi if alignment_dpi is not None else raster_dpi
+    if bbox_dpi <= 0:
+        raise ValueError("alignment_dpi must be greater than zero when provided.")
+
+    x_pt = comparison_bbox.x / bbox_dpi * 72.0
+    y_pt = comparison_bbox.y / bbox_dpi * 72.0
     width_pt = overlay_width / raster_dpi * 72.0
     height_pt = overlay_height / raster_dpi * 72.0
     image_rect = fitz.Rect(x_pt, y_pt, x_pt + width_pt, y_pt + height_pt)

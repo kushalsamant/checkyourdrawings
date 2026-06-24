@@ -49,6 +49,7 @@ def render_coordination_overlay(
     drawing_b_name: str,
     low_confidence: bool = False,
     timestamp: datetime | None = None,
+    include_footer: bool = True,
 ) -> tuple[ImageArray, OverlayStats]:
     """Render coordination overlay: orange/blue/green/red ink map."""
     if drawing_a_image.shape[:2] != aligned_drawing_b_image.shape[:2]:
@@ -67,7 +68,10 @@ def render_coordination_overlay(
 
     output = _render_coordination_map(classified, palette, drawing_a_image.shape[:2])
 
-    stamped = _append_footer_band(
+    if not include_footer:
+        return output, stats
+
+    stamped = append_coordination_footer(
         output,
         drawing_a_name=drawing_a_name,
         drawing_b_name=drawing_b_name,
@@ -76,6 +80,26 @@ def render_coordination_overlay(
         timestamp=timestamp or datetime.now(timezone.utc),
     )
     return stamped, stats
+
+
+def append_coordination_footer(
+    image: ImageArray,
+    *,
+    drawing_a_name: str,
+    drawing_b_name: str,
+    palette: OverlayPalette | None = None,
+    low_confidence: bool = False,
+    timestamp: datetime | None = None,
+) -> ImageArray:
+    """Append the metadata footer band below a coordination map image."""
+    return _append_footer_band(
+        image,
+        drawing_a_name=drawing_a_name,
+        drawing_b_name=drawing_b_name,
+        palette=palette or _light_palette(),
+        low_confidence=low_confidence,
+        timestamp=timestamp or datetime.now(timezone.utc),
+    )
 
 
 def _render_coordination_map(

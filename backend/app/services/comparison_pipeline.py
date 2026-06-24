@@ -7,7 +7,13 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from backend.app.config import OUTPUT_DIR, OUTPUT_MAX_AGE_HOURS
+from backend.app.config import (
+    MAX_IMAGE_DIMENSION,
+    MAX_IMAGE_PIXELS,
+    OUTPUT_DIR,
+    OUTPUT_MAX_AGE_HOURS,
+    PDF_DPI,
+)
 from backend.app.schemas.compare import CompareResponse
 from backend.app.services.alignment import (
     AlignmentError,
@@ -17,14 +23,23 @@ from backend.app.services.alignment import (
     use_ecc_refinement_for_images,
 )
 from backend.app.services.content_detection import (
+    BoundingBox,
     compute_overlap_bbox,
     crop_image,
     detect_content_bbox,
     union_bbox,
 )
+from backend.app.services.image_limits import choose_output_dpi
 from backend.app.services.output_cleanup import prune_old_outputs
-from backend.app.services.overlay_renderer import render_coordination_overlay
-from backend.app.services.pdf_converter import load_image, load_image_with_page_info
+from backend.app.services.overlay_renderer import (
+    append_coordination_footer,
+    render_coordination_overlay,
+)
+from backend.app.services.pdf_converter import (
+    load_image,
+    load_image_with_page_info,
+    rasterize_pdf_bbox,
+)
 from backend.app.services.pdf_exporter import save_overlay_pdf
 
 
@@ -62,12 +77,34 @@ def run_comparison_pipeline(
             )
 
         comparison_bbox = union_bbox(drawing_a_bbox, drawing_b_bbox)
-        drawing_a_crop = crop_image(drawing_a_image, comparison_bbox)
-        aligned_drawing_b_crop = crop_image(aligned_drawing_b, comparison_bbox)
+        alignment_dpi = drawing_a_page.raster_dpi
+        output_dpi = choose_output_dpi(
+            comparison_bbox.width,
+            comparison_bbox.height,
+            alignment_dpi=alignment_dpi,
+            preferred_dpi=PDF_DPI,
+            max_pixels=MAX_IMAGE_PIXELS,
+            max_dimension=MAX_IMAGE_DIMENSION,
+        )
+        drawing_a_crop, aligned_drawing_b_crop = _build_comparison_crops(
+            drawing_a_path,
+            drawing_a_image,
+            aligned_drawing_b,
+            comparison_bbox,
+            alignment_dpi=alignment_dpi,
+            output_dpi=output_dpi,
+        )
 
-        rendered_image, overlay_stats = render_coordination_overlay(
+        overlay_map, overlay_stats = render_coordination_overlay(
             drawing_a_crop,
             aligned_drawing_b_crop,
+            drawing_a_name=drawing_a_name,
+            drawing_b_name=drawing_b_name,
+            low_confidence=alignment_confidence.status == "marginal",
+            include_footer=False,
+        )
+        rendered_image = append_coordination_footer(
+            overlay_map,
             drawing_a_name=drawing_a_name,
             drawing_b_name=drawing_b_name,
             low_confidence=alignment_confidence.status == "marginal",
@@ -84,11 +121,12 @@ def run_comparison_pipeline(
 
         save_overlay_pdf(
             pdf_path,
-            rendered_image,
+            overlay_map,
             page_width_pt=drawing_a_page.page_width_pt,
             page_height_pt=drawing_a_page.page_height_pt,
-            raster_dpi=drawing_a_page.raster_dpi,
+            raster_dpi=output_dpi,
             comparison_bbox=comparison_bbox,
+            alignment_dpi=alignment_dpi,
         )
 
         changed_pixels = (
@@ -127,7 +165,7 @@ def run_comparison_pipeline(
                     "mode": "source_a",
                     "width_pt": drawing_a_page.page_width_pt,
                     "height_pt": drawing_a_page.page_height_pt,
-                    "raster_dpi": drawing_a_page.raster_dpi,
+                    "raster_dpi": output_dpi,
                 },
             },
         )
@@ -137,6 +175,44 @@ def run_comparison_pipeline(
         if "aligned_drawing_b" in locals():
             del aligned_drawing_b
         gc.collect()
+
+
+def _build_comparison_crops(
+    drawing_a_path: Path,
+    drawing_a_image: np.ndarray,
+    aligned_drawing_b: np.ndarray,
+    comparison_bbox: BoundingBox,
+    *,
+    alignment_dpi: int,
+    output_dpi: int,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Build comparison crops, re-rasterizing from PDF when output DPI is higher."""
+    if output_dpi <= alignment_dpi:
+        return (
+            crop_image(drawing_a_image, comparison_bbox),
+            crop_image(aligned_drawing_b, comparison_bbox),
+        )
+
+    drawing_a_crop = _pillow_to_bgr_array(
+        rasterize_pdf_bbox(
+            drawing_a_path,
+            comparison_bbox,
+            source_dpi=alignment_dpi,
+            target_dpi=output_dpi,
+        )
+    )
+    aligned_drawing_b_crop = crop_image(aligned_drawing_b, comparison_bbox)
+    target_size = (drawing_a_crop.shape[1], drawing_a_crop.shape[0])
+    if (
+        aligned_drawing_b_crop.shape[1] != target_size[0]
+        or aligned_drawing_b_crop.shape[0] != target_size[1]
+    ):
+        aligned_drawing_b_crop = cv2.resize(
+            aligned_drawing_b_crop,
+            target_size,
+            interpolation=cv2.INTER_CUBIC,
+        )
+    return drawing_a_crop, aligned_drawing_b_crop
 
 
 def _pillow_to_bgr_array(image: Image.Image) -> np.ndarray:
