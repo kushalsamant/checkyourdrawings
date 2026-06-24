@@ -16,6 +16,9 @@ export type AuthUser = {
 const AUTH_URL = (import.meta.env.VITE_KVSHVL_AUTH_URL ?? "").replace(/\/$/, "");
 
 const EXPIRY_LEEWAY_MS = 5_000;
+export const AUTH_SESSION_CLEARED_EVENT = "kvshvl-auth-session-cleared";
+
+let sessionClearedListener: (() => void) | null = null;
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -81,6 +84,8 @@ function readValidTokenFromStorage(): string | null {
 
 export function clearAuthAccessToken(): void {
   writeTokenToStorage(null);
+  sessionClearedListener?.();
+  window.dispatchEvent(new Event(AUTH_SESSION_CLEARED_EVENT));
 }
 
 function writeTokenToStorage(token: string | null): void {
@@ -120,8 +125,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     accessTokenGetter = () => readValidTokenFromStorage();
+    const handleSessionCleared = () => setUser(null);
+    sessionClearedListener = handleSessionCleared;
+    window.addEventListener(AUTH_SESSION_CLEARED_EVENT, handleSessionCleared);
     return () => {
       accessTokenGetter = null;
+      sessionClearedListener = null;
+      window.removeEventListener(AUTH_SESSION_CLEARED_EVENT, handleSessionCleared);
     };
   }, []);
 

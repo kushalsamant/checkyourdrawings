@@ -14,7 +14,7 @@ import {
 } from "./services/api";
 
 export default function App() {
-  const { user, signIn } = useAuth();
+  const { user, loading: authLoading, signIn } = useAuth();
   const [drawingA, setDrawingA] = useState<File | null>(null);
   const [drawingB, setDrawingB] = useState<File | null>(null);
   const [comparisonImageUrl, setComparisonImageUrl] = useState<string | null>(null);
@@ -26,8 +26,21 @@ export default function App() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    void fetchAllowance().then(setAllowance);
-  }, [user]);
+    if (authLoading) {
+      return;
+    }
+
+    const controller = new AbortController();
+    void fetchAllowance(Boolean(user), controller.signal).then((status) => {
+      if (!controller.signal.aborted) {
+        setAllowance(status);
+      }
+    });
+
+    return () => {
+      controller.abort();
+    };
+  }, [user, authLoading]);
 
   useEffect(() => {
     setComparisonImageUrl(null);
@@ -62,7 +75,7 @@ export default function App() {
       setComparisonPdfUrl(result.comparisonPdfUrl);
       setMetadata(result.metadata);
       trackEvent("compare_success");
-      void fetchAllowance().then(setAllowance);
+      void fetchAllowance(Boolean(user)).then(setAllowance);
     } catch (requestError) {
       if (requestError instanceof DOMException && requestError.name === "AbortError") {
         return;

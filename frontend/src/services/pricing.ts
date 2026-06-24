@@ -1,4 +1,4 @@
-const PLATFORM_API_URL = (import.meta.env.VITE_PLATFORM_API_URL ?? "").replace(/\/$/, "");
+import { isPlatformApiConfigured, platformApiFetch, readPlatformApiError } from "./platform-api";
 
 export interface PricingTier {
   tier: string;
@@ -25,10 +25,10 @@ declare global {
 }
 
 export async function fetchPricingTiers(): Promise<PricingTier[]> {
-  if (!PLATFORM_API_URL) {
+  if (!isPlatformApiConfigured()) {
     return [];
   }
-  const response = await fetch(`${PLATFORM_API_URL}/payments/plans?app=checkyourdrawings`);
+  const response = await platformApiFetch("/payments/plans?app=checkyourdrawings");
   if (!response.ok) {
     return [];
   }
@@ -37,11 +37,11 @@ export async function fetchPricingTiers(): Promise<PricingTier[]> {
 }
 
 export async function startCheckout(tier: string, accessToken: string): Promise<void> {
-  if (!PLATFORM_API_URL) {
+  if (!isPlatformApiConfigured()) {
     throw new Error("Billing is not configured for this environment.");
   }
 
-  const response = await fetch(`${PLATFORM_API_URL}/payments/checkout`, {
+  const response = await platformApiFetch("/payments/checkout", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -55,8 +55,7 @@ export async function startCheckout(tier: string, accessToken: string): Promise<
   });
 
   if (!response.ok) {
-    const detail = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(detail.detail ?? "Could not start checkout.");
+    throw new Error(await readPlatformApiError(response, "Could not start checkout."));
   }
 
   const session = (await response.json()) as CheckoutSession;

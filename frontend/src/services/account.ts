@@ -1,6 +1,9 @@
 import { getAuthAccessToken } from "../lib/auth-provider";
-
-const PLATFORM_API_URL = (import.meta.env.VITE_PLATFORM_API_URL ?? "").replace(/\/$/, "");
+import {
+  isPlatformApiConfigured,
+  platformApiFetch,
+  readPlatformApiError,
+} from "./platform-api";
 
 export interface AccountDetails {
   signed_in: boolean;
@@ -15,7 +18,7 @@ export interface AccountDetails {
 }
 
 export async function fetchAccountDetails(): Promise<AccountDetails> {
-  if (!PLATFORM_API_URL) {
+  if (!isPlatformApiConfigured()) {
     throw new Error("Account service is not configured for this environment.");
   }
 
@@ -24,20 +27,19 @@ export async function fetchAccountDetails(): Promise<AccountDetails> {
     throw new Error("Sign in to view your account.");
   }
 
-  const response = await fetch(`${PLATFORM_API_URL}/account`, {
+  const response = await platformApiFetch("/account", {
     headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!response.ok) {
-    const detail = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(detail.detail ?? "Could not load account.");
+    throw new Error(await readPlatformApiError(response, "Could not load account."));
   }
 
   return (await response.json()) as AccountDetails;
 }
 
 export async function cancelSubscription(): Promise<void> {
-  if (!PLATFORM_API_URL) {
+  if (!isPlatformApiConfigured()) {
     throw new Error("Account service is not configured for this environment.");
   }
 
@@ -46,13 +48,12 @@ export async function cancelSubscription(): Promise<void> {
     throw new Error("Sign in to manage your subscription.");
   }
 
-  const response = await fetch(`${PLATFORM_API_URL}/payments/subscriptions/cancel`, {
+  const response = await platformApiFetch("/payments/subscriptions/cancel", {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!response.ok) {
-    const detail = (await response.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(detail.detail ?? "Could not cancel subscription.");
+    throw new Error(await readPlatformApiError(response, "Could not cancel subscription."));
   }
 }

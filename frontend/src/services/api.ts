@@ -96,9 +96,11 @@ export interface UploadAndCompareResult {
   metadata: CompareMetadata;
 }
 
-export function buildCompareRequestHeaders(): Record<string, string> {
+export function buildCompareRequestHeaders(options?: {
+  preferAnonymous?: boolean;
+}): Record<string, string> {
   const headers: Record<string, string> = {};
-  const accessToken = getAuthAccessToken();
+  const accessToken = options?.preferAnonymous ? null : getAuthAccessToken();
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`;
   } else {
@@ -107,16 +109,32 @@ export function buildCompareRequestHeaders(): Record<string, string> {
   return headers;
 }
 
-export async function fetchAllowance(): Promise<AllowanceStatus | null> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/allowance`, {
-      headers: buildCompareRequestHeaders(),
+export async function fetchAllowance(
+  isSignedIn: boolean,
+  signal?: AbortSignal,
+): Promise<AllowanceStatus | null> {
+  const requestAllowance = async (signedIn: boolean): Promise<Response> =>
+    fetch(`${API_BASE_URL}/allowance`, {
+      headers: buildCompareRequestHeaders({ preferAnonymous: !signedIn }),
+      signal,
     });
+
+  try {
+    let response = await requestAllowance(isSignedIn);
+
+    if (response.status === 401 && isSignedIn) {
+      clearAuthAccessToken();
+      response = await requestAllowance(false);
+    }
+
     if (!response.ok) {
       return null;
     }
     return (await response.json()) as AllowanceStatus;
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return null;
+    }
     return null;
   }
 }
