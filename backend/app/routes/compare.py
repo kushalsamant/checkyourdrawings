@@ -5,19 +5,27 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
+from backend.app.auth.anon_session import get_anon_session_id
 from backend.app.auth.deps import get_current_user
+from backend.app.auth.job_access import assert_job_access
 from backend.app.auth.user import AuthenticatedUser
 from backend.app.config import (
     ALLOWED_EXTENSIONS,
+    ANONYMOUS_ALLOWANCE_TOTAL,
     MAX_FILE_SIZE_MB,
     PLATFORM_DATABASE_URL,
     UPLOAD_DIR,
 )
 from backend.app.database import get_db
 from backend.app.schemas.compare import (
+    AllowanceResponse,
     CompareJobCreatedResponse,
     CompareJobStatusResponse,
     CompareResponse,
+)
+from backend.app.services.anonymous_allowance import (
+    anonymous_allowance_exhausted,
+    remaining_anonymous_allowance,
 )
 from backend.app.services.job_queue import (
     JOB_STATUS_COMPLETED,
@@ -42,6 +50,42 @@ def _require_db(db: Session | None) -> Session:
     return db
 
 
+@router.get(
+    "/allowance",
+    status_code=status.HTTP_200_OK,
+    response_model=AllowanceResponse,
+)
+def get_allowance(
+    user: AuthenticatedUser | None = Depends(get_current_user),
+    anon_session_id: str | None = Depends(get_anon_session_id),
+    db: Session | None = Depends(get_db),
+) -> AllowanceResponse:
+    db = _require_db(db)
+
+    if user is not None:
+        tier = "pro" if user.paid else "free"
+        return AllowanceResponse(
+            tier=tier,
+            remaining=None,
+            total=None,
+            requires_sign_in=False,
+        )
+
+    if anon_session_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Anonymous session identifier is required.",
+        )
+
+    remaining = remaining_anonymous_allowance(db, anon_session_id)
+    return AllowanceResponse(
+        tier="anonymous",
+        remaining=remaining,
+        total=ANONYMOUS_ALLOWANCE_TOTAL,
+        requires_sign_in=remaining <= 0,
+    )
+
+
 @router.post(
     "/compare",
     status_code=status.HTTP_202_ACCEPTED,
@@ -52,6 +96,7 @@ async def compare_drawings(
     drawing_a: UploadFile | None = None,
     drawing_b: UploadFile | None = None,
     user: AuthenticatedUser | None = Depends(get_current_user),
+    anon_session_id: str | None = Depends(get_anon_session_id),
     db: Session | None = Depends(get_db),
 ) -> CompareJobCreatedResponse:
     if drawing_a is None or drawing_b is None:
@@ -67,6 +112,19 @@ async def compare_drawings(
         )
 
     db = _require_db(db)
+
+    if user is None:
+        if anon_session_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Anonymous session identifier is required.",
+            )
+        if anonymous_allowance_exhausted(db, anon_session_id):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sign in to continue comparing.",
+            )
+
     saved_drawing_a: Path | None = None
     saved_drawing_b: Path | None = None
 
@@ -82,6 +140,8 @@ async def compare_drawings(
             drawing_a_name=drawing_a.filename or saved_drawing_a.name,
             drawing_b_name=drawing_b.filename or saved_drawing_b.name,
             user_email=user.email if user is not None else None,
+            anon_session_id=anon_session_id if user is None else None,
+            platform_user_id=None,
             priority=priority,
         )
         return CompareJobCreatedResponse(job_id=str(job.id))
@@ -106,13 +166,16 @@ async def compare_drawings(
 )
 def get_compare_job(
     job_id: UUID,
-    _user: AuthenticatedUser | None = Depends(get_current_user),
+    user: AuthenticatedUser | None = Depends(get_current_user),
+    anon_session_id: str | None = Depends(get_anon_session_id),
     db: Session | None = Depends(get_db),
 ) -> CompareJobStatusResponse:
     db = _require_db(db)
     job = get_job(db, job_id)
     if job is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found.")
+
+    assert_job_access(job, user, anon_session_id)
 
     result: CompareResponse | None = None
     if job.status == JOB_STATUS_COMPLETED and job.result is not None:

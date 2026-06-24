@@ -33,17 +33,34 @@ class TestOptionalAuthCompare:
         mock_job = MagicMock()
         mock_job.id = "11111111-1111-1111-1111-111111111111"
 
-        with patch("backend.app.routes.compare.create_job", return_value=mock_job):
-            with patch("backend.app.routes.compare.PLATFORM_DATABASE_URL", "postgresql://test"):
-                app.dependency_overrides[get_db] = lambda: iter([mock_db])
-                try:
-                    response = client.post(
-                        "/compare",
-                        files=compare_files,
-                        headers={"Authorization": "Bearer signed-in-token"},
-                    )
-                finally:
-                    app.dependency_overrides.pop(get_db, None)
+        def mock_get_current_user() -> AuthenticatedUser:
+            return AuthenticatedUser(
+                email="test@example.com",
+                name="Test User",
+                google_id="google-123",
+                paid=False,
+                priority=False,
+                tier="free",
+            )
+
+        def override_db():
+            yield mock_db
+
+        app.dependency_overrides[get_current_user] = mock_get_current_user
+        try:
+            with patch("backend.app.routes.compare.create_job", return_value=mock_job):
+                with patch("backend.app.routes.compare.PLATFORM_DATABASE_URL", "postgresql://test"):
+                    app.dependency_overrides[get_db] = override_db
+                    try:
+                        response = client.post(
+                            "/compare",
+                            files=compare_files,
+                            headers={"Authorization": "Bearer signed-in-token"},
+                        )
+                    finally:
+                        app.dependency_overrides.pop(get_db, None)
+        finally:
+            app.dependency_overrides.pop(get_current_user, None)
 
         assert response.status_code == 202
         assert response.json()["job_id"] == str(mock_job.id)
@@ -96,11 +113,14 @@ class TestOptionalAuthCompare:
         mock_job = MagicMock()
         mock_job.id = "22222222-2222-2222-2222-222222222222"
 
+        def override_db():
+            yield mock_db
+
         app.dependency_overrides[get_current_user] = mock_get_current_user
         try:
             with patch("backend.app.routes.compare.create_job", return_value=mock_job):
                 with patch("backend.app.routes.compare.PLATFORM_DATABASE_URL", "postgresql://test"):
-                    app.dependency_overrides[get_db] = lambda: iter([mock_db])
+                    app.dependency_overrides[get_db] = override_db
                     try:
                         compare_response = client.post(
                             "/compare",

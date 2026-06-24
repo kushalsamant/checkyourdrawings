@@ -71,6 +71,7 @@ async def add_security_headers(request: Request, call_next) -> Response:
 
 
 app.include_router(compare_router)
+ensure_runtime_directories()
 if not bunny_enabled():
     app.mount("/outputs", StaticFiles(directory=OUTPUT_DIR), name="outputs")
 

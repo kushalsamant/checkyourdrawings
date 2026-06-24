@@ -24,12 +24,16 @@ def create_job(
     drawing_a_name: str,
     drawing_b_name: str,
     user_email: str | None,
+    anon_session_id: str | None,
+    platform_user_id: int | None,
     priority: int,
 ) -> ComparisonJob:
     job = ComparisonJob(
         status=JOB_STATUS_PENDING,
         priority=priority,
         user_email=user_email,
+        anon_session_id=anon_session_id,
+        platform_user_id=platform_user_id,
         drawing_a_path=str(drawing_a_path),
         drawing_b_path=str(drawing_b_path),
         drawing_a_name=drawing_a_name,
@@ -85,6 +89,11 @@ def mark_job_completed(db: Session, job: ComparisonJob, result: dict) -> None:
     job.completed_at = now
     db.add(job)
     db.commit()
+
+    if job.anon_session_id:
+        from backend.app.services.anonymous_allowance import record_anonymous_success
+
+        record_anonymous_success(db, job.anon_session_id)
 
 
 def mark_job_failed(db: Session, job: ComparisonJob, error_message: str) -> None:

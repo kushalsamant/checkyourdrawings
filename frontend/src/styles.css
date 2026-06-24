@@ -127,6 +127,12 @@ button:focus-visible,
   text-decoration: none;
 }
 
+.allowance-notice {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
 .auth-actions .header-link {
   border: 1px solid var(--accent);
   border-radius: 6px;

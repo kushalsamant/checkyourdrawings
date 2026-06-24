@@ -14,6 +14,8 @@ class ComparisonJob(Base):
     status = Column(String(20), nullable=False, default="pending")
     priority = Column(Integer, nullable=False, default=0)
     user_email = Column(String, nullable=True)
+    anon_session_id = Column(String, nullable=True)
+    platform_user_id = Column(Integer, nullable=True)
     drawing_a_path = Column(Text, nullable=False)
     drawing_b_path = Column(Text, nullable=False)
     drawing_a_name = Column(Text, nullable=False)

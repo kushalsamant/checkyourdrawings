@@ -91,3 +91,10 @@ class CompareJobStatusResponse(BaseModel):
     result: CompareResponse | None = None
     error_message: str | None = None
 
+
+class AllowanceResponse(BaseModel):
+    tier: str
+    remaining: int | None = None
+    total: int | None = None
+    requires_sign_in: bool = False
+

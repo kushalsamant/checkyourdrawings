@@ -17,9 +17,10 @@ Manual routing in `src/main.tsx` (no React Router):
 Sign-in is **not** required to compare. When configured:
 
 - Set `VITE_KVSHVL_AUTH_URL=https://auth.kvshvl.in` (production) or your local auth dev URL.
-- Sign-in redirects to auth → Google → handoff with a platform JWT in the URL hash → `/auth/callback` → home.
+- Sign-in redirects to auth → Google → handoff with a short-lived `handoff_code` → `/auth/callback` exchanges it for a platform JWT → home.
 - The token is sent as `Authorization: Bearer …` on `/compare` and `/account` when present.
-- Expired tokens are dropped client-side; the app falls back to anonymous compare.
+- Expired tokens are dropped client-side; the app falls back to anonymous compare until the anonymous allowance is exhausted.
+- Anonymous visitors receive a persistent `X-Anon-Session` header (stored in `localStorage`).
 
 ## Development
 
@@ -28,17 +29,15 @@ npm install
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173**. The dev server proxies `/compare`, `/outputs`, `/health`, and `/account` to `http://127.0.0.1:8000`.
+Open **http://127.0.0.1:5173**. The dev server proxies `/compare`, `/jobs`, `/allowance`, `/outputs`, and `/health` to `http://127.0.0.1:8000`.
 
 Leave `VITE_API_BASE_URL` **unset** in local dev so requests use relative URLs and the proxy.
 
-For optional sign-in locally, create `frontend/.env`:
+For optional sign-in locally, use production auth (local auth does not support `localhost` return URLs):
 
 ```env
-VITE_KVSHVL_AUTH_URL=http://localhost:3000
+VITE_KVSHVL_AUTH_URL=https://auth.kvshvl.in
 ```
-
-(Use whatever port your local auth app runs on.)
 
 ## Production build
 

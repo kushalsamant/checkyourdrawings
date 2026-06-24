@@ -17,31 +17,41 @@ export function readOAuthError(): string | null {
   return hashParams.get("error_description") ?? hashParams.get("error");
 }
 
-export function readAccessTokenFromHash(): string | null {
-  const hash = window.location.hash.startsWith("#")
-    ? window.location.hash.slice(1)
-    : window.location.hash;
-  if (!hash) {
-    return null;
-  }
-
-  const params = new URLSearchParams(hash);
-  return params.get("access_token");
+export function readHandoffCodeFromQuery(): string | null {
+  const url = new URL(window.location.href);
+  return url.searchParams.get("handoff_code");
 }
 
-export function tryCompleteAuthCallback(): string | null {
+export async function completeAuthCallback(
+  authUrl: string,
+): Promise<string | null> {
   const oauthError = readOAuthError();
   if (oauthError) {
     return oauthError;
   }
 
-  const accessToken = readAccessTokenFromHash();
-  if (!accessToken) {
+  const handoffCode = readHandoffCodeFromQuery();
+  if (!handoffCode) {
+    return "Could not complete sign-in. Try again from the app.";
+  }
+
+  const response = await fetch(`${authUrl}/api/handoff/exchange`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code: handoffCode }),
+  });
+
+  if (!response.ok) {
+    return "Could not complete sign-in. Try again from the app.";
+  }
+
+  const data = (await response.json()) as { access_token?: string };
+  if (!data.access_token) {
     return "Could not complete sign-in. Try again from the app.";
   }
 
   try {
-    sessionStorage.setItem(TOKEN_STORAGE_KEY, accessToken);
+    sessionStorage.setItem(TOKEN_STORAGE_KEY, data.access_token);
   } catch {
     // ignore
   }

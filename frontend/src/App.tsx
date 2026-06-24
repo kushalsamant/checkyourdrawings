@@ -6,9 +6,13 @@ import { ResultViewer } from "./components/ResultViewer";
 import { UploadPanel } from "./components/UploadPanel";
 import { trackEvent } from "./lib/analytics";
 import { isAuthConfigured, useAuth } from "./lib/auth-provider";
-import type { CompareMetadata } from "./services/api";
+import type { AllowanceStatus, CompareMetadata } from "./services/api";
 import { CHECKYOURDRAWINGS_SITE_URL } from "./lib/legal-urls";
-import { uploadAndCompare } from "./services/api";
+import {
+  fetchAllowance,
+  SignInRequiredError,
+  uploadAndCompare,
+} from "./services/api";
 
 export default function App() {
   const authConfigured = isAuthConfigured();
@@ -20,7 +24,12 @@ export default function App() {
   const [metadata, setMetadata] = useState<CompareMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isComparing, setIsComparing] = useState<boolean>(false);
+  const [allowance, setAllowance] = useState<AllowanceStatus | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    void fetchAllowance().then(setAllowance);
+  }, [user]);
 
   useEffect(() => {
     setComparisonImageUrl(null);
@@ -55,8 +64,14 @@ export default function App() {
       setComparisonPdfUrl(result.comparisonPdfUrl);
       setMetadata(result.metadata);
       trackEvent("compare_success");
+      void fetchAllowance().then(setAllowance);
     } catch (requestError) {
       if (requestError instanceof DOMException && requestError.name === "AbortError") {
+        return;
+      }
+
+      if (requestError instanceof SignInRequiredError) {
+        await signIn();
         return;
       }
 
@@ -109,6 +124,14 @@ export default function App() {
             </div>
           </div>
         </header>
+
+        {allowance?.tier === "anonymous" &&
+          allowance.remaining !== null &&
+          allowance.total !== null && (
+            <p className="allowance-notice" role="status">
+              {allowance.remaining} of {allowance.total} free comparisons remaining
+            </p>
+          )}
 
         <UploadPanel
           drawingA={drawingA}

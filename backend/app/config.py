@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     alignment_marginal_inlier_ratio: float = 0.55
     alignment_ecc_refinement: bool = True
     auth_required: bool = False
+    anonymous_allowance_total: int = 5
     rate_limit_enabled: bool = True
     rate_limit_max_requests: int = 20
     rate_limit_window_seconds: int = 60
@@ -99,6 +100,7 @@ MIN_OVERLAP_AREA_RATIO: float = _settings.min_overlap_area_ratio
 ALIGNMENT_MARGINAL_INLIER_RATIO: float = _settings.alignment_marginal_inlier_ratio
 ALIGNMENT_ECC_REFINEMENT: bool = _settings.alignment_ecc_refinement
 AUTH_REQUIRED: bool = _settings.auth_required
+ANONYMOUS_ALLOWANCE_TOTAL: int = _settings.anonymous_allowance_total
 RATE_LIMIT_ENABLED: bool = _settings.rate_limit_enabled
 RATE_LIMIT_MAX_REQUESTS: int = _settings.rate_limit_max_requests
 RATE_LIMIT_WINDOW_SECONDS: int = _settings.rate_limit_window_seconds

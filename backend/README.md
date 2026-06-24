@@ -9,8 +9,9 @@ Repo overview: [../README.md](../README.md).
 - `GET /` — service info
 - `GET /health` — upload/output directory health
 - `GET /health/ready` — Postgres readiness when auth enabled
+- `GET /allowance` — anonymous or signed-in allowance status
 - `POST /compare` — enqueue comparison job (`202 { job_id }`)
-- `GET /jobs/{job_id}` — poll job status and result
+- `GET /jobs/{job_id}` — poll job status and result (owner-only; 403 on mismatch)
 - `GET /outputs/<file>` — legacy static outputs when Bunny is disabled
 
 Account and billing live on **platform-api** (`/account`, `/payments/*`).
@@ -22,7 +23,7 @@ Account and billing live on **platform-api** (`/account`, `/payments/*`).
 - `PLATFORM_JWT_SECRET` / `PLATFORM_JWT_ISSUER` — KVSHVL auth tokens
 - `BUNNY_*` — storage zone, CDN hostname, token auth key (see [env.example](../env.example))
 
-When `AUTH_REQUIRED=false`, compare works without sign-in.
+When `AUTH_REQUIRED=false`, anonymous users get a lifetime allowance of successful comparisons (`ANONYMOUS_ALLOWANCE_TOTAL`, default 5). Send `X-Anon-Session` (UUID v4) on compare and job poll requests. After the allowance is used, the next compare attempt returns `401` and requires Google sign-in.
 
 ## Rate limiting
 

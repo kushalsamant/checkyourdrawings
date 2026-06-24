@@ -9,6 +9,8 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/compare": "http://127.0.0.1:8000",
+      "/jobs": "http://127.0.0.1:8000",
+      "/allowance": "http://127.0.0.1:8000",
       "/outputs": "http://127.0.0.1:8000",
       "/health": "http://127.0.0.1:8000",
     },

@@ -1,3 +1,4 @@
+import { ANON_SESSION_HEADER, getAnonSessionId } from "../lib/anon-session";
 import { clearAuthAccessToken, getAuthAccessToken } from "../lib/auth-provider";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
@@ -5,6 +6,21 @@ const PLATFORM_API_URL = (import.meta.env.VITE_PLATFORM_API_URL ?? "").replace(/
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 const COMPARE_POLL_INTERVAL_MS = 1500;
 const COMPARE_BUSY_DETAIL = "Another comparison is in progress. Try again in a moment.";
+export const SIGN_IN_TO_CONTINUE_MESSAGE = "Sign in to continue comparing.";
+
+export class SignInRequiredError extends Error {
+  constructor(message: string = SIGN_IN_TO_CONTINUE_MESSAGE) {
+    super(message);
+    this.name = "SignInRequiredError";
+  }
+}
+
+export interface AllowanceStatus {
+  tier: "anonymous" | "free" | "pro" | string;
+  remaining: number | null;
+  total: number | null;
+  requires_sign_in: boolean;
+}
 
 export interface CompareJobCreatedResponse {
   job_id: string;
@@ -87,6 +103,31 @@ export interface UploadAndCompareResult {
   metadata: CompareMetadata;
 }
 
+export function buildCompareRequestHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const accessToken = getAuthAccessToken();
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  } else {
+    headers[ANON_SESSION_HEADER] = getAnonSessionId();
+  }
+  return headers;
+}
+
+export async function fetchAllowance(): Promise<AllowanceStatus | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/allowance`, {
+      headers: buildCompareRequestHeaders(),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    return (await response.json()) as AllowanceStatus;
+  } catch {
+    return null;
+  }
+}
+
 export async function uploadAndCompare(
   drawingA: File,
   drawingB: File,
@@ -104,11 +145,7 @@ export async function uploadAndCompare(
     : timeoutController.signal;
 
   try {
-    const headers: Record<string, string> = {};
-    const accessToken = getAuthAccessToken();
-    if (accessToken) {
-      headers.Authorization = `Bearer ${accessToken}`;
-    }
+    const headers = buildCompareRequestHeaders();
 
     const response = await fetch(`${API_BASE_URL}/compare`, {
       method: "POST",
@@ -122,6 +159,9 @@ export async function uploadAndCompare(
         clearAuthAccessToken();
       }
       const errorMessage = await getErrorMessage(response);
+      if (response.status === 401 && errorMessage === SIGN_IN_TO_CONTINUE_MESSAGE) {
+        throw new SignInRequiredError(errorMessage);
+      }
       throw new Error(errorMessage);
     }
 
@@ -342,11 +382,7 @@ export async function fetchAccountStatus(): Promise<AccountStatus> {
 }
 
 async function pollCompareJob(jobId: string, signal: AbortSignal): Promise<CompareResponse> {
-  const headers: Record<string, string> = {};
-  const accessToken = getAuthAccessToken();
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
+  const headers = buildCompareRequestHeaders();
 
   while (true) {
     if (signal.aborted) {
