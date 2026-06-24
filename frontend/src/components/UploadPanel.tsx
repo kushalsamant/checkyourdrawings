@@ -114,7 +114,7 @@ function UploadSlot({
   }
 
   return (
-    <div className="upload-slot">
+    <div className="upload-slot" data-has-file={file !== null}>
       <label
         className="drop-zone"
         htmlFor={id}
@@ -136,7 +136,7 @@ function UploadSlot({
       />
 
       {file && (
-        <button type="button" onClick={() => handleSelectedFile(null)}>
+        <button type="button" className="button-subtle" onClick={() => handleSelectedFile(null)}>
           Remove {label}
         </button>
       )}

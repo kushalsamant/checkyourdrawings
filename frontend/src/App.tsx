@@ -127,6 +127,12 @@ export default function App() {
           <CompareButton
             isLoading={isComparing}
             disabled={drawingA === null || drawingB === null}
+            isPrimary={
+              drawingA !== null &&
+              drawingB !== null &&
+              comparisonImageUrl === null &&
+              !isComparing
+            }
             onClick={handleCompare}
           />
         </div>

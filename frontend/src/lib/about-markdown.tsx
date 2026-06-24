@@ -87,7 +87,7 @@ function renderLegendLine(line: string, key: string): ReactNode {
 
 function renderInline(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
-  const pattern = /(\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\))/g;
+  const pattern = /(\*\*([^*]+)\*\*|_([^_]+)_|\[([^\]]+)\]\(([^)]+)\))/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null = pattern.exec(text);
 
@@ -98,16 +98,22 @@ function renderInline(text: string): ReactNode[] {
 
     if (match[2] !== undefined) {
       parts.push(<strong key={`${match.index}-${match[2]}`}>{match[2]}</strong>);
-    } else if (match[3] !== undefined && match[4] !== undefined) {
-      const href = normalizeHref(match[4]);
+    } else if (match[3] !== undefined) {
+      parts.push(
+        <em key={`${match.index}-${match[3]}`} className="landing-muted">
+          {match[3]}
+        </em>,
+      );
+    } else if (match[4] !== undefined && match[5] !== undefined) {
+      const href = normalizeHref(match[5]);
       parts.push(
         <a
-          key={`${match.index}-${match[3]}`}
+          key={`${match.index}-${match[4]}`}
           href={href}
           className="landing-inline-link"
           {...externalLinkProps(href)}
         >
-          {match[3]}
+          {match[4]}
         </a>,
       );
     }
@@ -167,6 +173,24 @@ export function renderAboutMarkdown(markdown: string): ReactNode[] {
 
     if (trimmed.startsWith("## ")) {
       nodes.push(<h2 key={index}>{renderInline(trimmed.slice(3))}</h2>);
+      return;
+    }
+
+    if (trimmed.startsWith("### ")) {
+      nodes.push(<h3 key={index}>{renderInline(trimmed.slice(4))}</h3>);
+      return;
+    }
+
+    if (/^\d+\. /.test(trimmed)) {
+      const items = trimmed.split("\n").filter((line) => /^\d+\. /.test(line));
+
+      nodes.push(
+        <ol key={index}>
+          {items.map((item, itemIndex) => (
+            <li key={itemIndex}>{renderInline(item.replace(/^\d+\. /, ""))}</li>
+          ))}
+        </ol>,
+      );
       return;
     }
 

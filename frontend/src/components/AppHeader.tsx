@@ -39,12 +39,12 @@ export function AppHeader({
             ) : user ? (
               <>
                 <span className="auth-email">{user.email}</span>
-                <button type="button" onClick={() => void signOut()}>
+                <button type="button" className="button-subtle" onClick={() => void signOut()}>
                   Sign out
                 </button>
               </>
             ) : (
-              <button type="button" onClick={() => void signIn()}>
+              <button type="button" className="button-subtle" onClick={() => void signIn()}>
                 Sign in
               </button>
             ))}

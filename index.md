@@ -1,36 +1,66 @@
-## Check Your Drawings
+Spot drawing revision changes before they reach site. Upload two PDFs and get an auto-aligned coordination overlay.
 
-Spot drawing revision changes before they reach site. Upload two PDF plots or exports from your design software — Drawing A (earlier revision) and Drawing B (later revision) — and get an auto-aligned coordination overlay that shows what moved, what was added, and what clashes. [Upload your drawings](/) to start.
+- **Drawing A** — earlier revision
+- **Drawing B** — later revision
+- Shows additions, removals, overlap, and clashes
+- Any PDF export from your design tools; no CAD license
+
+[Upload your drawings](/)
+
+---
 
 ## How it works
 
-Upload Drawing A and Drawing B (PDF, up to 100 MB each). The app aligns the sheets and builds a color-coded overlay. Large sheets can take a few minutes; the page updates when processing finishes.
+- Upload two PDFs (**100 MB** max each)
+- App aligns the sheets and builds a color-coded overlay
+- Large sheets can take a few minutes; the page updates when done
+- Download **PNG** preview or **PDF** at sheet size
 
-Without sign-in you get **5 successful comparisons** (one active job at a time). After that, sign in with Google to continue — still free, with unlimited comparisons and one active job at a time.
+### Overlay colors
 
 Blue — New additions (only in the second drawing)  
 Orange — Removed elements (only in the first drawing)  
 Green — Aligned overlap (matching in both)  
 Red — Misaligned overlap (clashes and conflicts — review manually)
 
-Download the result as a PNG preview or a PDF at the uploaded sheet size. Outputs are kept about **24 hours** — this is a processing service, not long-term storage. Download a copy if you need to keep one. No CAD license is required. The overlay shows where to look; confirm red areas in CAD and mark them up with revision clouds as you normally would.
+### After you compare
+
+- Outputs kept about **24 hours** — download what you need
+- Confirm red areas in CAD; mark up with revision clouds as usual
+
+### Access
+
+- **Without sign-in:** 5 successful comparisons, 1 active job at a time
+- **Signed in (free):** unlimited comparisons, 1 active job at a time
+- Sign in with Google when the allowance runs out
+
+---
 
 ## Use
 
-QA/QC engineers and document controllers use Check Your Drawings to compare revision PDFs without stacking them by hand. Catch consultant mismatches before submittal. Drop the overlay into coordination reports. Works with PDF output from your usual design tools — no special export format.
+- Compare revision PDFs without stacking them by hand
+- Catch consultant mismatches before submittal
+- Drop the overlay into coordination reports
+
+---
 
 ## Pricing
 
-**Free:** Anonymous users get 5 successful comparisons, then sign in. Signed-in free accounts get unlimited comparisons with one active job at a time and standard queue throughput.
-
-**KVSHVL Pro** ($29/month or $290/year): Unlimited comparisons, up to **10 active jobs** at once, and **queue priority** so revision backlogs move faster. Same 100 MB per-PDF limit as free. Processing runs one job at a time on shared infrastructure — Pro lets you queue work ahead instead of waiting between uploads.
+- **Free** — 5 anonymous comparisons, then sign in; unlimited with 1 active job
+- **KVSHVL Pro** ($29/mo · $290/yr) — 10 active jobs, queue priority; same **100 MB** limit; queue work ahead on serial processing
 
 [View pricing](/pricing) · [Account](/account)
 
-Built by a coordination architect who used to run this workflow by hand. The computer does it now.
+---
+
+_Built by a coordination architect who used to run this workflow by hand. The computer does it now._
 
 ## Legal
 
-[Terms and Conditions](https://www.kvshvl.in/termsofservice). [Privacy Policy](https://www.kvshvl.in/privacypolicy). [Cancellation and Refund](https://www.kvshvl.in/refundpolicy). [Shipping and Exchange](https://www.kvshvl.in/shippingpolicy). [Contact Us](https://www.kvshvl.in/contact).
+- [Terms and Conditions](https://www.kvshvl.in/termsofservice)
+- [Privacy Policy](https://www.kvshvl.in/privacypolicy)
+- [Cancellation and Refund](https://www.kvshvl.in/refundpolicy)
+- [Shipping and Exchange](https://www.kvshvl.in/shippingpolicy)
+- [Contact Us](https://www.kvshvl.in/contact)
 
 [Back to app](/)

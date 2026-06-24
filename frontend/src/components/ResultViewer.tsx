@@ -63,48 +63,55 @@ export function ResultViewer({
   return (
     <div aria-label="Comparison result">
       <div className="result-toolbar">
-        <button
-          type="button"
-          onClick={zoomOut}
-          disabled={zoom <= MIN_ZOOM}
-          aria-label="Zoom out"
-        >
-          Zoom out
-        </button>
-        <button
-          type="button"
-          onClick={resetZoom}
-          disabled={zoom === 1}
-          aria-label={`Reset zoom to 100 percent, currently ${Math.round(zoom * 100)} percent`}
-        >
-          {Math.round(zoom * 100)}%
-        </button>
-        <button
-          type="button"
-          onClick={zoomIn}
-          disabled={zoom >= MAX_ZOOM}
-          aria-label="Zoom in"
-        >
-          Zoom in
-        </button>
-        <button
-          type="button"
-          className="download-link"
-          onClick={() => void handleDownload("pdf")}
-          disabled={downloading !== null}
-          aria-label="Download comparison PDF"
-        >
-          {downloading === "pdf" ? "Downloading..." : "Download PDF"}
-        </button>
-        <button
-          type="button"
-          className="download-link"
-          onClick={() => void handleDownload("png")}
-          disabled={downloading !== null}
-          aria-label="Download comparison PNG"
-        >
-          {downloading === "png" ? "Downloading..." : "Download PNG"}
-        </button>
+        <div className="toolbar-group" role="group" aria-label="Zoom controls">
+          <button
+            type="button"
+            className="toolbar-button"
+            onClick={zoomOut}
+            disabled={zoom <= MIN_ZOOM}
+            aria-label="Zoom out"
+          >
+            Zoom out
+          </button>
+          <button
+            type="button"
+            className="toolbar-button"
+            onClick={resetZoom}
+            disabled={zoom === 1}
+            aria-label={`Reset zoom to 100 percent, currently ${Math.round(zoom * 100)} percent`}
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            type="button"
+            className="toolbar-button"
+            onClick={zoomIn}
+            disabled={zoom >= MAX_ZOOM}
+            aria-label="Zoom in"
+          >
+            Zoom in
+          </button>
+        </div>
+        <div className="toolbar-group toolbar-group--downloads" role="group" aria-label="Download outputs">
+          <button
+            type="button"
+            className="download-link action-primary"
+            onClick={() => void handleDownload("pdf")}
+            disabled={downloading !== null}
+            aria-label="Download comparison PDF"
+          >
+            {downloading === "pdf" ? "Downloading..." : "Download PDF"}
+          </button>
+          <button
+            type="button"
+            className="download-link button-subtle"
+            onClick={() => void handleDownload("png")}
+            disabled={downloading !== null}
+            aria-label="Download comparison PNG"
+          >
+            {downloading === "png" ? "Downloading..." : "Download PNG"}
+          </button>
+        </div>
       </div>
 
       <p className="retention-notice" role="note">

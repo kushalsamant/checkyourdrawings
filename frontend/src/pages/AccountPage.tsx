@@ -77,7 +77,7 @@ export function AccountPage() {
         ) : !user ? (
           <section className="account-panel">
             <p>Sign in to view your account and subscription.</p>
-            <button type="button" onClick={() => void signIn()}>
+            <button type="button" className="action-primary" onClick={() => void signIn()}>
               Sign in with Google
             </button>
           </section>
@@ -126,12 +126,17 @@ export function AccountPage() {
             )}
 
             {account?.has_subscription && account.subscription_auto_renew && (
-              <button type="button" disabled={cancelling} onClick={() => void handleCancel()}>
+              <button
+                type="button"
+                className="button-subtle"
+                disabled={cancelling}
+                onClick={() => void handleCancel()}
+              >
                 {cancelling ? "Cancelling…" : "Cancel subscription"}
               </button>
             )}
 
-            <button type="button" onClick={() => void signOut()}>
+            <button type="button" className="button-subtle" onClick={() => void signOut()}>
               Sign out
             </button>
           </section>
