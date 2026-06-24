@@ -7,7 +7,7 @@ export function AboutPage() {
   return (
     <AppLayout
       title="About"
-      subtitle="Auto-aligned drawing comparison for coordination."
+      subtitle="Spot revision changes before site — auto-aligned coordination overlays."
       shellClassName="landing-shell"
     >
       {renderAboutMarkdown(aboutMarkdown)}
