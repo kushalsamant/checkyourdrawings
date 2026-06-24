@@ -296,7 +296,6 @@ export function buildImageUrl(imagePath: string): string {
     if (bunnyCdnHost) {
       allowedOrigins.add(new URL(`https://${bunnyCdnHost}`).origin);
     }
-    allowedOrigins.add(parsed.origin);
 
     if (allowedOrigins.size === 0 || !allowedOrigins.has(parsed.origin)) {
       throw new Error("Comparison image URL is not from an allowed origin.");

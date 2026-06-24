@@ -17,8 +17,9 @@ Compare two architectural drawing PDFs and get an auto-aligned coordination over
 
 ## Product
 
-- Upload **Drawing A** and **Drawing B** (PDF only).
+- Upload **Drawing A** and **Drawing B** (PDF only, **100 MB** max each — all tiers).
 - Compare runs as an **async job**; the UI polls until the overlay is ready.
+- **Throughput:** active-job limits only (anon/free: 1; Pro: 10). No daily caps or usage quotas.
 - Sign-in via `auth.kvshvl.in`; account and billing on **platform-api**.
 - Outputs stored on **Bunny CDN** (~24h signed URLs).
 

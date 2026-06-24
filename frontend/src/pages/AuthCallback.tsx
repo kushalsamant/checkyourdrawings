@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { AppLayout } from "../components/AppLayout";
 import { completeAuthCallback, readOAuthError } from "../lib/auth-callback";
 
 const AUTH_URL = (import.meta.env.VITE_KVSHVL_AUTH_URL ?? "").replace(/\/$/, "");
@@ -31,22 +32,18 @@ export function AuthCallback() {
 
   if (!error) {
     return (
-      <div className="page-body">
-        <main className="app-shell auth-callback">
-          <p>Completing sign-in…</p>
-        </main>
-      </div>
+      <AppLayout shellClassName="app-shell auth-callback">
+        <p>Completing sign-in…</p>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="page-body">
-      <main className="app-shell auth-callback">
-        <p role="alert">{error}</p>
-        <p>
-          <a href="/">Back to app</a>
-        </p>
-      </main>
-    </div>
+    <AppLayout shellClassName="app-shell auth-callback">
+      <p role="alert">{error}</p>
+      <p>
+        <a href="/">Back to app</a>
+      </p>
+    </AppLayout>
   );
 }

@@ -47,7 +47,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    max_file_size_mb: int = 100
+    max_file_size_mb: int = 100  # locked — same limit for anonymous, free, and Pro
     pdf_dpi: int = 300
     max_image_pixels: int = 50_000_000
     max_image_dimension: int = 12_000
@@ -63,10 +63,10 @@ class Settings(BaseSettings):
     alignment_marginal_inlier_ratio: float = 0.55
     alignment_ecc_refinement: bool = True
     auth_required: bool = False
-    anonymous_allowance_total: int = 5
-    max_anon_active_jobs: int = 1
-    max_free_active_jobs: int = 1
-    max_pro_active_jobs: int = 10
+    anonymous_allowance_total: int = 5  # lifetime successful compares before sign-in (anonymous only)
+    max_anon_active_jobs: int = 1  # locked — only throughput control for anonymous
+    max_free_active_jobs: int = 1  # locked — signed-in free; unlimited comparisons
+    max_pro_active_jobs: int = 10  # locked — Pro; unlimited comparisons + queue priority
     rate_limit_enabled: bool = True
     rate_limit_max_requests: int = 20
     rate_limit_window_seconds: int = 60

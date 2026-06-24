@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { AppHeader } from "./components/AppHeader";
+import { AppLayout } from "./components/AppLayout";
 import { CompareButton } from "./components/CompareButton";
 import { ResultViewer } from "./components/ResultViewer";
 import { UploadPanel } from "./components/UploadPanel";
@@ -88,10 +88,7 @@ export default function App() {
   }
 
   return (
-    <div className="page-body">
-      <main className="app-shell">
-        <AppHeader />
-
+    <AppLayout>
         {allowance?.tier === "anonymous" &&
           allowance.remaining !== null &&
           allowance.total !== null && (
@@ -195,7 +192,6 @@ export default function App() {
             </dl>
           </section>
         )}
-      </main>
-    </div>
+    </AppLayout>
   );
 }

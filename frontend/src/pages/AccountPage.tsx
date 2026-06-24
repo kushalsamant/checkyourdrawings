@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { AppHeader } from "../components/AppHeader";
+import { AppLayout } from "../components/AppLayout";
 import { trackEvent } from "../lib/analytics";
 import { useAuth } from "../lib/auth-provider";
 import {
@@ -71,10 +71,7 @@ export function AccountPage() {
   const expiresLabel = formatDate(account?.subscription_expires_at ?? null);
 
   return (
-    <div className="page-body">
-      <main className="app-shell">
-        <AppHeader title="Account" subtitle="Manage your KVSHVL subscription." />
-
+    <AppLayout title="Account" subtitle="Manage your KVSHVL subscription.">
         {authLoading || loading ? (
           <p role="status">Loading account…</p>
         ) : !user ? (
@@ -123,7 +120,8 @@ export function AccountPage() {
 
             {!account?.paid && (
               <p>
-                <a href="/pricing">View Pro pricing</a> for higher throughput and queue priority.
+                <a href="/pricing">View Pro pricing</a> for queue priority and up to 10 active
+                jobs (pending or in progress).
               </p>
             )}
 
@@ -144,7 +142,6 @@ export function AccountPage() {
             {error}
           </p>
         )}
-      </main>
-    </div>
+    </AppLayout>
   );
 }

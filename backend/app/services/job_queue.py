@@ -1,3 +1,8 @@
+"""Postgres-backed comparison job queue.
+
+Claim order: priority DESC, created_at ASC (single global queue, serial worker).
+"""
+
 import logging
 from datetime import UTC, datetime
 from pathlib import Path

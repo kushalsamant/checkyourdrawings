@@ -18,6 +18,9 @@ if (rootElement === null) {
 function AppRoutes() {
   const path = window.location.pathname;
 
+  if (path === "/auth/callback") {
+    return <AuthCallback />;
+  }
   if (path === "/about") {
     return <AboutPage />;
   }
@@ -31,16 +34,10 @@ function AppRoutes() {
   return <App />;
 }
 
-const path = window.location.pathname;
-
-if (path === "/auth/callback") {
-  createRoot(rootElement).render(<AuthCallback />);
-} else {
-  createRoot(rootElement).render(
-    <StrictMode>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </StrictMode>,
-  );
-}
+createRoot(rootElement).render(
+  <StrictMode>
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  </StrictMode>,
+);

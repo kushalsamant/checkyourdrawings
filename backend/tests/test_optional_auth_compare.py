@@ -50,15 +50,16 @@ class TestOptionalAuthCompare:
         try:
             with patch("backend.app.routes.compare.create_job", return_value=mock_job):
                 with patch("backend.app.routes.compare.PLATFORM_DATABASE_URL", "postgresql://test"):
-                    app.dependency_overrides[get_db] = override_db
-                    try:
-                        response = client.post(
-                            "/compare",
-                            files=compare_files,
-                            headers={"Authorization": "Bearer signed-in-token"},
-                        )
-                    finally:
-                        app.dependency_overrides.pop(get_db, None)
+                    with patch("backend.app.routes.compare.count_active_jobs", return_value=0):
+                        app.dependency_overrides[get_db] = override_db
+                        try:
+                            response = client.post(
+                                "/compare",
+                                files=compare_files,
+                                headers={"Authorization": "Bearer signed-in-token"},
+                            )
+                        finally:
+                            app.dependency_overrides.pop(get_db, None)
         finally:
             app.dependency_overrides.pop(get_current_user, None)
 
@@ -120,15 +121,16 @@ class TestOptionalAuthCompare:
         try:
             with patch("backend.app.routes.compare.create_job", return_value=mock_job):
                 with patch("backend.app.routes.compare.PLATFORM_DATABASE_URL", "postgresql://test"):
-                    app.dependency_overrides[get_db] = override_db
-                    try:
-                        compare_response = client.post(
-                            "/compare",
-                            files=compare_files,
-                            headers={"Authorization": "Bearer valid-token"},
-                        )
-                    finally:
-                        app.dependency_overrides.pop(get_db, None)
+                    with patch("backend.app.routes.compare.count_active_jobs", return_value=0):
+                        app.dependency_overrides[get_db] = override_db
+                        try:
+                            compare_response = client.post(
+                                "/compare",
+                                files=compare_files,
+                                headers={"Authorization": "Bearer valid-token"},
+                            )
+                        finally:
+                            app.dependency_overrides.pop(get_db, None)
         finally:
             app.dependency_overrides.clear()
 

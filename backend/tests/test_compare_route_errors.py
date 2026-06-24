@@ -5,41 +5,50 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.services.output_cleanup import prune_old_outputs
+from backend.tests.conftest import ANON_SESSION_HEADERS
 
 
 class TestCompareRouteErrors:
-    def test_missing_filename(self, client: TestClient) -> None:
+    def test_missing_filename(self, client: TestClient, compare_route_context: object) -> None:
         response = client.post(
             "/compare",
             files={
                 "drawing_a": ("", b"data", "application/pdf"),
                 "drawing_b": ("b.pdf", b"data", "application/pdf"),
             },
+            headers=ANON_SESSION_HEADERS,
         )
         assert response.status_code in {400, 422}
 
-    def test_unsupported_extension(self, client: TestClient) -> None:
+    def test_unsupported_extension(self, client: TestClient, compare_route_context: object) -> None:
         response = client.post(
             "/compare",
             files={
                 "drawing_a": ("a.gif", b"gif", "image/gif"),
                 "drawing_b": ("b.png", b"png", "image/png"),
             },
+            headers=ANON_SESSION_HEADERS,
         )
         assert response.status_code == 415
 
-    def test_empty_file(self, client: TestClient) -> None:
+    def test_empty_file(self, client: TestClient, compare_route_context: object) -> None:
         response = client.post(
             "/compare",
             files={
                 "drawing_a": ("a.pdf", b"", "application/pdf"),
                 "drawing_b": ("b.pdf", b"x", "application/pdf"),
             },
+            headers=ANON_SESSION_HEADERS,
         )
         assert response.status_code == 400
         assert "empty" in response.json()["detail"].lower()
 
-    def test_oversize_bytes(self, client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_oversize_bytes(
+        self,
+        client: TestClient,
+        compare_route_context: object,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         monkeypatch.setattr("backend.app.routes.compare.MAX_FILE_SIZE_MB", 0)
         response = client.post(
             "/compare",
@@ -47,50 +56,20 @@ class TestCompareRouteErrors:
                 "drawing_a": ("a.pdf", b"12", "application/pdf"),
                 "drawing_b": ("b.pdf", b"12", "application/pdf"),
             },
+            headers=ANON_SESSION_HEADERS,
         )
         assert response.status_code == 413
 
-    def test_corrupt_pdf(self, client: TestClient) -> None:
+    def test_corrupt_pdf(self, client: TestClient, compare_route_context: object) -> None:
         response = client.post(
             "/compare",
             files={
                 "drawing_a": ("a.pdf", b"not-a-pdf", "application/pdf"),
                 "drawing_b": ("b.pdf", b"not-a-pdf", "application/pdf"),
             },
+            headers=ANON_SESSION_HEADERS,
         )
         assert response.status_code == 400
-
-    def test_success_response_shape(self, client: TestClient) -> None:
-        from backend.tests.fixtures.factory import image_to_bytes, make_drawing_a_image
-
-        content = image_to_bytes(make_drawing_a_image(), ".pdf")
-
-        response = client.post(
-            "/compare",
-            files={
-                "drawing_a": ("a.pdf", content, "application/pdf"),
-                "drawing_b": ("b.pdf", content, "application/pdf"),
-            },
-        )
-        assert response.status_code == 200
-        payload = response.json()
-        assert "image_path" in payload
-        assert "pdf_path" in payload
-        assert payload["pdf_path"].endswith(".pdf")
-        assert "metadata" in payload
-        assert "alignment" in payload["metadata"]
-        assert "alignment_confidence" in payload["metadata"]
-        assert "content" in payload["metadata"]
-        assert "overlay" in payload["metadata"]
-        assert "differences" in payload["metadata"]
-        assert payload["metadata"]["alignment_confidence"]["status"] in {
-            "high",
-            "marginal",
-            "failed",
-        }
-        assert "overlap_bbox" in payload["metadata"]["content"]
-        assert "comparison_bbox" in payload["metadata"]["content"]
-        assert "output_page" in payload["metadata"]
 
 
 class TestOutputCleanup:

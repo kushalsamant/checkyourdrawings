@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { AppHeader } from "../components/AppHeader";
+import { AppLayout } from "../components/AppLayout";
 import { trackEvent } from "../lib/analytics";
 import { useAuth } from "../lib/auth-provider";
 import { fetchPricingTiers, startCheckout, type PricingTier } from "../services/pricing";
@@ -63,17 +63,23 @@ export function PricingPage() {
   }
 
   return (
-    <div className="page-body">
-      <main className="app-shell">
-        <AppHeader
-          title="Pricing"
-          subtitle="KVSHVL Pro improves throughput — not product access."
-        />
-
+    <AppLayout
+      title="Pricing"
+      subtitle="KVSHVL Pro — queue priority and more active jobs. Not larger uploads or feature gates."
+    >
         <section className="pricing-intro">
           <p>
-            Signed-in free accounts get unlimited comparisons with standard queue throughput.
-            Pro adds queue priority and up to 10 active jobs.
+            <strong>Free (signed in):</strong> Unlimited comparisons, one active job at a time,
+            standard queue. PDFs up to 100 MB each.
+          </p>
+          <p>
+            <strong>Anonymous:</strong> Five successful comparisons without sign-in (one active job
+            at a time), then Google sign-in to continue on the free tier.
+          </p>
+          <p>
+            <strong>Pro:</strong> Unlimited comparisons, up to ten active jobs (pending or in
+            progress), and queue priority. Same 100 MB per-PDF limit. Processing is serial — Pro
+            lets you submit a backlog while earlier jobs run.
           </p>
         </section>
 
@@ -105,7 +111,6 @@ export function PricingPage() {
             {error}
           </p>
         )}
-      </main>
-    </div>
+    </AppLayout>
   );
 }

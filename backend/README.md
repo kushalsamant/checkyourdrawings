@@ -25,6 +25,20 @@ Account and billing live on **platform-api** (`/account`, `/payments/*`).
 
 When `AUTH_REQUIRED=false`, anonymous users get a lifetime allowance of successful comparisons (`ANONYMOUS_ALLOWANCE_TOTAL`, default 5). Send `X-Anon-Session` (UUID v4) on compare and job poll requests. After the allowance is used, the next compare attempt returns `401` and requires Google sign-in.
 
+## Throughput limits (locked)
+
+| Tier | Active jobs | Comparisons | Notes |
+|------|-------------|-------------|-------|
+| Anonymous | 1 (`MAX_ANON_ACTIVE_JOBS`) | 5 lifetime successes | No daily/monthly caps |
+| Signed-in free | 1 (`MAX_FREE_ACTIVE_JOBS`) | Unlimited | Standard queue |
+| Pro | 10 (`MAX_PRO_ACTIVE_JOBS`) | Unlimited | Queue priority |
+
+**Active job** = `pending` or `running` status. `POST /compare` returns **409** when at limit.
+
+**File size:** 100 MB per PDF for all tiers (`MAX_FILE_SIZE_MB`).
+
+**Queue:** single global ordering `priority DESC, created_at ASC`; one worker (`COMPARE_MAX_WORKERS=1`). Pro does not add dedicated workers — it allows more queued jobs and higher priority.
+
 ## Rate limiting
 
 `POST /compare` is rate limited per client IP. Configure via `RATE_LIMIT_*` env vars.
