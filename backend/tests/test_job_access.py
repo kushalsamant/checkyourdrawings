@@ -29,6 +29,7 @@ def _user(email: str = "owner@example.com") -> AuthenticatedUser:
         email=email,
         name="Owner",
         google_id="google-1",
+        platform_user_id=None,
         paid=False,
         priority=False,
         tier="free",

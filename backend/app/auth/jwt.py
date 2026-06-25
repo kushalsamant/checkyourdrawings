@@ -32,10 +32,4 @@ def extract_email_from_payload(payload: dict[str, Any]) -> str | None:
     if isinstance(email, str) and email:
         return email
 
-    user_metadata = payload.get("user_metadata")
-    if isinstance(user_metadata, dict):
-        metadata_email = user_metadata.get("email")
-        if isinstance(metadata_email, str) and metadata_email:
-            return metadata_email
-
     return None

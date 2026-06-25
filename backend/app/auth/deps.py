@@ -51,6 +51,9 @@ def get_current_user(
     paid = bool(entitlements.get("paid"))
     priority = bool(entitlements.get("priority"))
     enabled = entitlements.get("enabled", True)
+    platform_user_id = entitlements.get("user_id")
+    if platform_user_id is not None and not isinstance(platform_user_id, int):
+        platform_user_id = None
     if enabled is False:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -61,6 +64,7 @@ def get_current_user(
         email=email,
         name=payload.get("name") if isinstance(payload.get("name"), str) else None,
         google_id=payload.get("sub") if isinstance(payload.get("sub"), str) else None,
+        platform_user_id=platform_user_id,
         paid=paid,
         priority=priority,
         tier=tier if isinstance(tier, str) else "free",

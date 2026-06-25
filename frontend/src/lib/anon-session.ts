@@ -1,4 +1,5 @@
-const STORAGE_KEY = "cyd_anon_session_id";
+const STORAGE_KEY = "kvshvl_anon_session_id";
+const LEGACY_STORAGE_KEY = "cyd_anon_session_id";
 
 function generateUuidV4(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -15,7 +16,19 @@ function generateUuidV4(): string {
 
 function readStoredSessionId(): string | null {
   try {
-    return localStorage.getItem(STORAGE_KEY);
+    const current = localStorage.getItem(STORAGE_KEY);
+    if (current) {
+      return current;
+    }
+
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy) {
+      localStorage.setItem(STORAGE_KEY, legacy);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      return legacy;
+    }
+
+    return null;
   } catch {
     return null;
   }

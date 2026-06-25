@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
+from backend.app.config import MIN_INK_PIXEL_RATIO, OVERLAY_AGREE_DILATION_RADIUS
+from backend.app.services.alignment import AlignmentError
 from backend.app.services.image_utils import ImageArray, build_foreground_mask, convert_to_grayscale
 
 CLASH_DILATION_RADIUS: Final[int] = 3
@@ -21,6 +23,11 @@ FOOTER_LEGEND: Final[str] = (
     "Orange = only in A | Blue = only in B | Green = in both | Red = clash"
 )
 
+INSUFFICIENT_INK_MESSAGE: Final[str] = (
+    "Could not detect enough drawing content in the overlay. "
+    "Try a vector PDF export or a higher-quality plot."
+)
+
 
 @dataclass(frozen=True)
 class OverlayStats:
@@ -28,6 +35,26 @@ class OverlayStats:
     blue_pixels: int
     green_pixels: int
     red_pixels: int
+
+
+def validate_overlay_stats(
+    stats: OverlayStats,
+    *,
+    crop_pixel_count: int,
+    min_ink_pixel_ratio: float = MIN_INK_PIXEL_RATIO,
+) -> None:
+    """Reject compares that produced an effectively blank coordination map."""
+    ink_pixels = (
+        stats.orange_pixels
+        + stats.blue_pixels
+        + stats.green_pixels
+        + stats.red_pixels
+    )
+    if crop_pixel_count <= 0:
+        raise AlignmentError(INSUFFICIENT_INK_MESSAGE)
+
+    if ink_pixels / crop_pixel_count < min_ink_pixel_ratio:
+        raise AlignmentError(INSUFFICIENT_INK_MESSAGE)
 
 
 @dataclass(frozen=True)
@@ -57,7 +84,11 @@ def render_coordination_overlay(
 
     palette = _light_palette()
     a_mask, b_mask = _build_ink_masks(drawing_a_image, aligned_drawing_b_image)
-    classified = _classify_pixels(a_mask, b_mask)
+    classified = _classify_pixels(
+        a_mask,
+        b_mask,
+        agree_dilation_radius=OVERLAY_AGREE_DILATION_RADIUS,
+    )
 
     stats = OverlayStats(
         orange_pixels=int(classified["a_only"].sum()),
@@ -129,10 +160,23 @@ def _build_ink_masks(
 def _classify_pixels(
     a_mask: NDArray[np.bool_],
     b_mask: NDArray[np.bool_],
+    *,
+    agree_dilation_radius: int = OVERLAY_AGREE_DILATION_RADIUS,
 ) -> dict[str, NDArray[np.bool_]]:
-    agree = a_mask & b_mask
-    a_only = a_mask & ~b_mask
-    b_only = b_mask & ~a_mask
+    if agree_dilation_radius > 0:
+        agree_kernel_size = agree_dilation_radius * 2 + 1
+        agree_kernel = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE,
+            (agree_kernel_size, agree_kernel_size),
+        )
+        a_for_agree = cv2.dilate(a_mask.astype(np.uint8), agree_kernel) > 0
+        b_for_agree = cv2.dilate(b_mask.astype(np.uint8), agree_kernel) > 0
+        agree = a_for_agree & b_for_agree
+    else:
+        agree = a_mask & b_mask
+
+    a_only = a_mask & ~agree
+    b_only = b_mask & ~agree
 
     kernel_size = CLASH_DILATION_RADIUS * 2 + 1
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))

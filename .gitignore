@@ -27,6 +27,7 @@ frontend/vite.config.d.ts
 assets/
 Demo_WhatsApp*.mp4
 *.pdf
+!backend/tests/fixtures/pdfs/*.pdf
 *.dwg
 comparison-result*.png
 sample-*.png

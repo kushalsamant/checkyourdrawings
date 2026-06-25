@@ -16,11 +16,40 @@ def overlay_array() -> np.ndarray:
     return image
 
 
-def test_save_overlay_pdf_uses_drawing_a_page_size(
+def test_save_overlay_pdf_uses_crop_page_size(
     overlay_array: np.ndarray,
     tmp_path: Path,
 ) -> None:
     output_path = tmp_path / "comparison-test.pdf"
+    raster_dpi = 150
+    comparison_bbox = BoundingBox(x=40, y=30, width=200, height=120)
+
+    save_overlay_pdf(
+        output_path,
+        overlay_array,
+        page_width_pt=842.0,
+        page_height_pt=595.0,
+        raster_dpi=raster_dpi,
+        comparison_bbox=comparison_bbox,
+        layout="crop",
+    )
+
+    assert output_path.is_file()
+    with fitz.open(output_path) as document:
+        assert document.page_count == 1
+        page = document.load_page(0)
+        expected_width_pt = overlay_array.shape[1] / raster_dpi * 72.0
+        expected_height_pt = overlay_array.shape[0] / raster_dpi * 72.0
+        assert page.rect.width == pytest.approx(expected_width_pt)
+        assert page.rect.height == pytest.approx(expected_height_pt)
+        assert len(page.get_images(full=True)) == 1
+
+
+def test_save_overlay_pdf_full_sheet_layout(
+    overlay_array: np.ndarray,
+    tmp_path: Path,
+) -> None:
+    output_path = tmp_path / "comparison-full-sheet.pdf"
     page_width_pt = 842.0
     page_height_pt = 595.0
     raster_dpi = 150
@@ -33,15 +62,13 @@ def test_save_overlay_pdf_uses_drawing_a_page_size(
         page_height_pt=page_height_pt,
         raster_dpi=raster_dpi,
         comparison_bbox=comparison_bbox,
+        layout="full_sheet",
     )
 
-    assert output_path.is_file()
     with fitz.open(output_path) as document:
-        assert document.page_count == 1
         page = document.load_page(0)
         assert page.rect.width == pytest.approx(page_width_pt)
         assert page.rect.height == pytest.approx(page_height_pt)
-        assert len(page.get_images(full=True)) == 1
 
 
 def test_save_overlay_pdf_embeds_lossless_png(

@@ -66,10 +66,28 @@ def clean_mask(mask: ImageArray, *, morphology_kernel_size: int) -> ImageArray:
     return cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernel, iterations=2)
 
 
+def _normalize_for_ink_detection(grayscale_image: ImageArray) -> ImageArray:
+    """Boost local contrast on light PDF backgrounds so thin linework survives."""
+    mean_value = float(np.mean(grayscale_image))
+    if mean_value >= 180:
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        return clahe.apply(grayscale_image)
+    return grayscale_image
+
+
+def _adaptive_block_size(grayscale_image: ImageArray) -> int:
+    shortest_side = min(grayscale_image.shape[:2])
+    block_size = max(15, shortest_side // 32)
+    if block_size % 2 == 0:
+        block_size += 1
+    return block_size
+
+
 def build_framing_mask(grayscale_image: ImageArray) -> ImageArray:
     """Build an ink mask for content framing without removing thin separated lines."""
+    normalized = _normalize_for_ink_detection(grayscale_image)
     _, mask = cv2.threshold(
-        grayscale_image,
+        normalized,
         0,
         255,
         cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU,
@@ -85,22 +103,36 @@ def build_foreground_mask(
     morphology_kernel_size: int = 3,
 ) -> ImageArray:
     """Build a binary mask of ink-like foreground pixels."""
-    if threshold is None:
-        _, mask = cv2.threshold(
-            grayscale_image,
-            0,
-            255,
-            cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU,
-        )
-    else:
+    normalized = _normalize_for_ink_detection(grayscale_image)
+
+    if threshold is not None:
         if not 0 <= threshold <= 255:
             raise ValueError("threshold must be between 0 and 255.")
 
-        _, mask = cv2.threshold(
-            grayscale_image,
+        mask = cv2.threshold(
+            normalized,
             threshold,
             255,
             cv2.THRESH_BINARY_INV,
-        )
+        )[1]
+        return clean_mask(mask, morphology_kernel_size=morphology_kernel_size)
 
-    return clean_mask(mask, morphology_kernel_size=morphology_kernel_size)
+    _, otsu_mask = cv2.threshold(
+        normalized,
+        0,
+        255,
+        cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU,
+    )
+    otsu_mask = clean_mask(otsu_mask, morphology_kernel_size=morphology_kernel_size)
+
+    adaptive_mask = cv2.adaptiveThreshold(
+        normalized,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV,
+        _adaptive_block_size(normalized),
+        8,
+    )
+    adaptive_mask = clean_mask(adaptive_mask, morphology_kernel_size=morphology_kernel_size)
+
+    return cv2.bitwise_or(otsu_mask, adaptive_mask)

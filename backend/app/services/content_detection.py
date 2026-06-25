@@ -110,6 +110,19 @@ def _union_area(bbox_a: BoundingBox, bbox_b: BoundingBox) -> int:
     return area_a + area_b - (intersection.width * intersection.height)
 
 
+def scale_bbox(bbox: BoundingBox, scale: float) -> BoundingBox:
+    """Scale a bounding box between raster resolutions."""
+    if scale <= 0:
+        raise ValueError("scale must be greater than zero.")
+
+    return BoundingBox(
+        x=int(round(bbox.x * scale)),
+        y=int(round(bbox.y * scale)),
+        width=int(round(bbox.width * scale)),
+        height=int(round(bbox.height * scale)),
+    )
+
+
 def crop_image(image: NDArray[np.generic], bbox: BoundingBox) -> NDArray[np.generic]:
     """Crop an image to a bounding box."""
     if image.size == 0:

@@ -11,6 +11,7 @@ from backend.app.config import (
     ALIGNMENT_LARGE_IMAGE_PIXELS,
     ALIGNMENT_MARGINAL_INLIER_RATIO,
     COMPARE_DISABLE_ECC_ABOVE_PIXELS,
+    CROP_ECC_MAX_PIXELS,
 )
 from backend.app.services.image_utils import ImageArray, convert_to_grayscale
 
@@ -85,6 +86,48 @@ def use_ecc_refinement_for_images(
     drawing_a_pixels = int(drawing_a_image.shape[0] * drawing_a_image.shape[1])
     drawing_b_pixels = int(drawing_b_image.shape[0] * drawing_b_image.shape[1])
     return max(drawing_a_pixels, drawing_b_pixels) <= disable_above_pixels
+
+
+def scale_homography(homography: FloatMatrix, scale: float) -> FloatMatrix:
+    """Scale a homography when moving between raster resolutions."""
+    if abs(scale - 1.0) < 1e-9:
+        return homography.astype(np.float64, copy=False)
+
+    inverse_scale = 1.0 / scale
+    normalize = np.array(
+        [
+            [inverse_scale, 0.0, 0.0],
+            [0.0, inverse_scale, 0.0],
+            [0.0, 0.0, 1.0],
+        ],
+        dtype=np.float64,
+    )
+    upscale = np.array(
+        [
+            [scale, 0.0, 0.0],
+            [0.0, scale, 0.0],
+            [0.0, 0.0, 1.0],
+        ],
+        dtype=np.float64,
+    )
+    return upscale @ homography.astype(np.float64) @ normalize
+
+
+def warp_drawing_with_homography(
+    drawing_image: NDArray[np.generic],
+    homography: FloatMatrix,
+    output_size: tuple[int, int],
+) -> ImageArray:
+    """Warp a drawing image with a homography onto a target canvas size."""
+    output_width, output_height = output_size
+    return cv2.warpPerspective(
+        drawing_image,
+        homography,
+        (output_width, output_height),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=255,
+    )
 
 
 def align_drawing_b_to_a(
@@ -205,6 +248,75 @@ def refine_alignment_with_ecc(
     if drawing_a_gray.shape != aligned_gray.shape:
         return aligned_image
 
+    warp_matrix = _find_ecc_warp_matrix(drawing_a_gray, aligned_gray)
+    if warp_matrix is None:
+        return aligned_image
+
+    height, width = drawing_a_image.shape[:2]
+    return cv2.warpAffine(
+        aligned_image,
+        warp_matrix,
+        (width, height),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=255,
+    )
+
+
+def refine_crop_alignment(
+    drawing_a_image: NDArray[np.generic],
+    aligned_image: NDArray[np.generic],
+    *,
+    max_ecc_pixels: int = CROP_ECC_MAX_PIXELS,
+) -> ImageArray:
+    """Refine hi-res comparison crops; downscales for ECC when crops are large."""
+    if drawing_a_image.shape[:2] != aligned_image.shape[:2]:
+        return aligned_image
+
+    height, width = drawing_a_image.shape[:2]
+    pixel_count = height * width
+    if pixel_count <= max_ecc_pixels:
+        return refine_alignment_with_ecc(drawing_a_image, aligned_image)
+
+    scale = (max_ecc_pixels / pixel_count) ** 0.5
+    new_width = max(64, int(round(width * scale)))
+    new_height = max(64, int(round(height * scale)))
+
+    drawing_a_small = cv2.resize(
+        drawing_a_image,
+        (new_width, new_height),
+        interpolation=cv2.INTER_AREA,
+    )
+    aligned_small = cv2.resize(
+        aligned_image,
+        (new_width, new_height),
+        interpolation=cv2.INTER_AREA,
+    )
+
+    drawing_a_gray = convert_to_grayscale(drawing_a_small).astype(np.float32) / 255.0
+    aligned_gray = convert_to_grayscale(aligned_small).astype(np.float32) / 255.0
+    warp_matrix = _find_ecc_warp_matrix(drawing_a_gray, aligned_gray)
+    if warp_matrix is None:
+        return aligned_image
+
+    coord_scale = width / new_width
+    warp_matrix[0, 2] *= coord_scale
+    warp_matrix[1, 2] *= coord_scale
+
+    return cv2.warpAffine(
+        aligned_image,
+        warp_matrix,
+        (width, height),
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=255,
+    )
+
+
+def _find_ecc_warp_matrix(
+    drawing_a_gray: NDArray[np.float32],
+    aligned_gray: NDArray[np.float32],
+) -> NDArray[np.float32] | None:
     warp_matrix = np.eye(2, 3, dtype=np.float32)
     criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 50, 1e-5)
 
@@ -219,17 +331,9 @@ def refine_alignment_with_ecc(
             gaussFiltSize=5,
         )
     except cv2.error:
-        return aligned_image
+        return None
 
-    height, width = drawing_a_image.shape[:2]
-    return cv2.warpAffine(
-        aligned_image,
-        warp_matrix,
-        (width, height),
-        flags=cv2.INTER_LINEAR,
-        borderMode=cv2.BORDER_CONSTANT,
-        borderValue=255,
-    )
+    return warp_matrix
 
 
 def _validate_alignment_parameters(

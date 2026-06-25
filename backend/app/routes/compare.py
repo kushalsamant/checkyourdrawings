@@ -154,7 +154,7 @@ async def compare_drawings(
             drawing_b_name=drawing_b.filename or saved_drawing_b.name,
             user_email=user.email if user is not None else None,
             anon_session_id=anon_session_id if user is None else None,
-            platform_user_id=None,
+            platform_user_id=user.platform_user_id if user is not None else None,
             priority=priority,
         )
         return CompareJobCreatedResponse(job_id=str(job.id))
