@@ -25,12 +25,12 @@ describe("validateFile", () => {
 
   it("rejects unsupported extensions", () => {
     const file = new File(["content"], "drawing.png", { type: "image/png" });
-    expect(validateFile(file)).toMatch(/Unsupported file type/);
+    expect(validateFile(file)).toMatch(/PDF only/);
   });
 
   it("rejects DWG files", () => {
     const file = new File(["content"], "drawing.dwg", { type: "application/octet-stream" });
-    expect(validateFile(file)).toMatch(/Unsupported file type/);
+    expect(validateFile(file)).toMatch(/PDF only/);
   });
 
   it("rejects files over the size limit", () => {

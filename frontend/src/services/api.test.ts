@@ -19,7 +19,7 @@ describe("getErrorMessage", () => {
     const response = new Response("", { status: 503 });
 
     await expect(getErrorMessage(response)).resolves.toBe(
-      "Another comparison is in progress. Try again in a moment.",
+      "Another comparison is running. Wait, then try again.",
     );
   });
 });

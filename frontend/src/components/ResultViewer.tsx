@@ -19,7 +19,7 @@ export function ResultViewer({
   pdfUrl,
   pngFilename = "comparison-result.png",
   pdfFilename = "comparison-result.pdf",
-  altText = "Rendered drawing comparison result",
+  altText = "Drawing comparison overlay",
 }: ResultViewerProps) {
   const [zoom, setZoom] = useState<number>(1);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export function ResultViewer({
       link.click();
       URL.revokeObjectURL(objectUrl);
     } catch {
-      setDownloadError("Download failed. Open the file in a new tab and save it manually.");
+      setDownloadError("Download failed. Open the file and save manually.");
     } finally {
       setDownloading(null);
     }
@@ -115,7 +115,7 @@ export function ResultViewer({
       </div>
 
       <p className="retention-notice" role="note">
-        Download to keep a copy — results aren&apos;t stored permanently.
+        Download a copy. Files delete after 24 hours.
       </p>
 
       {downloadError && (
@@ -138,7 +138,7 @@ export function ResultViewer({
               width: `${zoom * 100}%`,
             }}
             onError={() => {
-              setImageError("Failed to load comparison image.");
+              setImageError("Could not load the overlay image.");
             }}
           />
         )}

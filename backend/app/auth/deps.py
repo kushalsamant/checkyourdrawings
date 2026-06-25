@@ -16,7 +16,7 @@ def get_current_user(
         if AUTH_REQUIRED:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Sign in to compare drawings.",
+                detail="Sign in to continue.",
             )
         return None
 

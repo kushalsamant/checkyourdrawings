@@ -7,7 +7,7 @@ interface AppHeaderProps {
 
 export function AppHeader({
   title = "Check Your Drawings",
-  subtitle = "Upload two PDF drawings for an auto-aligned coordination overlay.",
+  subtitle = "Upload Drawing A and Drawing B. Get an aligned overlay.",
 }: AppHeaderProps) {
   const authConfigured = isAuthConfigured();
   const { user, loading: authLoading, signIn, signOut } = useAuth();

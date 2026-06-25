@@ -63,11 +63,14 @@ When `AUTH_REQUIRED=false`, anonymous users get a lifetime allowance of successf
 
 ## Local run
 
+Requires **Python 3.12** (see repo `Dockerfile` and CI). If default `python` is 3.14+, use `py -3.12` — OpenCV and NumPy have no Windows wheels for 3.14 yet, so `import cv2` fails.
+
+Setup and run from repo root: [../README.md#local-development](../README.md).
+
+Quick test (from `backend/` with root venv):
+
 ```powershell
-$env:PYTHONPATH = (Get-Location).Path
-$env:PLATFORM_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/checkyourdrawings"
-python scripts\migrate.py
-uvicorn backend.app.main:app --reload --port 8000
+..\.venv\Scripts\pytest -q
 ```
 
 ## Deploy

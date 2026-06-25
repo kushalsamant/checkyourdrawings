@@ -54,7 +54,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title="Check Your Drawings API",
-    description="PDF coordination overlay API for comparing two architectural drawing PDFs.",
+    description="Aligns two PDF revisions and returns a color-coded overlay.",
     version="0.1.0",
     lifespan=lifespan,
 )

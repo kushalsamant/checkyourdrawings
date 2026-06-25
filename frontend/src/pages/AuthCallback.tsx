@@ -41,9 +41,6 @@ export function AuthCallback() {
   return (
     <AppLayout shellClassName="app-shell auth-callback">
       <p role="alert">{error}</p>
-      <p>
-        <a href="/">Back to app</a>
-      </p>
     </AppLayout>
   );
 }

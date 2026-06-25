@@ -51,8 +51,7 @@ def evaluate_alignment_confidence(
         return AlignmentConfidence(
             status="marginal",
             message=(
-                "Alignment confidence is low. Review the comparison manually before "
-                "relying on the overlay."
+                "Alignment confidence is low. Review the overlay manually."
             ),
         )
 

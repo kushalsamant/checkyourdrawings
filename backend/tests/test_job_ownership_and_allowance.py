@@ -205,7 +205,7 @@ class TestAnonymousAllowanceRoutes:
                     app.dependency_overrides.pop(get_db, None)
 
         assert response.status_code == 401
-        assert response.json()["detail"] == "Sign in to continue comparing."
+        assert response.json()["detail"] == "Sign in to continue."
 
     def test_get_allowance_for_anonymous_session(self, client: TestClient) -> None:
         mock_db = MagicMock()

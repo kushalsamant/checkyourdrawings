@@ -23,10 +23,9 @@ def max_active_jobs_for_user(user: AuthenticatedUser | None) -> int:
 def active_job_limit_detail(limit: int) -> str:
     if limit <= 1:
         return (
-            "Another comparison is pending or in progress. "
-            "Wait for it to finish before starting a new one."
+            "Another comparison is running. Wait, then try again."
         )
     return (
-        f"You have reached the limit of {limit} active comparisons "
-        f"(pending or in progress). Wait for one to finish before starting another."
+        f"You have {limit} active comparisons. "
+        f"Wait for one to finish, then try again."
     )

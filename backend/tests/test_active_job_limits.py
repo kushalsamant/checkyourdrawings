@@ -45,7 +45,7 @@ def test_max_active_jobs_by_tier() -> None:
 
 
 def test_active_job_limit_detail() -> None:
-    assert "in progress" in active_job_limit_detail(1).lower()
+    assert "running" in active_job_limit_detail(1).lower()
     assert "10" in active_job_limit_detail(10)
 
 

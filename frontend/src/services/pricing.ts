@@ -38,7 +38,7 @@ export async function fetchPricingTiers(): Promise<PricingTier[]> {
 
 export async function startCheckout(tier: string, accessToken: string): Promise<void> {
   if (!isPlatformApiConfigured()) {
-    throw new Error("Billing is not configured for this environment.");
+    throw new Error("Billing is not configured here.");
   }
 
   const response = await platformApiFetch("/payments/checkout", {
@@ -55,7 +55,7 @@ export async function startCheckout(tier: string, accessToken: string): Promise<
   });
 
   if (!response.ok) {
-    throw new Error(await readPlatformApiError(response, "Could not start checkout."));
+    throw new Error(await readPlatformApiError(response, "Could not start checkout. Try again."));
   }
 
   const session = (await response.json()) as CheckoutSession;

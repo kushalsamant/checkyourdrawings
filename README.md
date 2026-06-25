@@ -27,10 +27,10 @@ See [index.md](index.md) for user-facing copy on the About page.
 
 ## Local development
 
-**Backend** (port 8000):
+**Backend** (port 8000) — requires **Python 3.12** (same as Docker/CI). OpenCV and NumPy do not install on Python 3.14 on Windows yet.
 
 ```powershell
-python -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\pip install -r backend\requirements.txt -r backend\requirements-dev.txt
 $env:PYTHONPATH = (Get-Location).Path
 $env:PLATFORM_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/checkyourdrawings"

@@ -57,7 +57,7 @@ export default function App() {
 
   async function handleCompare(): Promise<void> {
     if (drawingA === null || drawingB === null) {
-      setError("Upload Drawing A and Drawing B before comparing.");
+      setError("Upload Drawing A and Drawing B first.");
       return;
     }
 
@@ -93,7 +93,7 @@ export default function App() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Comparison failed. Please try again.",
+          : "Comparison failed. Try again.",
       );
     } finally {
       setIsComparing(false);
@@ -106,7 +106,7 @@ export default function App() {
           allowance.remaining !== null &&
           allowance.total !== null && (
             <p className="allowance-notice" role="status">
-              {allowance.remaining} of {allowance.total} free comparisons remaining
+              {allowance.remaining} of {allowance.total} free comparisons left
             </p>
           )}
 
@@ -119,7 +119,7 @@ export default function App() {
 
         {isComparing && (
           <p className="status" role="status">
-            Comparing drawings… This can take a few minutes for large PDFs.
+            Aligning and comparing… Large PDFs may take several minutes.
           </p>
         )}
 
@@ -146,7 +146,7 @@ export default function App() {
         {metadata?.alignment_confidence.status === "marginal" && (
           <p className="warning" role="status">
             {metadata.alignment_confidence.message ??
-              "Alignment confidence is low. Review the comparison manually."}
+              "Alignment confidence is low. Review the overlay manually."}
           </p>
         )}
 
@@ -159,7 +159,7 @@ export default function App() {
               pdfUrl={comparisonPdfUrl}
             />
           ) : (
-            <p>No comparison result yet.</p>
+            <p>No overlay yet. Upload two PDFs and compare.</p>
           )}
         </section>
 
@@ -168,22 +168,22 @@ export default function App() {
             <h2>Metadata</h2>
             <dl className="metadata-grid">
               <div>
-                <dt>Orange (only A)</dt>
+                <dt>Orange — removals</dt>
                 <dd>{metadata.overlay.orange_pixels}</dd>
               </div>
 
               <div>
-                <dt>Blue (only B)</dt>
+                <dt>Blue — additions</dt>
                 <dd>{metadata.overlay.blue_pixels}</dd>
               </div>
 
               <div>
-                <dt>Green (both)</dt>
+                <dt>Green — matching</dt>
                 <dd>{metadata.overlay.green_pixels}</dd>
               </div>
 
               <div>
-                <dt>Red (clash)</dt>
+                <dt>Red — overlap</dt>
                 <dd>{metadata.overlay.red_pixels}</dd>
               </div>
 

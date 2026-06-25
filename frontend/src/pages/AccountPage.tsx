@@ -71,12 +71,12 @@ export function AccountPage() {
   const expiresLabel = formatDate(account?.subscription_expires_at ?? null);
 
   return (
-    <AppLayout title="Account" subtitle="Manage your KVSHVL subscription.">
+    <AppLayout title="Account" subtitle="Your plan and subscription.">
         {authLoading || loading ? (
-          <p role="status">Loading account…</p>
+          <p role="status">Loading…</p>
         ) : !user ? (
           <section className="account-panel">
-            <p>Sign in to view your account and subscription.</p>
+            <p>Sign in to view your plan.</p>
             <button type="button" className="action-primary" onClick={() => void signIn()}>
               Sign in with Google
             </button>
@@ -119,10 +119,7 @@ export function AccountPage() {
             </dl>
 
             {!account?.paid && (
-              <p>
-                <a href="/pricing">View Pro pricing</a> for queue priority and up to 10 active
-                jobs (pending or in progress).
-              </p>
+              <p>Pro adds queue priority and up to ten active jobs.</p>
             )}
 
             {account?.has_subscription && account.subscription_auto_renew && (

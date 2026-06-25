@@ -1,8 +1,6 @@
-export const UPLOAD_DROP_HINT =
-  "Drop a PDF here (plot or export from your design software)";
+export const UPLOAD_DROP_HINT = "Drop a PDF here.";
 
-export const INVALID_FILE_TYPE_MESSAGE =
-  "Unsupported file type. Upload a PDF exported or plotted from your design software.";
+export const INVALID_FILE_TYPE_MESSAGE = "PDF only. Upload a plotted or exported drawing.";
 
 export const ACCEPTED_EXTENSIONS = [".pdf"] as const;
 export const ACCEPTED_MIME_TYPES = ["application/pdf"] as const;
@@ -41,11 +39,11 @@ export function validateFile(file: File): string | null {
   }
 
   if (!isAcceptedMimeType(file.type, extension)) {
-    return "Unsupported file content type. Upload a PDF.";
+    return "Not a PDF. Upload a plotted or exported drawing.";
   }
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
-    return "File exceeds the maximum size of 100 MB.";
+    return "File exceeds 100 MB.";
   }
 
   return null;

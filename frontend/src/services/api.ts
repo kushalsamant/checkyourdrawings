@@ -4,8 +4,8 @@ import { clearAuthAccessToken, getAuthAccessToken } from "../lib/auth-provider";
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 const COMPARE_TIMEOUT_MS = 5 * 60 * 1000;
 const COMPARE_POLL_INTERVAL_MS = 1500;
-const COMPARE_BUSY_DETAIL = "Another comparison is in progress. Try again in a moment.";
-export const SIGN_IN_TO_CONTINUE_MESSAGE = "Sign in to continue comparing.";
+const COMPARE_BUSY_DETAIL = "Another comparison is running. Wait, then try again.";
+export const SIGN_IN_TO_CONTINUE_MESSAGE = "Sign in to continue.";
 
 export class SignInRequiredError extends Error {
   constructor(message: string = SIGN_IN_TO_CONTINUE_MESSAGE) {
@@ -198,11 +198,11 @@ export async function uploadAndCompare(
     };
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("Comparison timed out. Try smaller files or try again.");
+      throw new Error("Comparison timed out. Try again or use smaller files.");
     }
     if (error instanceof TypeError && error.message === "Failed to fetch") {
       throw new Error(
-        "Could not reach the compare server. If you were comparing large drawings, wait a moment and try again.",
+        "Could not reach the server. Wait a moment, then try again.",
       );
     }
     throw error;
@@ -265,7 +265,7 @@ export function buildOutputUrl(outputPath: string): string {
 
 export async function getErrorMessage(response: Response): Promise<string> {
   if (response.status === 401) {
-    return "Sign in to compare drawings.";
+    return "Sign in to continue.";
   }
   try {
     const data = (await response.json()) as { detail?: unknown };
@@ -379,7 +379,7 @@ async function pollCompareJob(jobId: string, signal: AbortSignal): Promise<Compa
       return payload.result;
     }
     if (payload.status === "failed") {
-      throw new Error(payload.error_message ?? "Comparison failed. Please try again.");
+      throw new Error(payload.error_message ?? "Comparison failed. Try again.");
     }
 
     await new Promise((resolve) => window.setTimeout(resolve, COMPARE_POLL_INTERVAL_MS));

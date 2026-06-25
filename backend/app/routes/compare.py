@@ -124,7 +124,7 @@ async def compare_drawings(
         if anonymous_allowance_exhausted(db, anon_session_id):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Sign in to continue comparing.",
+                detail="Sign in to continue.",
             )
 
     active_limit = max_active_jobs_for_user(user)
@@ -236,7 +236,7 @@ async def _save_validated_upload(upload: UploadFile) -> Path:
                 _remove_file(saved_path)
                 raise HTTPException(
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail=f"File exceeds the maximum size of {MAX_FILE_SIZE_MB} MB.",
+                    detail=f"File exceeds {MAX_FILE_SIZE_MB} MB.",
                 )
             output_file.write(chunk)
 

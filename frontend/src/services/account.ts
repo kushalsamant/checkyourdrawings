@@ -19,12 +19,12 @@ export interface AccountDetails {
 
 export async function fetchAccountDetails(): Promise<AccountDetails> {
   if (!isPlatformApiConfigured()) {
-    throw new Error("Account service is not configured for this environment.");
+    throw new Error("Account service is not configured here.");
   }
 
   const token = getAuthAccessToken();
   if (!token) {
-    throw new Error("Sign in to view your account.");
+    throw new Error("Sign in to view your plan.");
   }
 
   const response = await platformApiFetch("/account", {
@@ -40,7 +40,7 @@ export async function fetchAccountDetails(): Promise<AccountDetails> {
 
 export async function cancelSubscription(): Promise<void> {
   if (!isPlatformApiConfigured()) {
-    throw new Error("Account service is not configured for this environment.");
+    throw new Error("Account service is not configured here.");
   }
 
   const token = getAuthAccessToken();

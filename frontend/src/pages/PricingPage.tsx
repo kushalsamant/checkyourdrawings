@@ -64,23 +64,21 @@ export function PricingPage() {
 
   return (
     <AppLayout
-      title="Pricing"
-      subtitle="KVSHVL Pro — queue priority and more active jobs. Not larger uploads or feature gates."
+      title="Need more active jobs?"
+      subtitle="Pro adds queue priority. Upload limits stay the same."
     >
         <section className="pricing-intro">
-          <p>
-            <strong>Free (signed in):</strong> Unlimited comparisons, one active job at a time,
-            standard queue. PDFs up to 100 MB each.
-          </p>
-          <p>
-            <strong>Anonymous:</strong> Five successful comparisons without sign-in (one active job
-            at a time), then Google sign-in to continue on the free tier.
-          </p>
-          <p>
-            <strong>Pro:</strong> Unlimited comparisons, up to ten active jobs (pending or in
-            progress), and queue priority. Same 100 MB per-PDF limit. Processing is serial — Pro
-            lets you submit a backlog while earlier jobs run.
-          </p>
+          <ul>
+            <li>
+              <strong>Free:</strong> Unlimited comparisons. One active job. PDFs up to 100 MB.
+            </li>
+            <li>
+              <strong>Anonymous:</strong> Five comparisons without sign-in. One active job.
+            </li>
+            <li>
+              <strong>Pro:</strong> Ten active jobs. Queue priority. Same 100 MB limit.
+            </li>
+          </ul>
         </section>
 
         {tiers.length > 0 ? (
@@ -103,7 +101,7 @@ export function PricingPage() {
             ))}
           </div>
         ) : (
-          <p>Billing is not configured for this environment.</p>
+          <p>Billing is not configured here.</p>
         )}
 
         {error && (
