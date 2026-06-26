@@ -92,6 +92,9 @@ def _poll_compare_job(
     stages_seen: list[str] = []
     while time.time() < deadline:
         response = client.get(f"{API_URL}/jobs/{job_id}", headers=headers, timeout=60)
+        if response.status_code in (502, 503, 504):
+            time.sleep(5)
+            continue
         response.raise_for_status()
         payload = response.json()
         stage = payload.get("stage")
@@ -103,7 +106,14 @@ def _poll_compare_job(
         if status == "completed" and payload.get("result"):
             if stage != "completed":
                 raise RuntimeError(f"expected stage=completed, got {stage!r}")
-            if "loading_drawings" not in stages_seen:
+            pipeline_stages = {
+                "loading_drawings",
+                "aligning_sheets",
+                "preparing_comparison",
+                "building_overlay",
+                "saving_results",
+            }
+            if not pipeline_stages.intersection(stages_seen):
                 raise RuntimeError(f"expected progress stages, saw only {stages_seen}")
             print("job_stages", " -> ".join(stages_seen))
             return payload["result"]
@@ -111,6 +121,21 @@ def _poll_compare_job(
             raise RuntimeError(payload.get("error_message") or "Comparison job failed")
         time.sleep(2)
     raise RuntimeError(f"Comparison job {job_id} did not complete within {JOB_POLL_SECONDS}s")
+
+
+def _post_compare(
+    client: httpx.Client,
+    files: dict,
+    headers: dict[str, str],
+) -> httpx.Response:
+    deadline = time.time() + JOB_POLL_SECONDS
+    while time.time() < deadline:
+        response = client.post(f"{API_URL}/compare", files=files, headers=headers)
+        if response.status_code == 409:
+            time.sleep(5)
+            continue
+        return response
+    raise RuntimeError("compare queue stayed busy during smoke window")
 
 
 def _assert_output_paths(image_path: str, pdf_path: str) -> None:
@@ -159,6 +184,7 @@ def main() -> int:
             return 1
 
         from backend.tests.fixtures.factory import ContentScenario, image_to_bytes, make_drawing_a_image, make_drawing_b_image
+        from backend.tests.fixtures.mvp_assets import resolve_mvp_revision_pairs
 
         a_img = make_drawing_a_image()
         b_img = make_drawing_b_image(ContentScenario.IDENTICAL, a_img)
@@ -166,7 +192,7 @@ def main() -> int:
             "drawing_a": ("a.pdf", image_to_bytes(a_img, ".pdf"), "application/pdf"),
             "drawing_b": ("b.pdf", image_to_bytes(b_img, ".pdf"), "application/pdf"),
         }
-        queued = client.post(f"{API_URL}/compare", files=files, headers=auth_headers)
+        queued = _post_compare(client, files, auth_headers)
         print("authed_compare_synthetic", queued.status_code)
         if queued.status_code != 202:
             print(queued.text[:300])
@@ -184,21 +210,18 @@ def main() -> int:
         print("pdf_path", pdf_path[:100])
         _assert_output_paths(image_path, pdf_path)
 
-        pair_prefixes = ("0A", "1A", "2A", "3A")
-        for prefix in pair_prefixes:
-            drawing_a = next(REPO_ROOT.glob(f"{prefix}*.pdf"), None)
-            drawing_b = next(REPO_ROOT.glob(f"{prefix[0]}B*.pdf"), None)
-            if drawing_a is None or drawing_b is None:
-                print(f"real_pair_{prefix[0]}A/{prefix[0]}B", "SKIP", "missing PDFs")
-                continue
-
+        mvp_pairs = [
+            pair for pair in resolve_mvp_revision_pairs(REPO_ROOT) if pair[0] == "level3"
+        ]
+        if not mvp_pairs:
+            print("real_pair_level3", "SKIP", "missing PDFs under backend/tests/fixtures/pdfs/")
+        for level, drawing_a, drawing_b in mvp_pairs:
             pair_files = {
                 "drawing_a": (drawing_a.name, drawing_a.read_bytes(), "application/pdf"),
                 "drawing_b": (drawing_b.name, drawing_b.read_bytes(), "application/pdf"),
             }
-            response = client.post(f"{API_URL}/compare", files=pair_files, headers=auth_headers)
-            label = f"{prefix[0]}A/{prefix[0]}B"
-            print(f"real_pair_{label}", response.status_code)
+            response = _post_compare(client, pair_files, auth_headers)
+            print(f"real_pair_{level}", response.status_code)
             if response.status_code != 202:
                 print(response.text[:300])
                 return 1

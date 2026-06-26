@@ -116,17 +116,38 @@ def run_comparison_pipeline(
             max_dimension=MAX_IMAGE_DIMENSION,
         )
         report_stage(STAGE_PREPARING_COMPARISON)
-        drawing_a_crop, aligned_drawing_b_crop = _build_comparison_crops(
-            drawing_a_path,
-            drawing_b_path,
-            drawing_a_image,
-            drawing_b_image,
-            aligned_drawing_b,
-            comparison_bbox,
-            alignment_metadata=alignment_metadata,
-            alignment_dpi=alignment_dpi,
-            output_dpi=output_dpi,
-        )
+        if output_dpi <= alignment_dpi:
+            drawing_a_crop, aligned_drawing_b_crop = _build_comparison_crops(
+                drawing_a_path,
+                drawing_b_path,
+                drawing_a_image,
+                drawing_b_image,
+                aligned_drawing_b,
+                comparison_bbox,
+                alignment_metadata=alignment_metadata,
+                alignment_dpi=alignment_dpi,
+                output_dpi=output_dpi,
+            )
+        else:
+            drawing_a_size = (drawing_a_image.shape[1], drawing_a_image.shape[0])
+            drawing_b_size = (drawing_b_image.shape[1], drawing_b_image.shape[0])
+            drawing_a_image = None
+            drawing_b_image = None
+            aligned_drawing_b = None
+            gc.collect()
+            drawing_a_crop, aligned_drawing_b_crop = _build_comparison_crops(
+                drawing_a_path,
+                drawing_b_path,
+                None,
+                None,
+                None,
+                comparison_bbox,
+                alignment_metadata=alignment_metadata,
+                alignment_dpi=alignment_dpi,
+                output_dpi=output_dpi,
+                drawing_a_size=drawing_a_size,
+                drawing_b_size=drawing_b_size,
+            )
         aligned_drawing_b_crop = refine_crop_alignment(
             drawing_a_crop,
             aligned_drawing_b_crop,
@@ -217,31 +238,43 @@ def run_comparison_pipeline(
             },
         )
     finally:
-        del drawing_a_image
-        del drawing_b_image
-        if "aligned_drawing_b" in locals():
-            del aligned_drawing_b
+        drawing_a_image = None
+        drawing_b_image = None
+        aligned_drawing_b = None
         gc.collect()
 
 
 def _build_comparison_crops(
     drawing_a_path: Path,
     drawing_b_path: Path,
-    drawing_a_image: np.ndarray,
-    drawing_b_image: np.ndarray,
-    aligned_drawing_b: np.ndarray,
+    drawing_a_image: np.ndarray | None,
+    drawing_b_image: np.ndarray | None,
+    aligned_drawing_b: np.ndarray | None,
     comparison_bbox,
     *,
     alignment_metadata: AlignmentMetadata,
     alignment_dpi: int,
     output_dpi: int,
+    drawing_a_size: tuple[int, int] | None = None,
+    drawing_b_size: tuple[int, int] | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Build comparison crops, re-rasterizing from PDF when output DPI is higher."""
     if output_dpi <= alignment_dpi:
+        if drawing_a_image is None or aligned_drawing_b is None:
+            raise ValueError("Low-res comparison crops require aligned page images.")
         return (
             crop_image(drawing_a_image, comparison_bbox),
             crop_image(aligned_drawing_b, comparison_bbox),
         )
+
+    if drawing_a_size is None:
+        if drawing_a_image is None:
+            raise ValueError("Hi-res comparison crops require drawing A dimensions.")
+        drawing_a_size = (drawing_a_image.shape[1], drawing_a_image.shape[0])
+    if drawing_b_size is None:
+        if drawing_b_image is None:
+            raise ValueError("Hi-res comparison crops require drawing B dimensions.")
+        drawing_b_size = (drawing_b_image.shape[1], drawing_b_image.shape[0])
 
     scale = output_dpi / alignment_dpi
     drawing_a_crop = _pillow_to_bgr_array(
@@ -256,14 +289,14 @@ def _build_comparison_crops(
     homography = np.array(alignment_metadata.homography, dtype=np.float64)
     scaled_homography = scale_homography(homography, scale)
     output_size = (
-        int(round(drawing_a_image.shape[1] * scale)),
-        int(round(drawing_a_image.shape[0] * scale)),
+        int(round(drawing_a_size[0] * scale)),
+        int(round(drawing_a_size[1] * scale)),
     )
     drawing_b_full_bbox = BoundingBox(
         x=0,
         y=0,
-        width=int(drawing_b_image.shape[1]),
-        height=int(drawing_b_image.shape[0]),
+        width=drawing_b_size[0],
+        height=drawing_b_size[1],
     )
     drawing_b_highres = _pillow_to_bgr_array(
         rasterize_pdf_bbox(
@@ -278,10 +311,13 @@ def _build_comparison_crops(
         scaled_homography,
         output_size,
     )
+    del drawing_b_highres
     aligned_drawing_b_crop = crop_image(
         warped_drawing_b,
         scale_bbox(comparison_bbox, scale),
     )
+    warped_drawing_b = None
+    gc.collect()
     aligned_drawing_b_crop = _match_crop_size(aligned_drawing_b_crop, drawing_a_crop)
 
     return drawing_a_crop, aligned_drawing_b_crop
