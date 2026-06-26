@@ -91,6 +91,7 @@ def requeue_interrupted_jobs(db: Session) -> int:
     return len(jobs)
 
 
+def claim_next_job(db: Session) -> ComparisonJob | None:
     row = db.execute(
         text(
             """
