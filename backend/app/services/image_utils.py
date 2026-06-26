@@ -66,6 +66,18 @@ def clean_mask(mask: ImageArray, *, morphology_kernel_size: int) -> ImageArray:
     return cv2.morphologyEx(opened, cv2.MORPH_CLOSE, kernel, iterations=2)
 
 
+def close_mask(mask: ImageArray, *, morphology_kernel_size: int = 3) -> ImageArray:
+    """Close small gaps without opening, which erases thin separated linework."""
+    if morphology_kernel_size < 1 or morphology_kernel_size % 2 == 0:
+        raise ValueError("morphology_kernel_size must be a positive odd integer.")
+
+    kernel: ImageArray = cv2.getStructuringElement(
+        cv2.MORPH_RECT,
+        (morphology_kernel_size, morphology_kernel_size),
+    )
+    return cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+
 def _normalize_for_ink_detection(grayscale_image: ImageArray) -> ImageArray:
     """Boost local contrast on light PDF backgrounds so thin linework survives."""
     mean_value = float(np.mean(grayscale_image))
@@ -134,5 +146,47 @@ def build_foreground_mask(
         8,
     )
     adaptive_mask = clean_mask(adaptive_mask, morphology_kernel_size=morphology_kernel_size)
+
+    return cv2.bitwise_or(otsu_mask, adaptive_mask)
+
+
+def build_comparison_mask(
+    grayscale_image: ImageArray,
+    *,
+    threshold: int | None = None,
+    morphology_kernel_size: int = 3,
+) -> ImageArray:
+    """Build an ink mask for overlay diffing; preserves thin linework (no morph open)."""
+    normalized = _normalize_for_ink_detection(grayscale_image)
+
+    if threshold is not None:
+        if not 0 <= threshold <= 255:
+            raise ValueError("threshold must be between 0 and 255.")
+
+        mask = cv2.threshold(
+            normalized,
+            threshold,
+            255,
+            cv2.THRESH_BINARY_INV,
+        )[1]
+        return close_mask(mask, morphology_kernel_size=morphology_kernel_size)
+
+    _, otsu_mask = cv2.threshold(
+        normalized,
+        0,
+        255,
+        cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU,
+    )
+    otsu_mask = close_mask(otsu_mask, morphology_kernel_size=morphology_kernel_size)
+
+    adaptive_mask = cv2.adaptiveThreshold(
+        normalized,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV,
+        _adaptive_block_size(normalized),
+        8,
+    )
+    adaptive_mask = close_mask(adaptive_mask, morphology_kernel_size=morphology_kernel_size)
 
     return cv2.bitwise_or(otsu_mask, adaptive_mask)

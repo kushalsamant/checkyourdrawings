@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 
 from backend.app.config import MIN_INK_PIXEL_RATIO, OVERLAY_AGREE_DILATION_RADIUS
 from backend.app.services.alignment import AlignmentError
-from backend.app.services.image_utils import ImageArray, build_foreground_mask, convert_to_grayscale
+from backend.app.services.image_utils import ImageArray, build_comparison_mask, convert_to_grayscale
 
 CLASH_DILATION_RADIUS: Final[int] = 3
 
@@ -152,8 +152,8 @@ def _build_ink_masks(
 ) -> tuple[NDArray[np.bool_], NDArray[np.bool_]]:
     drawing_a_gray = convert_to_grayscale(drawing_a_image)
     drawing_b_gray = convert_to_grayscale(aligned_drawing_b_image)
-    a_mask = build_foreground_mask(drawing_a_gray) > 0
-    b_mask = build_foreground_mask(drawing_b_gray) > 0
+    a_mask = build_comparison_mask(drawing_a_gray) > 0
+    b_mask = build_comparison_mask(drawing_b_gray) > 0
     return a_mask, b_mask
 
 

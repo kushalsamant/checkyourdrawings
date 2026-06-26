@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from backend.app.services.alignment import AlignmentError, refine_crop_alignment, scale_homography, warp_drawing_with_homography
-from backend.app.services.image_utils import build_foreground_mask, convert_to_grayscale
+from backend.app.services.image_utils import build_comparison_mask, build_foreground_mask, convert_to_grayscale
 from backend.app.services.comparison_pipeline import _build_comparison_crops
 from backend.app.services.overlay_renderer import OverlayStats, validate_overlay_stats
 from backend.app.services.overlay_renderer import render_coordination_overlay
@@ -52,6 +52,18 @@ class TestInkDetection:
         grayscale = convert_to_grayscale(image)
         mask = build_foreground_mask(grayscale)
         assert int(mask.sum() / 255) > 1000
+
+    def test_comparison_mask_keeps_at_least_as_much_linework(self) -> None:
+        image = np.full((400, 600, 3), 245, dtype=np.uint8)
+        for y in range(100, 360, 8):
+            image[y, 120:520] = 80
+        for x in range(140, 500, 12):
+            image[180:220, x] = 80
+        grayscale = convert_to_grayscale(image)
+        foreground = int(build_foreground_mask(grayscale).sum() / 255)
+        comparison = int(build_comparison_mask(grayscale).sum() / 255)
+        assert comparison >= foreground
+        assert comparison > 1000
 
 
 class TestRefineCropAlignment:

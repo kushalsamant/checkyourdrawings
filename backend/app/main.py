@@ -34,11 +34,12 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     removed = prune_old_outputs(OUTPUT_DIR, max_age_hours=OUTPUT_MAX_AGE_HOURS)
     logger.info("Application startup complete. Pruned %d expired output file(s).", removed)
     if PLATFORM_DATABASE_URL:
-        from backend.app.database import _get_engine, _SessionLocal
+        import backend.app.database as database
 
-        _get_engine()
-        assert _SessionLocal is not None
-        db = _SessionLocal()
+        database._get_engine()
+        if database._SessionLocal is None:
+            raise RuntimeError("Failed to initialize database session factory.")
+        db = database._SessionLocal()
         try:
             pruned_jobs = prune_old_jobs(db, max_age_hours=OUTPUT_MAX_AGE_HOURS)
             if pruned_jobs:

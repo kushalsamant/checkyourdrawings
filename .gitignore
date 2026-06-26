@@ -23,6 +23,10 @@ frontend/vite.config.d.ts
 .env.deploy.tmp
 .env.deploy.local
 
+# Regenerated locally via scripts/render_level3_dilation_ab.py
+backend/tests/fixtures/expected/level3_overlay_dilation*.png
+backend/outputs/diagnosis/
+
 # Local test assets / logs
 assets/
 Demo_WhatsApp*.mp4
