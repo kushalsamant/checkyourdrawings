@@ -197,6 +197,7 @@ def get_compare_job(
     return CompareJobStatusResponse(
         job_id=str(job.id),
         status=job.status,
+        stage=job.stage,
         result=result,
         error_message=job.error_message if job.status == JOB_STATUS_FAILED else None,
     )

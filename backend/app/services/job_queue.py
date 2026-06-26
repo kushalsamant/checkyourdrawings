@@ -12,6 +12,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from backend.app.models.comparison_job import ComparisonJob
+from backend.app.services.compare_stages import STAGE_COMPLETED, STAGE_FAILED, STAGE_LOADING_DRAWINGS, STAGE_QUEUED
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,7 @@ def create_job(
         drawing_b_path=str(drawing_b_path),
         drawing_a_name=drawing_a_name,
         drawing_b_name=drawing_b_name,
+        stage=STAGE_QUEUED,
         created_at=datetime.now(UTC).replace(tzinfo=None),
     )
     db.add(job)
@@ -97,6 +99,7 @@ def claim_next_job(db: Session) -> ComparisonJob | None:
 
     now = datetime.now(UTC).replace(tzinfo=None)
     job.status = JOB_STATUS_RUNNING
+    job.stage = STAGE_LOADING_DRAWINGS
     job.started_at = now
     db.add(job)
     db.commit()
@@ -109,6 +112,7 @@ def mark_job_completed(db: Session, job: ComparisonJob, result: dict) -> None:
     job.status = JOB_STATUS_COMPLETED
     job.result = result
     job.error_message = None
+    job.stage = STAGE_COMPLETED
     job.completed_at = now
     db.add(job)
     db.commit()
@@ -123,6 +127,13 @@ def mark_job_failed(db: Session, job: ComparisonJob, error_message: str) -> None
     now = datetime.now(UTC).replace(tzinfo=None)
     job.status = JOB_STATUS_FAILED
     job.error_message = error_message
+    job.stage = STAGE_FAILED
     job.completed_at = now
+    db.add(job)
+    db.commit()
+
+
+def update_job_stage(db: Session, job: ComparisonJob, stage: str) -> None:
+    job.stage = stage
     db.add(job)
     db.commit()

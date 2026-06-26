@@ -1,0 +1,10 @@
+"""Compare job stage identifiers for live progress UI."""
+
+STAGE_QUEUED = "queued"
+STAGE_LOADING_DRAWINGS = "loading_drawings"
+STAGE_ALIGNING_SHEETS = "aligning_sheets"
+STAGE_PREPARING_COMPARISON = "preparing_comparison"
+STAGE_BUILDING_OVERLAY = "building_overlay"
+STAGE_SAVING_RESULTS = "saving_results"
+STAGE_COMPLETED = "completed"
+STAGE_FAILED = "failed"

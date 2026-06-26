@@ -22,6 +22,7 @@ class ComparisonJob(Base):
     drawing_b_name = Column(Text, nullable=False)
     result = Column(JSONB, nullable=True)
     error_message = Column(Text, nullable=True)
+    stage = Column(String(40), nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)

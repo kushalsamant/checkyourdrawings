@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { PlatformAppLayout } from "./components/PlatformAppLayout";
 import { CompareButton } from "./components/CompareButton";
+import { CompareProgress, type CompareStageId } from "./components/CompareProgress";
 import { ResultViewer } from "./components/ResultViewer";
 import { UploadPanel } from "./components/UploadPanel";
 import { trackEvent } from "./lib/analytics";
@@ -22,6 +23,7 @@ export default function App() {
   const [metadata, setMetadata] = useState<CompareMetadata | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isComparing, setIsComparing] = useState<boolean>(false);
+  const [compareStage, setCompareStage] = useState<CompareStageId | null>(null);
   const [allowance, setAllowance] = useState<AllowanceStatus | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -66,11 +68,21 @@ export default function App() {
     abortControllerRef.current = abortController;
 
     setIsComparing(true);
+    setCompareStage("queued");
     setError(null);
     trackEvent("compare_start");
 
     try {
-      const result = await uploadAndCompare(drawingA, drawingB, abortController.signal);
+      const result = await uploadAndCompare(
+        drawingA,
+        drawingB,
+        abortController.signal,
+        (stage) => {
+          if (stage) {
+            setCompareStage(stage as CompareStageId);
+          }
+        },
+      );
       setComparisonImageUrl(result.comparisonImageUrl);
       setComparisonPdfUrl(result.comparisonPdfUrl);
       setMetadata(result.metadata);
@@ -97,6 +109,7 @@ export default function App() {
       );
     } finally {
       setIsComparing(false);
+      setCompareStage(null);
     }
   }
 
@@ -118,9 +131,10 @@ export default function App() {
         />
 
         {isComparing && (
-          <p className="status" role="status">
-            Aligning and comparing… Large PDFs may take several minutes.
-          </p>
+          <div className="compare-progress-panel" role="status" aria-live="polite">
+            <CompareProgress stage={compareStage} />
+            <p className="compare-progress-note">Large PDFs may take several minutes.</p>
+          </div>
         )}
 
         <div className="compare-row">

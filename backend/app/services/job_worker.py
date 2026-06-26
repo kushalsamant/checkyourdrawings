@@ -8,7 +8,7 @@ from backend.app.database import _get_engine
 from backend.app.services.alignment import AlignmentError
 from backend.app.services.comparison_pipeline import run_comparison_pipeline
 from backend.app.services.image_limits import ImageTooLargeError
-from backend.app.services.job_queue import claim_next_job, mark_job_completed, mark_job_failed
+from backend.app.services.job_queue import claim_next_job, get_job, mark_job_completed, mark_job_failed, update_job_stage
 from backend.app.services.pdf_converter import FileConversionError, UnsupportedFileTypeError
 
 logger = logging.getLogger(__name__)
@@ -19,11 +19,26 @@ _stop_event: asyncio.Event | None = None
 
 
 def _run_job_sync(job) -> dict:
+    job_id = job.id
+
+    def on_stage(stage: str) -> None:
+        from sqlalchemy.orm import sessionmaker
+
+        session_factory = sessionmaker(bind=_get_engine())
+        db = session_factory()
+        try:
+            current = get_job(db, job_id)
+            if current is not None:
+                update_job_stage(db, current, stage)
+        finally:
+            db.close()
+
     result = run_comparison_pipeline(
         Path(job.drawing_a_path),
         Path(job.drawing_b_path),
         job.drawing_a_name,
         job.drawing_b_name,
+        on_stage=on_stage,
     )
     payload = result.model_dump(mode="json")
 

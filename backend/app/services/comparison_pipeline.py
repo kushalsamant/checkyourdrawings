@@ -1,4 +1,5 @@
 import gc
+from collections.abc import Callable
 from dataclasses import asdict
 from pathlib import Path
 from uuid import uuid4
@@ -27,6 +28,13 @@ from backend.app.services.alignment import (
     warp_drawing_with_homography,
 )
 from backend.app.services.compare_debug import save_debug_frame
+from backend.app.services.compare_stages import (
+    STAGE_ALIGNING_SHEETS,
+    STAGE_BUILDING_OVERLAY,
+    STAGE_LOADING_DRAWINGS,
+    STAGE_PREPARING_COMPARISON,
+    STAGE_SAVING_RESULTS,
+)
 from backend.app.services.content_detection import (
     BoundingBox,
     compute_overlap_bbox,
@@ -55,10 +63,17 @@ def run_comparison_pipeline(
     drawing_b_path: Path,
     drawing_a_name: str,
     drawing_b_name: str,
+    *,
+    on_stage: Callable[[str], None] | None = None,
 ) -> CompareResponse:
+    def report_stage(stage: str) -> None:
+        if on_stage is not None:
+            on_stage(stage)
+
     prune_old_outputs(OUTPUT_DIR, max_age_hours=OUTPUT_MAX_AGE_HOURS)
     debug_run_id = uuid4().hex[:8]
 
+    report_stage(STAGE_LOADING_DRAWINGS)
     drawing_a_image_pil, drawing_a_page = load_image_with_page_info(drawing_a_path)
     drawing_a_image = _pillow_to_bgr_array(drawing_a_image_pil)
     drawing_b_image = _pillow_to_bgr_array(load_image(drawing_b_path))
@@ -67,6 +82,7 @@ def run_comparison_pipeline(
     save_debug_frame("02_drawing_b", drawing_b_image, run_id=debug_run_id)
 
     try:
+        report_stage(STAGE_ALIGNING_SHEETS)
         aligned_drawing_b, alignment_metadata = align_drawing_b_to_a(
             drawing_a_image,
             drawing_b_image,
@@ -99,6 +115,7 @@ def run_comparison_pipeline(
             max_pixels=MAX_IMAGE_PIXELS,
             max_dimension=MAX_IMAGE_DIMENSION,
         )
+        report_stage(STAGE_PREPARING_COMPARISON)
         drawing_a_crop, aligned_drawing_b_crop = _build_comparison_crops(
             drawing_a_path,
             drawing_b_path,
@@ -117,6 +134,7 @@ def run_comparison_pipeline(
         save_debug_frame("04_drawing_a_crop", drawing_a_crop, run_id=debug_run_id)
         save_debug_frame("05_drawing_b_crop", aligned_drawing_b_crop, run_id=debug_run_id)
 
+        report_stage(STAGE_BUILDING_OVERLAY)
         overlay_map, overlay_stats = render_coordination_overlay(
             drawing_a_crop,
             aligned_drawing_b_crop,
@@ -137,6 +155,7 @@ def run_comparison_pipeline(
             low_confidence=alignment_confidence.status == "marginal",
         )
 
+        report_stage(STAGE_SAVING_RESULTS)
         output_id = uuid4().hex
         output_filename = f"comparison-{output_id}.png"
         pdf_filename = f"comparison-{output_id}.pdf"

@@ -221,6 +221,39 @@ button.toolbar-button:hover:not(:disabled) {
   background-color: #ff0000;
 }
 
+.compare-progress-panel {
+  margin: 0.75rem 0 1rem;
+}
+
+.compare-progress {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compare-progress__step {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.compare-progress__step--active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.compare-progress__step--complete {
+  color: var(--text-primary);
+}
+
+.compare-progress-note {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0;
+}
+
 @media (max-width: 760px) {
   .upload-panel,
   .metadata-grid {

@@ -88,6 +88,7 @@ class CompareJobCreatedResponse(BaseModel):
 class CompareJobStatusResponse(BaseModel):
     job_id: str
     status: str
+    stage: str | None = None
     result: CompareResponse | None = None
     error_message: str | None = None
 

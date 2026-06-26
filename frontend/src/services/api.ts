@@ -28,6 +28,7 @@ export interface CompareJobCreatedResponse {
 export interface CompareJobStatusResponse {
   job_id: string;
   status: "pending" | "running" | "completed" | "failed" | string;
+  stage?: string | null;
   result: CompareResponse | null;
   error_message: string | null;
 }
@@ -143,6 +144,7 @@ export async function uploadAndCompare(
   drawingA: File,
   drawingB: File,
   signal?: AbortSignal,
+  onStage?: (stage: string | null) => void,
 ): Promise<UploadAndCompareResult> {
   const formData = new FormData();
   formData.append("drawing_a", drawingA);
@@ -181,7 +183,7 @@ export async function uploadAndCompare(
       if (!queued.job_id) {
         throw new Error("Comparison response is missing job_id.");
       }
-      const completed = await pollCompareJob(queued.job_id, combinedSignal);
+      const completed = await pollCompareJob(queued.job_id, combinedSignal, onStage);
       const data = parseCompareResponse(completed);
       return {
         comparisonImageUrl: buildOutputUrl(data.image_path),
@@ -358,7 +360,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-async function pollCompareJob(jobId: string, signal: AbortSignal): Promise<CompareResponse> {
+async function pollCompareJob(
+  jobId: string,
+  signal: AbortSignal,
+  onStage?: (stage: string | null) => void,
+): Promise<CompareResponse> {
   const headers = buildCompareRequestHeaders();
 
   while (true) {
@@ -375,6 +381,7 @@ async function pollCompareJob(jobId: string, signal: AbortSignal): Promise<Compa
     }
 
     const payload = (await response.json()) as CompareJobStatusResponse;
+    onStage?.(payload.stage ?? null);
     if (payload.status === "completed" && payload.result) {
       return payload.result;
     }
