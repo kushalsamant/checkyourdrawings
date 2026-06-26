@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { AppLayout } from "./components/AppLayout";
+import { PlatformAppLayout } from "./components/PlatformAppLayout";
 import { CompareButton } from "./components/CompareButton";
 import { ResultViewer } from "./components/ResultViewer";
 import { UploadPanel } from "./components/UploadPanel";
@@ -101,7 +101,7 @@ export default function App() {
   }
 
   return (
-    <AppLayout>
+    <PlatformAppLayout>
         {allowance?.tier === "anonymous" &&
           allowance.remaining !== null &&
           allowance.total !== null && (
@@ -211,6 +211,6 @@ export default function App() {
             </dl>
           </section>
         )}
-    </AppLayout>
+    </PlatformAppLayout>
   );
 }

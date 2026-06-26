@@ -12,4 +12,5 @@ Committed copies of the local `assets/` revision set used for end-to-end compare
 Drawing A is the earlier revision; Drawing B is the later revision for each level.
 
 Tests: `backend/tests/test_mvp_asset_pdfs.py`  
-Batch runner: `python scripts/test_mvp_assets.py`
+Batch runner: `python scripts/test_mvp_assets.py`  
+Golden overlay (level3, human review): `backend/tests/fixtures/expected/level3_overlay.png`

@@ -89,12 +89,19 @@ class TestOverlayRenderer:
         height, width = drawing_a.shape[:2]
         aligned[shift:height, shift:width] = drawing_a[: height - shift, : width - shift]
 
-        output, stats = render_coordination_overlay(
-            drawing_a,
-            aligned,
-            drawing_a_name="a.pdf",
-            drawing_b_name="b.pdf",
-        )
+        import backend.app.services.overlay_renderer as overlay_renderer
+
+        original_radius = overlay_renderer.OVERLAY_AGREE_DILATION_RADIUS
+        try:
+            overlay_renderer.OVERLAY_AGREE_DILATION_RADIUS = 0
+            output, stats = render_coordination_overlay(
+                drawing_a,
+                aligned,
+                drawing_a_name="a.pdf",
+                drawing_b_name="b.pdf",
+            )
+        finally:
+            overlay_renderer.OVERLAY_AGREE_DILATION_RADIUS = original_radius
 
         content = _content_region(output, drawing_a.shape[0])
         assert stats.red_pixels > 0

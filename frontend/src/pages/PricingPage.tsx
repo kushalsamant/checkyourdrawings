@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { AppLayout } from "../components/AppLayout";
+import { PlatformAppLayout } from "../components/PlatformAppLayout";
 import { trackEvent } from "../lib/analytics";
 import { useAuth } from "../lib/auth-provider";
 import { fetchPricingTiers, startCheckout, type PricingTier } from "../services/pricing";
@@ -63,7 +63,7 @@ export function PricingPage() {
   }
 
   return (
-    <AppLayout
+    <PlatformAppLayout
       title="Need more active jobs?"
       subtitle="Pro adds queue priority. Upload limits stay the same."
     >
@@ -109,6 +109,6 @@ export function PricingPage() {
             {error}
           </p>
         )}
-    </AppLayout>
+    </PlatformAppLayout>
   );
 }

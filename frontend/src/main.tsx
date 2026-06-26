@@ -7,7 +7,10 @@ import { AboutPage } from "./pages/AboutPage";
 import { AccountPage } from "./pages/AccountPage";
 import { AuthCallback } from "./pages/AuthCallback";
 import { PricingPage } from "./pages/PricingPage";
-import "./styles.css";
+import "@kvshvl/platform-design-system/tokens.css";
+import "@kvshvl/platform-design-system/base.css";
+import "@kvshvl/platform-design-system/pages.css";
+import "./compare.css";
 
 const rootElement = document.getElementById("root");
 

@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@kvshvl/platform-design-system": "file:../../platform-design-system",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

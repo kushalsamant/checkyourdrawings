@@ -1,16 +1,16 @@
 import aboutMarkdown from "../../../index.md?raw";
 
-import { AppLayout } from "../components/AppLayout";
+import { PlatformAppLayout } from "../components/PlatformAppLayout";
 import { renderAboutMarkdown } from "../lib/about-markdown";
 
 export function AboutPage() {
   return (
-    <AppLayout
-      title="Drawing revisions hide their changes."
-      subtitle="You align sheets and compare by eye."
-      shellClassName="landing-shell"
+    <PlatformAppLayout
+      title="About"
+      subtitle="Visual comparison for two drawing PDFs."
+      shellVariant="content"
     >
-      {renderAboutMarkdown(aboutMarkdown)}
-    </AppLayout>
+      <div className="landing-content">{renderAboutMarkdown(aboutMarkdown)}</div>
+    </PlatformAppLayout>
   );
 }

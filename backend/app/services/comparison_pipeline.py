@@ -22,13 +22,17 @@ from backend.app.services.alignment import (
     evaluate_alignment_confidence,
     max_features_for_image,
     refine_crop_alignment,
+    scale_homography,
     use_ecc_refinement_for_images,
+    warp_drawing_with_homography,
 )
 from backend.app.services.compare_debug import save_debug_frame
 from backend.app.services.content_detection import (
+    BoundingBox,
     compute_overlap_bbox,
     crop_image,
     detect_content_bbox,
+    scale_bbox,
     union_bbox,
 )
 from backend.app.services.image_limits import choose_output_dpi
@@ -99,6 +103,7 @@ def run_comparison_pipeline(
             drawing_a_path,
             drawing_b_path,
             drawing_a_image,
+            drawing_b_image,
             aligned_drawing_b,
             comparison_bbox,
             alignment_metadata=alignment_metadata,
@@ -204,6 +209,7 @@ def _build_comparison_crops(
     drawing_a_path: Path,
     drawing_b_path: Path,
     drawing_a_image: np.ndarray,
+    drawing_b_image: np.ndarray,
     aligned_drawing_b: np.ndarray,
     comparison_bbox,
     *,
@@ -211,13 +217,14 @@ def _build_comparison_crops(
     alignment_dpi: int,
     output_dpi: int,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Build comparison crops, re-rasterizing A when output DPI is higher."""
+    """Build comparison crops, re-rasterizing from PDF when output DPI is higher."""
     if output_dpi <= alignment_dpi:
         return (
             crop_image(drawing_a_image, comparison_bbox),
             crop_image(aligned_drawing_b, comparison_bbox),
         )
 
+    scale = output_dpi / alignment_dpi
     drawing_a_crop = _pillow_to_bgr_array(
         rasterize_pdf_bbox(
             drawing_a_path,
@@ -227,21 +234,46 @@ def _build_comparison_crops(
         )
     )
 
-    aligned_drawing_b_crop_low = crop_image(aligned_drawing_b, comparison_bbox)
-    target_size = (drawing_a_crop.shape[1], drawing_a_crop.shape[0])
-    if (
-        aligned_drawing_b_crop_low.shape[1] != target_size[0]
-        or aligned_drawing_b_crop_low.shape[0] != target_size[1]
-    ):
-        aligned_drawing_b_crop = cv2.resize(
-            aligned_drawing_b_crop_low,
-            target_size,
-            interpolation=cv2.INTER_CUBIC,
+    homography = np.array(alignment_metadata.homography, dtype=np.float64)
+    scaled_homography = scale_homography(homography, scale)
+    output_size = (
+        int(round(drawing_a_image.shape[1] * scale)),
+        int(round(drawing_a_image.shape[0] * scale)),
+    )
+    drawing_b_full_bbox = BoundingBox(
+        x=0,
+        y=0,
+        width=int(drawing_b_image.shape[1]),
+        height=int(drawing_b_image.shape[0]),
+    )
+    drawing_b_highres = _pillow_to_bgr_array(
+        rasterize_pdf_bbox(
+            drawing_b_path,
+            drawing_b_full_bbox,
+            source_dpi=alignment_dpi,
+            target_dpi=output_dpi,
         )
-    else:
-        aligned_drawing_b_crop = aligned_drawing_b_crop_low
+    )
+    warped_drawing_b = warp_drawing_with_homography(
+        drawing_b_highres,
+        scaled_homography,
+        output_size,
+    )
+    aligned_drawing_b_crop = crop_image(
+        warped_drawing_b,
+        scale_bbox(comparison_bbox, scale),
+    )
+    aligned_drawing_b_crop = _match_crop_size(aligned_drawing_b_crop, drawing_a_crop)
 
     return drawing_a_crop, aligned_drawing_b_crop
+
+
+def _match_crop_size(crop: np.ndarray, reference: np.ndarray) -> np.ndarray:
+    """Resize a crop when PDF raster rounding leaves a 1px size mismatch."""
+    target_size = (reference.shape[1], reference.shape[0])
+    if crop.shape[1] == target_size[0] and crop.shape[0] == target_size[1]:
+        return crop
+    return cv2.resize(crop, target_size, interpolation=cv2.INTER_CUBIC)
 
 
 def _pillow_to_bgr_array(image: Image.Image) -> np.ndarray:

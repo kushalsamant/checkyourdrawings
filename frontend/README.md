@@ -14,6 +14,17 @@ Manual routing in `src/main.tsx` (no React Router):
 | `/account` | Plan and subscription (`AccountPage.tsx`) |
 | `/auth/callback` | OAuth return from [auth.kvshvl.in](https://auth.kvshvl.in) |
 
+## Styling
+
+Platform chrome comes from [`platform-design-system`](../../platform-design-system):
+
+| Import | Purpose |
+|--------|---------|
+| `tokens.css` + `base.css` + `pages.css` | Shared layout, header, pricing, account, about |
+| `src/compare.css` | Compare UI only (upload, viewer, overlay legend) |
+
+Nav links live in `src/lib/site-chrome.ts`. Pages use `PlatformAppLayout` (wraps package `AppLayout` + auth actions).
+
 ## User-facing copy
 
 Copy follows the workspace **6×6 rule** (short lines, pain-first, decision-support — no guarantee language).
@@ -21,8 +32,8 @@ Copy follows the workspace **6×6 rule** (short lines, pain-first, decision-supp
 | Location | What |
 |----------|------|
 | [index.md](../index.md) | About page body (markdown → `about-markdown.tsx`) |
-| `src/pages/*Page.tsx` | Page `title` / `subtitle` passed to `AppHeader` |
-| `src/components/AppHeader.tsx` | Default compare-page header |
+| `src/pages/*Page.tsx` | Page `title` / `subtitle` passed to `PlatformAppLayout` |
+| `src/lib/site-chrome.ts` | Header nav links |
 | `src/App.tsx`, `src/components/*` | Compare flow labels, errors, empty states |
 | `frontend/index.html` | Document title and meta description |
 

@@ -3,9 +3,11 @@ import pytest
 
 from backend.app.services.alignment import AlignmentError, refine_crop_alignment, scale_homography, warp_drawing_with_homography
 from backend.app.services.image_utils import build_foreground_mask, convert_to_grayscale
+from backend.app.services.comparison_pipeline import _build_comparison_crops
 from backend.app.services.overlay_renderer import OverlayStats, validate_overlay_stats
 from backend.app.services.overlay_renderer import render_coordination_overlay
 from backend.tests.fixtures.factory import bgr_array_from_image, make_drawing_a_image
+from backend.tests.fixtures.mvp_assets import MVP_REVISION_PAIRS, require_mvp_assets
 
 
 class TestScaleHomography:
@@ -103,3 +105,60 @@ class TestValidateOverlayStats:
     def test_sufficient_ink_passes(self) -> None:
         stats = OverlayStats(orange_pixels=0, blue_pixels=0, green_pixels=2_000, red_pixels=0)
         validate_overlay_stats(stats, crop_pixel_count=100_000, min_ink_pixel_ratio=0.001)
+
+
+class TestHiResComparisonCrops:
+    def test_level3_hi_res_crops_share_dimensions(self) -> None:
+        require_mvp_assets()
+        from backend.app.config import MAX_IMAGE_DIMENSION, MAX_IMAGE_PIXELS, PDF_DPI
+        from backend.app.services.alignment import (
+            align_drawing_b_to_a,
+            max_features_for_image,
+            use_ecc_refinement_for_images,
+        )
+        from backend.app.services.comparison_pipeline import _pillow_to_bgr_array
+        from backend.app.services.content_detection import detect_content_bbox, union_bbox
+        from backend.app.services.image_limits import choose_output_dpi
+        from backend.app.services.pdf_converter import load_image, load_image_with_page_info
+
+        _, drawing_a, drawing_b = next(
+            pair for pair in MVP_REVISION_PAIRS if pair[0] == "level3"
+        )
+        drawing_a_pil, drawing_a_page = load_image_with_page_info(drawing_a)
+        drawing_a_image = _pillow_to_bgr_array(drawing_a_pil)
+        drawing_b_image = _pillow_to_bgr_array(load_image(drawing_b))
+        aligned_drawing_b, alignment_metadata = align_drawing_b_to_a(
+            drawing_a_image,
+            drawing_b_image,
+            max_features=max_features_for_image(drawing_a_image),
+            ecc_refinement=use_ecc_refinement_for_images(drawing_a_image, drawing_b_image),
+        )
+        comparison_bbox = union_bbox(
+            detect_content_bbox(drawing_a_image),
+            detect_content_bbox(aligned_drawing_b),
+        )
+        output_dpi = choose_output_dpi(
+            comparison_bbox.width,
+            comparison_bbox.height,
+            alignment_dpi=drawing_a_page.raster_dpi,
+            preferred_dpi=PDF_DPI,
+            max_pixels=MAX_IMAGE_PIXELS,
+            max_dimension=MAX_IMAGE_DIMENSION,
+        )
+        assert output_dpi > drawing_a_page.raster_dpi
+
+        drawing_a_crop, drawing_b_crop = _build_comparison_crops(
+            drawing_a,
+            drawing_b,
+            drawing_a_image,
+            drawing_b_image,
+            aligned_drawing_b,
+            comparison_bbox,
+            alignment_metadata=alignment_metadata,
+            alignment_dpi=drawing_a_page.raster_dpi,
+            output_dpi=output_dpi,
+        )
+
+        assert drawing_a_crop.shape == drawing_b_crop.shape
+        assert drawing_a_crop.shape[0] > 0
+        assert drawing_a_crop.shape[1] > 0

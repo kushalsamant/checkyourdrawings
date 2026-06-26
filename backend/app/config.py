@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     min_overlap_area_ratio: float = 0.05
     alignment_marginal_inlier_ratio: float = 0.55
     alignment_ecc_refinement: bool = True
-    overlay_agree_dilation_radius: int = 2
+    overlay_agree_dilation_radius: int = 3
     crop_ecc_max_pixels: int = 4_000_000
     auth_required: bool = False
     anonymous_allowance_total: int = 5  # lifetime successful compares before sign-in (anonymous only)

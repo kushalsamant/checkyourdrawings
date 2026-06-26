@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { AppLayout } from "../components/AppLayout";
+import { PlatformAppLayout } from "../components/PlatformAppLayout";
 import { trackEvent } from "../lib/analytics";
 import { useAuth } from "../lib/auth-provider";
 import {
@@ -71,7 +71,7 @@ export function AccountPage() {
   const expiresLabel = formatDate(account?.subscription_expires_at ?? null);
 
   return (
-    <AppLayout title="Account" subtitle="Your plan and subscription.">
+    <PlatformAppLayout title="Account" subtitle="Your plan and subscription.">
         {authLoading || loading ? (
           <p role="status">Loading…</p>
         ) : !user ? (
@@ -144,6 +144,6 @@ export function AccountPage() {
             {error}
           </p>
         )}
-    </AppLayout>
+    </PlatformAppLayout>
   );
 }

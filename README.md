@@ -12,6 +12,7 @@ Compare two architectural drawing PDFs and get an auto-aligned coordination over
 | [backend/](backend/) | FastAPI compare API (async jobs + Bunny outputs) |
 | [index.md](index.md) | About page content (rendered at `/about`) |
 | [migrations/](migrations/) | Postgres job queue schema |
+| [docs/KVSHVL_APP_TEMPLATE.md](docs/KVSHVL_APP_TEMPLATE.md) | Reusable KVSHVL app pattern |
 | [auth](https://github.com/kushalsamant/auth) (separate repo) | Google sign-in at `auth.kvshvl.in` |
 | [platform-api](https://github.com/kushalsamant/platform-api) | Accounts, entitlements, Razorpay |
 
@@ -55,6 +56,12 @@ Copy env from [env.example](env.example) into `.env.deploy.local` (never commit 
 ```powershell
 # Backend (from backend/)
 ..\.venv\Scripts\pytest -q
+
+# All MVP revision pairs (committed fixtures)
+python scripts\test_mvp_assets.py
+
+# Single pair with debug frames
+python scripts\diagnose_compare.py backend\tests\fixtures\pdfs\level3_a.pdf backend\tests\fixtures\pdfs\level3_b.pdf --debug
 
 # Frontend (from frontend/)
 npm test
