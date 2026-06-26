@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -210,10 +211,19 @@ def main() -> int:
         print("pdf_path", pdf_path[:100])
         _assert_output_paths(image_path, pdf_path)
 
-        mvp_pairs = [
-            pair for pair in resolve_mvp_revision_pairs(REPO_ROOT) if pair[0] == "level3"
-        ]
-        if not mvp_pairs:
+        include_mvp = os.environ.get("SMOKE_INCLUDE_MVP_PDF", "").lower() in ("1", "true", "yes")
+        if not include_mvp:
+            print(
+                "real_pair_level3",
+                "SKIP",
+                "MVP PDFs OOM on Render free tier; set SMOKE_INCLUDE_MVP_PDF=1 to run",
+            )
+        mvp_pairs = (
+            [pair for pair in resolve_mvp_revision_pairs(REPO_ROOT) if pair[0] == "level3"]
+            if include_mvp
+            else []
+        )
+        if include_mvp and not mvp_pairs:
             print("real_pair_level3", "SKIP", "missing PDFs under backend/tests/fixtures/pdfs/")
         for level, drawing_a, drawing_b in mvp_pairs:
             pair_files = {
