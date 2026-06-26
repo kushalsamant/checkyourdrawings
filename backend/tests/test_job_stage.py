@@ -1,8 +1,8 @@
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from backend.app.services.compare_stages import STAGE_BUILDING_OVERLAY, STAGE_COMPLETED, STAGE_QUEUED
-from backend.app.services.job_queue import JOB_STATUS_PENDING, JOB_STATUS_RUNNING, create_job, mark_job_completed, requeue_interrupted_jobs, update_job_stage
+from backend.app.services.compare_stages import STAGE_BUILDING_OVERLAY, STAGE_COMPLETED, STAGE_FAILED, STAGE_QUEUED
+from backend.app.services.job_queue import JOB_STATUS_RUNNING, create_job, fail_interrupted_jobs, mark_job_completed, update_job_stage
 
 
 def test_update_job_stage_persists() -> None:
@@ -41,17 +41,16 @@ def test_mark_job_completed_sets_completed_stage() -> None:
     assert mock_job.stage == STAGE_COMPLETED
 
 
-def test_requeue_interrupted_jobs_resets_running_to_pending() -> None:
+def test_fail_interrupted_jobs_marks_running_as_failed() -> None:
     mock_db = MagicMock()
     running_job = MagicMock()
     running_job.status = JOB_STATUS_RUNNING
-    running_job.started_at = object()
+    running_job.anon_session_id = None
     mock_db.query.return_value.filter.return_value.all.return_value = [running_job]
 
-    count = requeue_interrupted_jobs(mock_db)
+    count = fail_interrupted_jobs(mock_db)
 
     assert count == 1
-    assert running_job.status == JOB_STATUS_PENDING
-    assert running_job.stage == STAGE_QUEUED
-    assert running_job.started_at is None
+    assert running_job.status == "failed"
+    assert running_job.stage == STAGE_FAILED
     mock_db.commit.assert_called()

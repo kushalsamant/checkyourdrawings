@@ -44,9 +44,10 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             pruned_jobs = prune_old_jobs(db, max_age_hours=OUTPUT_MAX_AGE_HOURS)
             if pruned_jobs:
                 logger.info("Pruned %d expired comparison job(s).", pruned_jobs)
-            from backend.app.services.job_queue import requeue_interrupted_jobs
+            from backend.app.services.job_queue import fail_interrupted_jobs, fail_jobs_with_missing_uploads
 
-            requeue_interrupted_jobs(db)
+            fail_interrupted_jobs(db)
+            fail_jobs_with_missing_uploads(db)
         finally:
             db.close()
     await start_worker()

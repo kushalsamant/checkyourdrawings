@@ -75,20 +75,41 @@ def get_job(db: Session, job_id: UUID) -> ComparisonJob | None:
     return db.query(ComparisonJob).filter(ComparisonJob.id == job_id).first()
 
 
-def requeue_interrupted_jobs(db: Session) -> int:
-    """Return orphaned running jobs to pending after deploy or OOM restart."""
-    jobs = db.query(ComparisonJob).filter(ComparisonJob.status == JOB_STATUS_RUNNING).all()
-    if not jobs:
-        return 0
+def fail_interrupted_jobs(db: Session) -> int:
+    """Fail orphaned running jobs after deploy or OOM restart.
 
+    Upload paths live on ephemeral disk and do not survive a restart, so requeueing
+    would only produce immediate file-not-found failures.
+    """
+    jobs = db.query(ComparisonJob).filter(ComparisonJob.status == JOB_STATUS_RUNNING).all()
+    failed = 0
     for job in jobs:
-        job.status = JOB_STATUS_PENDING
-        job.stage = STAGE_QUEUED
-        job.started_at = None
-        db.add(job)
-    db.commit()
-    logger.info("Requeued %d interrupted comparison job(s).", len(jobs))
-    return len(jobs)
+        mark_job_failed(db, job, "Comparison interrupted by service restart. Try again.")
+        failed += 1
+    if failed:
+        logger.info("Failed %d interrupted comparison job(s).", failed)
+    return failed
+
+
+def fail_jobs_with_missing_uploads(db: Session) -> int:
+    """Fail queued jobs whose upload files are gone after a container restart."""
+    jobs = db.query(ComparisonJob).filter(
+        ComparisonJob.status.in_((JOB_STATUS_PENDING, JOB_STATUS_RUNNING))
+    ).all()
+    failed = 0
+    for job in jobs:
+        if Path(job.drawing_a_path).is_file() and Path(job.drawing_b_path).is_file():
+            continue
+        mark_job_failed(db, job, "Upload files expired after service restart. Try again.")
+        failed += 1
+    if failed:
+        logger.info("Failed %d comparison job(s) with missing uploads.", failed)
+    return failed
+
+
+def requeue_interrupted_jobs(db: Session) -> int:
+    """Deprecated alias — uploads do not survive Render restarts."""
+    return fail_interrupted_jobs(db)
 
 
 def claim_next_job(db: Session) -> ComparisonJob | None:
