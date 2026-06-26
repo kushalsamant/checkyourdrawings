@@ -19,6 +19,15 @@ API_URL = "https://checkyourdrawings.onrender.com"
 PLATFORM_API_URL = "https://platform-api-1y5i.onrender.com"
 SMOKE_EMAIL = "checkyourdrawings-smoke@kvshvl.in"
 JOB_POLL_SECONDS = 180
+EXPECTED_PROGRESS_STAGES = (
+    "queued",
+    "loading_drawings",
+    "aligning_sheets",
+    "preparing_comparison",
+    "building_overlay",
+    "saving_results",
+    "completed",
+)
 
 
 def _sign_platform_jwt(*, email: str, secret: str, issuer: str) -> str:
@@ -80,12 +89,23 @@ def _poll_compare_job(
     headers: dict[str, str],
 ) -> dict:
     deadline = time.time() + JOB_POLL_SECONDS
+    stages_seen: list[str] = []
     while time.time() < deadline:
         response = client.get(f"{API_URL}/jobs/{job_id}", headers=headers, timeout=60)
         response.raise_for_status()
         payload = response.json()
+        stage = payload.get("stage")
+        if isinstance(stage, str) and (not stages_seen or stages_seen[-1] != stage):
+            if stage not in EXPECTED_PROGRESS_STAGES and stage != "failed":
+                raise RuntimeError(f"unexpected job stage {stage!r}")
+            stages_seen.append(stage)
         status = payload.get("status")
         if status == "completed" and payload.get("result"):
+            if stage != "completed":
+                raise RuntimeError(f"expected stage=completed, got {stage!r}")
+            if "loading_drawings" not in stages_seen:
+                raise RuntimeError(f"expected progress stages, saw only {stages_seen}")
+            print("job_stages", " -> ".join(stages_seen))
             return payload["result"]
         if status == "failed":
             raise RuntimeError(payload.get("error_message") or "Comparison job failed")
