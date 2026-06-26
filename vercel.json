@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm ci --prefix frontend",
+  "installCommand": "bash scripts/vercel-install.sh",
   "buildCommand": "npm run build --prefix frontend",
   "outputDirectory": "frontend/dist",
   "framework": "vite",
