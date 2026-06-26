@@ -75,7 +75,22 @@ def get_job(db: Session, job_id: UUID) -> ComparisonJob | None:
     return db.query(ComparisonJob).filter(ComparisonJob.id == job_id).first()
 
 
-def claim_next_job(db: Session) -> ComparisonJob | None:
+def requeue_interrupted_jobs(db: Session) -> int:
+    """Return orphaned running jobs to pending after deploy or OOM restart."""
+    jobs = db.query(ComparisonJob).filter(ComparisonJob.status == JOB_STATUS_RUNNING).all()
+    if not jobs:
+        return 0
+
+    for job in jobs:
+        job.status = JOB_STATUS_PENDING
+        job.stage = STAGE_QUEUED
+        job.started_at = None
+        db.add(job)
+    db.commit()
+    logger.info("Requeued %d interrupted comparison job(s).", len(jobs))
+    return len(jobs)
+
+
     row = db.execute(
         text(
             """
