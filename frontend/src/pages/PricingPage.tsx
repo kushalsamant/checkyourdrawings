@@ -79,11 +79,6 @@ export function PricingPage() {
               <strong>Pro:</strong> Ten active jobs. Queue priority. Same 100 MB limit.
             </li>
           </ul>
-          <p>
-            <strong>KVSHVL Pro is one subscription per account.</strong> It is not limited to
-            this app. Pro today includes <strong>Check Your Drawings</strong> and{" "}
-            <strong>Coherence</strong>.
-          </p>
         </section>
 
         {tiers.length > 0 ? (
@@ -114,6 +109,12 @@ export function PricingPage() {
             {error}
           </p>
         )}
+
+        <p>
+          <strong>KVSHVL Pro is one subscription per account.</strong> It is not limited to
+          this app. Pro today includes <strong>Check Your Drawings</strong> and{" "}
+          <strong>Coherence</strong>.
+        </p>
     </PlatformAppLayout>
   );
 }
