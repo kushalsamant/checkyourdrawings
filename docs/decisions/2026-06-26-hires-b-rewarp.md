@@ -254,8 +254,8 @@ Exact counts may shift slightly if `OVERLAY_AGREE_DILATION_RADIUS` changes (2 in
 
 ### Manual verification remaining
 
-- Side-by-side visual check vs `assets/expected-comparison-result3.png` (not wired to CI).
-- **Unknown** — whether post-`347d947` uncommitted `rasterize_pdf_bbox` + warp path was regression-tested.
+- ~~Side-by-side visual check vs golden overlay~~ — **Done:** committed `level3_overlay.png` + `test_level3_golden_overlay.py` (palette-label regression in CI).
+- ~~Unknown — post-`347d947` `rasterize_pdf_bbox` + warp path~~ — **Done:** covered by `test_all_mvp_revision_pairs_produce_usable_overlay` and level3 golden test on current `main`.
 
 ---
 

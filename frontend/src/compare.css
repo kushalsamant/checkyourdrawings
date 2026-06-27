@@ -264,4 +264,23 @@ button.toolbar-button:hover:not(:disabled) {
     margin-left: 0;
     width: 100%;
   }
+
+  .compare-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .compare-button {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .image-stage {
+    max-height: 55vh;
+    padding: 0.5rem;
+  }
+
+  .metadata-grid dd {
+    font-size: 1.15rem;
+  }
 }
