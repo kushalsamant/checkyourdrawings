@@ -13,6 +13,7 @@ Compare two architectural drawing PDFs and get an auto-aligned coordination over
 | [index.md](index.md) | About page content (rendered at `/about`) |
 | [migrations/](migrations/) | Postgres job queue schema |
 | [docs/KVSHVL_APP_TEMPLATE.md](docs/KVSHVL_APP_TEMPLATE.md) | Reusable KVSHVL app pattern |
+| [docs/RENDER_OPS.md](docs/RENDER_OPS.md) | Render service IDs, env deploy, cutover notes |
 | [auth](https://github.com/kushalsamant/auth) (separate repo) | Google sign-in at `auth.kvshvl.in` |
 | [platform-api](https://github.com/kushalsamant/platform-api) | Accounts, entitlements, Razorpay |
 
@@ -76,4 +77,4 @@ CI runs both on push/PR (see [.github/workflows/ci.yml](.github/workflows/ci.yml
 - **Platform:** `platform-api-1y5i.onrender.com`
 - **Auth:** `auth.kvshvl.in`
 
-More detail: [backend/README.md](backend/README.md).
+More detail: [backend/README.md](backend/README.md) · [docs/RENDER_OPS.md](docs/RENDER_OPS.md).
