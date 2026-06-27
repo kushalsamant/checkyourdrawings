@@ -59,6 +59,7 @@ Do not use legacy abbreviations in new apps.
 
 ### 2. Frontend (Vercel)
 
+- GoDaddy DNS: **A** `<app>` → `76.76.21.21` (match `auth`, `coherence`; no `*.vercel-dns-*.com` CNAME on app subdomains)
 - React + Vite SPA
 - `VITE_KVSHVL_AUTH_URL` → sign-in redirect
 - `VITE_PLATFORM_API_URL` → account + checkout
