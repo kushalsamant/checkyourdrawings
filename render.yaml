@@ -3,10 +3,10 @@
 
 services:
   - type: web
-    name: checkyourdrawings
+    name: checkyourdrawings-api
     runtime: docker
     dockerfilePath: ./Dockerfile
-    healthCheckPath: /health
+    healthCheckPath: /health/ready
     envVars:
       - key: PYTHONPATH
         value: /app

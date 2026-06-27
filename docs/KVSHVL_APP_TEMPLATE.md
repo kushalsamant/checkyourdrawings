@@ -51,7 +51,8 @@ flowchart LR
 | Context | Example |
 |---------|---------|
 | User-facing product name | Check Your Drawings |
-| Repo / Render service | `checkyourdrawings` |
+| Repo | `checkyourdrawings` |
+| Render service | `checkyourdrawings-api` |
 | Entitlement slug | `GET /entitlements?app=checkyourdrawings` |
 | Bunny prefix | `checkyourdrawings/` |
 

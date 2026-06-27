@@ -74,7 +74,7 @@ VITE_KVSHVL_AUTH_URL=https://auth.kvshvl.in
 Vercel sets env vars; locally:
 
 ```powershell
-$env:VITE_API_BASE_URL="https://checkyourdrawings.onrender.com"
+$env:VITE_API_BASE_URL="https://checkyourdrawings-api.onrender.com"
 $env:VITE_KVSHVL_AUTH_URL="https://auth.kvshvl.in"
 npm run build
 ```

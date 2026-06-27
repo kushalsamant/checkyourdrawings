@@ -16,7 +16,7 @@ from env_file import parse_env_file
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 SECRETS_FILE = REPO_ROOT / ".env.deploy.local"
-API_URL = "https://checkyourdrawings.onrender.com"
+API_URL = "https://checkyourdrawings-api.onrender.com"
 PLATFORM_API_URL = "https://platform-api-1y5i.onrender.com"
 SMOKE_EMAIL = "checkyourdrawings-smoke@kvshvl.in"
 JOB_POLL_SECONDS = 180
@@ -66,7 +66,7 @@ def _load_jwt_config() -> tuple[str, str]:
     )
     headers = {"Authorization": f"Bearer {render_key}"}
     response = httpx.get(
-        "https://api.render.com/v1/services/srv-d8qmgpr7uimc73e5bp9g/env-vars",
+        "https://api.render.com/v1/services/srv-d8viasj7uimc738g0h0g/env-vars",
         headers=headers,
         timeout=60,
     )

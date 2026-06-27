@@ -12,8 +12,31 @@ from env_file import parse_env_file
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 RENDER_KEY_PATH = Path.home() / ".render" / "cli.yaml"
-SERVICE_ID = "srv-d8qmgpr7uimc73e5bp9g"
+SERVICE_ID = "srv-d8viasj7uimc738g0h0g"
 SECRETS_FILE = REPO_ROOT / ".env.deploy.local"
+PLATFORM_SECRETS_FILE = REPO_ROOT.parent / "platform-api" / ".env.deploy.local"
+BUNNY_SECRETS_FILE = REPO_ROOT / ".env.bunnynet"
+
+DEFAULT_RENDER_ENV: dict[str, str] = {
+    "AUTH_REQUIRED": "true",
+    "ANONYMOUS_ALLOWANCE_TOTAL": "5",
+    "MAX_ANON_ACTIVE_JOBS": "1",
+    "MAX_FREE_ACTIVE_JOBS": "1",
+    "MAX_PRO_ACTIVE_JOBS": "10",
+    "CORS_ORIGINS": (
+        "https://checkyourdrawings.kvshvl.in,"
+        "https://www.checkyourdrawings.kvshvl.in,"
+        "http://localhost:5173"
+    ),
+    "COMPARE_MAX_RASTER_PIXELS": "4000000",
+    "COMPARE_MAX_WORKERS": "1",
+    "PYTHONPATH": "/app",
+    "PLATFORM_API_URL": "https://platform-api-1y5i.onrender.com",
+    "BUNNY_STORAGE_REGION": "ny",
+    "BUNNY_STORAGE_PREFIX": "checkyourdrawings",
+    "BUNNY_CDN_HOSTNAME": "kvshvl-platform-cdn.b-cdn.net",
+    "BUNNY_SIGNED_URL_TTL_SECONDS": "86400",
+}
 
 RENDER_KEYS = (
     "AUTH_REQUIRED",
@@ -56,16 +79,58 @@ def _load_render_key() -> str:
     raise RuntimeError("Render API key not found in cli.yaml")
 
 
-def main() -> int:
-    if not SECRETS_FILE.is_file():
-        print(f"Missing secrets file: {SECRETS_FILE}", file=sys.stderr)
-        return 1
+def _build_render_env() -> dict[str, str]:
+    merged = dict(DEFAULT_RENDER_ENV)
+    for path in (PLATFORM_SECRETS_FILE, BUNNY_SECRETS_FILE, SECRETS_FILE):
+        if path.is_file():
+            merged.update(parse_env_file(path))
 
-    env = parse_env_file(SECRETS_FILE)
-    required = ("AUTH_REQUIRED", "CORS_ORIGINS", "PLATFORM_JWT_SECRET", "PLATFORM_JWT_ISSUER")
+    legacy_auth = merged.pop("CYD_AUTH_REQUIRED", None)
+    legacy_cors = merged.pop("CYD_CORS_ORIGINS", None)
+    if legacy_auth is not None and not merged.get("AUTH_REQUIRED"):
+        merged["AUTH_REQUIRED"] = legacy_auth
+    if legacy_cors and not merged.get("CORS_ORIGINS"):
+        merged["CORS_ORIGINS"] = legacy_cors
+
+    if not merged.get("BUNNY_STORAGE_ZONE"):
+        merged["BUNNY_STORAGE_ZONE"] = merged.get("STORAGE_ZONE_NAME", "")
+    if not merged.get("BUNNY_STORAGE_ACCESS_KEY"):
+        merged["BUNNY_STORAGE_ACCESS_KEY"] = merged.get("STORAGE_ZONE_PASSWORD", "")
+
+    if not merged.get("BUNNY_TOKEN_AUTH_KEY"):
+        bunny_key_csv = REPO_ROOT.parent / "bunny-live-key.csv"
+        if bunny_key_csv.is_file():
+            for line in bunny_key_csv.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("pull_zone_name,"):
+                    continue
+                parts = line.split(",")
+                if len(parts) >= 4 and parts[3].strip():
+                    merged["BUNNY_TOKEN_AUTH_KEY"] = parts[3].strip()
+                    break
+
+    for drop_key in (
+        "STORAGE_ZONE_NAME",
+        "STORAGE_ZONE_PASSWORD",
+        "STORAGE_ZONE_HOSTNAME",
+        "STORAGE_ZONE_ID",
+        "STORAGE_ZONE_LINKED_HOSTNAME",
+        "STORAGE_ZONE_READ_ONLY_PASSWORD",
+        "STORAGE_ZONE_CONNECTION_TYPE",
+        "STORAGE_ZONE_PORT",
+        "BUNNY_ACCOUNT_API_KEY",
+    ):
+        merged.pop(drop_key, None)
+
+    return merged
+
+
+def main() -> int:
+    env = _build_render_env()
+    required = ("AUTH_REQUIRED", "CORS_ORIGINS", "PLATFORM_JWT_SECRET", "PLATFORM_JWT_ISSUER", "PLATFORM_DATABASE_URL")
     missing = [key for key in required if not env.get(key)]
     if missing:
-        print(f"Missing keys in {SECRETS_FILE.name}: {', '.join(missing)}", file=sys.stderr)
+        print(f"Missing keys after merging deploy secrets: {', '.join(missing)}", file=sys.stderr)
         return 1
 
     api_key = _load_render_key()

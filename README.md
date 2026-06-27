@@ -71,7 +71,7 @@ CI runs both on push/PR (see [.github/workflows/ci.yml](.github/workflows/ci.yml
 
 ## Deploy
 
-- **API:** Render (Docker) → `checkyourdrawings.onrender.com`
+- **API:** Render (Docker) → `checkyourdrawings-api.onrender.com`
 - **Frontend:** Vercel → `checkyourdrawings.kvshvl.in`
 - **Platform:** `platform-api-1y5i.onrender.com`
 - **Auth:** `auth.kvshvl.in`

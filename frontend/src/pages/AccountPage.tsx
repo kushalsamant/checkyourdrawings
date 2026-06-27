@@ -119,7 +119,17 @@ export function AccountPage() {
             </dl>
 
             {!account?.paid && (
-              <p>Pro adds queue priority and up to ten active jobs.</p>
+              <p>
+                Pro adds queue priority and up to ten active jobs. One subscription also unlocks{" "}
+                <strong>Coherence</strong>.
+              </p>
+            )}
+
+            {account?.paid && (
+              <p>
+                Your KVSHVL Pro subscription is active on this account. Includes Pro in{" "}
+                <strong>Check Your Drawings</strong> and <strong>Coherence</strong>.
+              </p>
             )}
 
             {account?.has_subscription && account.subscription_auto_renew && (
