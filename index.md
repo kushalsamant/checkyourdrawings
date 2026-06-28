@@ -1,6 +1,6 @@
 ## The problem
 
-Drawing revisions contain changes that visual inspection alone cannot reliably detect.
+Important drawing revisions are easy to overlook during visual inspection.
 
 Geometry shifts by small amounts. Lines move. Whole elements disappear into what looks like an unchanged drawing.
 
@@ -20,7 +20,7 @@ The process is time-consuming and scales poorly as drawing complexity increases.
 
 Manual comparison requires both drawings to be mentally aligned before any difference can be interpreted. Small positional offsets between revisions undermine that alignment.
 
-Geometry that has shifted by a millimeter looks identical to geometry that has not moved. Without a precise overlay, those differences are undetectable.
+Small changes can look identical to an unchanged drawing. Without a precise overlay, those differences are undetectable.
 
 ---
 
@@ -61,6 +61,10 @@ Reviewers spend less time searching for changes and more time evaluating them. W
 1. Upload two PDF revisions of the same drawing.
 2. The drawings are automatically aligned and the overlay is generated.
 3. Download the **PNG** or **PDF** overlay and incorporate it into your existing review process.
+
+Built by an architect for architects, engineers, and drawing reviewers.
+
+Designed to support drawing review—not replace it.
 
 ### Overlay key
 
