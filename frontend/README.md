@@ -12,7 +12,7 @@ Manual routing in `src/main.tsx` (no React Router):
 | `/about` | About — body from repo root [index.md](../index.md) |
 | `/pricing` | Usage limits and Pro checkout (`PricingPage.tsx`) |
 | `/account` | Plan and subscription (`AccountPage.tsx`) |
-| `/auth/callback` | OAuth return from [auth.kvshvl.in](https://auth.kvshvl.in) |
+| `/auth/callback` | OAuth return from [platform-auth.kvshvl.in](https://platform-auth.kvshvl.in) |
 
 ## Styling
 
@@ -43,7 +43,7 @@ Do not duplicate header nav (Compare, Pricing, Account) in page body copy.
 
 Sign-in is **not** required to compare. When configured:
 
-- Set `VITE_KVSHVL_AUTH_URL=https://auth.kvshvl.in` (production) or your local auth dev URL.
+- Set `VITE_KVSHVL_AUTH_URL=https://platform-auth.kvshvl.in` (production) or your local auth dev URL.
 - Sign-in redirects to auth → Google → handoff → `/auth/callback` stores a platform JWT in `sessionStorage`.
 - The token is sent as `Authorization: Bearer …` on `/compare` and `/jobs/*` when present.
 - `/account` and `/payments/*` call **platform-api** via `VITE_PLATFORM_API_URL`, not the Vite proxy.
@@ -66,7 +66,7 @@ Backend requires **Python 3.12** — see root [README.md](../README.md).
 For optional sign-in locally, use production auth (local auth does not support `localhost` return URLs):
 
 ```env
-VITE_KVSHVL_AUTH_URL=https://auth.kvshvl.in
+VITE_KVSHVL_AUTH_URL=https://platform-auth.kvshvl.in
 ```
 
 ## Production build
@@ -75,7 +75,7 @@ Vercel sets env vars; locally:
 
 ```powershell
 $env:VITE_API_BASE_URL="https://checkyourdrawings-api.onrender.com"
-$env:VITE_KVSHVL_AUTH_URL="https://auth.kvshvl.in"
+$env:VITE_KVSHVL_AUTH_URL="https://platform-auth.kvshvl.in"
 npm run build
 ```
 

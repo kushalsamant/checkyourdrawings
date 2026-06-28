@@ -31,7 +31,7 @@ def get_current_user(
     payload = decode_platform_jwt(
         credentials.credentials,
         secret=PLATFORM_JWT_SECRET,
-        issuer=PLATFORM_JWT_ISSUER or "https://auth.kvshvl.in",
+        issuer=PLATFORM_JWT_ISSUER or "https://platform-auth.kvshvl.in",
         audience="kvshvl-platform",
     )
     email = extract_email_from_payload(payload)

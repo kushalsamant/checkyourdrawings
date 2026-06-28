@@ -11,7 +11,7 @@ flowchart LR
   end
 
   subgraph kvshvl [KVSHVL platform]
-    Auth[auth.kvshvl.in]
+    Auth[platform-auth.kvshvl.in]
     PlatformAPI[platform-api]
     Razorpay[Razorpay]
   end
@@ -40,7 +40,7 @@ flowchart LR
 
 | Repo | Role |
 |------|------|
-| `auth` | Google OAuth, issues platform JWT |
+| `platform-auth` | Google OAuth, issues platform JWT |
 | `platform-api` | Users, subscriptions, Razorpay webhooks, entitlements |
 | `<app>` (e.g. `checkyourdrawings`) | Product only — no Razorpay, no user DB |
 
@@ -60,7 +60,7 @@ Do not use legacy abbreviations in new apps.
 
 ### 2. Frontend (Vercel)
 
-- GoDaddy DNS: **A** `<app>` → `76.76.21.21` (match `auth`, `coherence`; no `*.vercel-dns-*.com` CNAME on app subdomains)
+- GoDaddy DNS: **A** `<app>` → `76.76.21.21` (match `platform-auth`, `coherence`; no `*.vercel-dns-*.com` CNAME on app subdomains)
 - React + Vite SPA
 - `VITE_KVSHVL_AUTH_URL` → sign-in redirect
 - `VITE_PLATFORM_API_URL` → account + checkout

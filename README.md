@@ -14,7 +14,7 @@ Compare two architectural drawing PDFs and get an auto-aligned coordination over
 | [migrations/](migrations/) | Postgres job queue schema |
 | [docs/KVSHVL_APP_TEMPLATE.md](docs/KVSHVL_APP_TEMPLATE.md) | Reusable KVSHVL app pattern |
 | [docs/RENDER_OPS.md](docs/RENDER_OPS.md) | Render service IDs, env deploy, cutover notes |
-| [auth](https://github.com/kushalsamant/auth) (separate repo) | Google sign-in at `auth.kvshvl.in` |
+| [platform-auth](https://github.com/kushalsamant/platform-auth) (separate repo) | Google sign-in at `platform-auth.kvshvl.in` |
 | [platform-api](https://github.com/kushalsamant/platform-api) | Accounts, entitlements, Razorpay |
 
 ## Product
@@ -22,7 +22,7 @@ Compare two architectural drawing PDFs and get an auto-aligned coordination over
 - Upload **Drawing A** and **Drawing B** (PDF only, **100 MB** max each — all tiers).
 - Compare runs as an **async job**; the UI polls until the overlay is ready.
 - **Throughput:** active-job limits only (anon/free: 1; Pro: 10). No daily caps or usage quotas.
-- Sign-in via `auth.kvshvl.in`; account and billing on **platform-api**.
+- Sign-in via `platform-auth.kvshvl.in`; account and billing on **platform-api**.
 - Outputs stored on **Bunny CDN** (~24h signed URLs).
 
 See [index.md](index.md) for user-facing copy on the About page.
@@ -75,6 +75,6 @@ CI runs both on push/PR (see [.github/workflows/ci.yml](.github/workflows/ci.yml
 - **API:** Render (Docker) → `checkyourdrawings-api.onrender.com`
 - **Frontend:** Vercel → `checkyourdrawings.kvshvl.in`
 - **Platform:** `platform-api-1y5i.onrender.com`
-- **Auth:** `auth.kvshvl.in`
+- **Auth:** `platform-auth.kvshvl.in`
 
 More detail: [backend/README.md](backend/README.md) · [docs/RENDER_OPS.md](docs/RENDER_OPS.md).
