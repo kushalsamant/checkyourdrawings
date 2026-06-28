@@ -1,115 +1,119 @@
 ## The problem
 
-Drawing revisions easily hide crucial changes.
+Important drawing changes are easy to miss.
 
-Lines shift by millimeters, leaving differences invisible at a glance.
+Even a millimeter of movement can hide a meaningful revision.
 
-Review often begins before anyone spots the drift.
+Reviews often begin before those changes become obvious.
 
 ---
 
 ## How teams work today
 
-Teams manually align sheets and compare them by eye.
+Most teams compare revisions manually.
 
-You pan, zoom, and hunt for moved geometry side-by-side.
+They pan, zoom, and inspect drawings side by side, searching for moved geometry.
 
-It is a slow process that relies entirely on one careful reviewer.
+The process is slow and depends on careful visual review.
 
 ---
 
 ## Why that is error-prone
 
-Slightly misaligned sheets mask actual differences.
+Small alignment differences can conceal real design changes.
 
-Critical edits easily hide behind near-overlaps.
+Critical revisions disappear within nearly identical geometry.
 
-Manual checking simply does not scale across design disciplines.
+As projects grow, manual comparison becomes increasingly difficult to maintain.
 
 ---
 
 ## What Check Your Drawings does
 
-Built by an architect to solve this exact frustration.
+Created by an architect to solve this exact problem.
 
-It automatically aligns and compares your two revision PDFs.
+It automatically aligns and compares two revisions of the same drawing.
 
-You receive clean, color-coded overlays in minutes.
+Within minutes, you receive clear, color-coded overlays that reveal the differences.
 
 ---
 
 ## The benefit
 
-All changes stand out immediately.
+Changes become immediately visible.
 
-You can spot additions, removals, and exact matches in seconds.
+Additions, removals, and matching geometry are easy to identify at a glance.
 
-Side-by-side guesswork drops out, keeping you in full control.
+Less time spent searching means more time reviewing with confidence.
 
 ---
 
 ## What it does
 
-Visually compares an earlier and later PDF (up to 100 MB each).
+Compares two revisions of a PDF drawing (up to **100 MB** each).
 
-Outputs PNG and PDF overlays for quick download.
+Generates downloadable **PNG** and **PDF** overlay outputs.
 
-Strictly aligns and highlights raw geometry differences.
+Precisely aligns both revisions and highlights geometry differences.
 
 ---
 
 ## What it does not do
 
-Does not replace your CAD software or QA workflow.
+It does not replace your CAD software or quality assurance process.
 
-Does not read title blocks or issue pass/fail judgments.
+It does not interpret title blocks or determine whether changes are acceptable.
 
-Does not substitute for a thorough professional review.
+It does not replace professional judgement during drawing review.
 
 ---
 
 ## How it works
 
-1. Upload two PDF revisions
+1. Upload two PDF drawing revisions.
 
-2. Sheets align automatically; the overlay builds in minutes
+2. The drawings are automatically aligned, and the overlay is generated in minutes.
 
-3. Download **PNG** or **PDF**; review using your normal process
+3. Download the **PNG** or **PDF** overlay and review it using your existing workflow.
 
 ### Overlay colors
 
-Blue — Additions (only in Drawing B)
+**Blue** — Geometry only in Drawing B (Added)
 
-Orange — Removals (only in Drawing A)
+**Orange** — Geometry only in Drawing A (Removed)
 
-Green — Matching geometry (both revisions)
+**Green** — Geometry common to both revisions
 
-Red — Misaligned overlap (inspect before deciding)
+**Red** — Areas requiring alignment review before interpretation
 
 ---
 
 ## Privacy
 
-Files and outputs automatically delete after about **24 hours**.
+Uploaded files and generated outputs are automatically deleted after approximately **24 hours**.
 
-Download exactly what you need for your permanent records.
+Download the files you need and retain them as part of your own project records.
 
 ---
 
 ## Usage limits
 
-- **Without sign-in:** **5** comparisons, **1** active job
+* **Without sign-in:** **5** comparisons, **1** active job
 
-- **Signed in (free):** **Unlimited** comparisons, **1** active job
+* **Signed in (free):** **Unlimited** comparisons, **1** active job
 
-- **KVSHVL Pro:** **10** active jobs, queue priority, **100 MB** limit
+* **KVSHVL Pro:** **10** active jobs, queue priority, **100 MB** limit
 
 ---
 
 ## Legal
 
-- [Terms and Conditions](https://www.kvshvl.in/termsofservice)
-- [Privacy Policy](https://www.kvshvl.in/privacypolicy)
-- [Cancellation and Refund](https://www.kvshvl.in/refundpolicy)
-- [Shipping and Exchange](https://www.kvshvl.in/shippingpolicy)
-- [Contact Us](https://www.kvshvl.in/contact)
+* [Terms and Conditions](https://www.kvshvl.in/termsofservice)
+
+* [Privacy Policy](https://www.kvshvl.in/privacypolicy)
+
+* [Cancellation and Refund](https://www.kvshvl.in/refundpolicy)
+
+* [Shipping and Exchange](https://www.kvshvl.in/shippingpolicy)
+
+* [Contact Us](https://www.kvshvl.in/contact)
