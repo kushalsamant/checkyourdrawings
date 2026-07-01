@@ -31,7 +31,7 @@ DEFAULT_RENDER_ENV: dict[str, str] = {
     "COMPARE_MAX_RASTER_PIXELS": "4000000",
     "COMPARE_MAX_WORKERS": "1",
     "PYTHONPATH": "/app",
-    "PLATFORM_API_URL": "https://platform-api-1y5i.onrender.com",
+    "PLATFORM_API_URL": "https://platform-api.kvshvl.in",
     "BUNNY_STORAGE_REGION": "ny",
     "BUNNY_STORAGE_PREFIX": "checkyourdrawings",
     "BUNNY_CDN_HOSTNAME": "kvshvl-platform-cdn.b-cdn.net",

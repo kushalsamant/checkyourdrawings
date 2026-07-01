@@ -8,12 +8,12 @@ Operational notes for the app backend on Render. Reusable pattern for future KVS
 |-------|-------|
 | Render service name | `checkyourdrawings-api` |
 | Service ID | `srv-d8viasj7uimc738g0h0g` |
-| Default URL | `https://checkyourdrawings-api.onrender.com` |
+| Default URL | `https://checkyourdrawings-api.kvshvl.in` |
 | Health check | `/health/ready` |
 | Repo branch | `main` |
 | Region / runtime | Ohio · Docker (`./Dockerfile`) |
 | Frontend (Vercel) | `https://checkyourdrawings.kvshvl.in` |
-| Vercel env | `VITE_API_BASE_URL=https://checkyourdrawings-api.onrender.com` |
+| Vercel env | `VITE_API_BASE_URL=https://checkyourdrawings-api.kvshvl.in` |
 
 ## Naming (three layers)
 
@@ -74,7 +74,7 @@ When the API origin changes:
 ```powershell
 cd frontend
 vercel env rm VITE_API_BASE_URL production --yes
-"https://checkyourdrawings-api.onrender.com" | vercel env add VITE_API_BASE_URL production
+"https://checkyourdrawings-api.kvshvl.in" | vercel env add VITE_API_BASE_URL production
 vercel --prod
 ```
 
@@ -100,4 +100,4 @@ Set `SMOKE_INCLUDE_MVP_PDF=1` to run full MVP PDF pairs (may OOM on Render Free)
 - Entitlement slug: `checkyourdrawings`
 - Bunny prefix: `checkyourdrawings/`
 - `CORS_ORIGINS` (frontend origins, not API URL)
-- Postgres job data (shared `kvshvl-platform-db`)
+- Postgres job data (shared `platform-db`)
