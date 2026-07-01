@@ -16,7 +16,7 @@ from env_file import parse_env_file
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 SECRETS_FILE = REPO_ROOT / ".env.deploy.local"
-API_URL = "https://checkyourdrawings-api.kvshvl.in"
+API_URL = "https://checkyourdrawings-api.onrender.com"
 PLATFORM_API_URL = "https://platform-api.kvshvl.in"
 SMOKE_EMAIL = "checkyourdrawings-smoke@kvshvl.in"
 JOB_POLL_SECONDS = 180
