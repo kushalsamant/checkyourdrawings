@@ -112,8 +112,8 @@ export function PricingPage() {
 
         <p>
           <strong>KVSHVL Pro is one subscription per account.</strong> It is not limited to
-          this app. Pro today includes <strong>Check Your Drawings</strong> and{" "}
-          <strong>Coherence</strong>.
+        this app. Pro includes unlimited access to <strong>Check Your Drawings</strong>,{" "}
+        <strong>Coherence</strong>, and our entire ecosystem of software and knowledge.
         </p>
     </PlatformAppLayout>
   );
